@@ -74,8 +74,14 @@ Hora: ${new Date().toLocaleString("es-AR")}
       }
     }
 
-    // Send Telegram notification if configured and verified
-    if (notif?.telegram_enabled && notif?.telegram_chat_id && notif?.telegram_verified && process.env.TELEGRAM_BOT_TOKEN) {
+    // Send Telegram notification only if configured AND phone is verified
+    if (
+      notif?.telegram_enabled &&
+      notif?.telegram_chat_id &&
+      notif?.telegram_verified &&
+      notif?.whatsapp_verified &&
+      process.env.TELEGRAM_BOT_TOKEN
+    ) {
       try {
         const telegramResponse = await fetch(
           `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,

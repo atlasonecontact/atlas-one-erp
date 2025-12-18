@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       .select("kiosko_id")
       .eq("telegram_chat_id", chatId)
       .eq("telegram_verified", true)
+      .eq("whatsapp_verified", true)
       .maybeSingle()
 
     if (notifError) {
