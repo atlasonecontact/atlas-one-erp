@@ -39,12 +39,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const [showCredentials, setShowCredentials] = useState(false)
   const [generatedCredentials, setGeneratedCredentials] = useState<{
     username: string
-    password: string
   } | null>(null)
   const [copied, setCopied] = useState(false)
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
+    email: "",
     custom_role: "",
     permissions: {
       can_sell: true,
@@ -62,6 +62,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       setFormData({
         first_name: employee.first_name,
         last_name: employee.last_name,
+        email: employee.auto_generated_email,
         custom_role: employee.custom_role || "",
         permissions: employee.permissions,
         is_active: employee.is_active,
@@ -72,6 +73,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       setFormData({
         first_name: "",
         last_name: "",
+        email: "",
         custom_role: "",
         permissions: {
           can_sell: true,
@@ -108,40 +110,20 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         onSuccess()
         onClose()
       } else {
-        const { data: credentials, error: credError } = await supabase.rpc("generate_employee_credentials", {
-          p_first_name: formData.first_name,
-          p_last_name: formData.last_name,
-          p_kiosko_id: kioskoId,
-        })
-
-        if (credError) throw credError
-
-        const { username, password } = credentials[0]
-
-        // Supabase Auth can be strict about email formats; generate a very conservative temp email
-        // (letters+digits only) so employee creation doesn't depend on the DB function's formatting.
-        const usernameToken = String(username)
+        const username = formData.email
+          .split("@")[0]
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "")
-          .slice(0, 32)
-
-        const randomToken = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "")
-          .slice(0, 16)
-
-        const safeLocal = `u${usernameToken || randomToken}`
-        const temp_email = `${safeLocal}@example.com`
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: temp_email,
-          password,
+          email: formData.email,
+          password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
           options: {
             data: {
               full_name: `${formData.first_name} ${formData.last_name}`,
               role: "employee",
             },
-            emailRedirectTo: undefined,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         })
 
@@ -153,7 +135,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           first_name: formData.first_name,
           last_name: formData.last_name,
           username: username,
-          auto_generated_email: temp_email,
+          auto_generated_email: formData.email,
           custom_role: formData.custom_role || null,
           permissions: formData.permissions,
           is_active: formData.is_active,
@@ -161,7 +143,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
         if (insertError) throw insertError
 
-        setGeneratedCredentials({ username, password })
+        setGeneratedCredentials({ username })
         setShowCredentials(true)
         onSuccess()
       }
@@ -174,7 +156,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const copyCredentials = async () => {
     if (!generatedCredentials) return
-    const text = `Usuario: ${generatedCredentials.username}\nContraseña: ${generatedCredentials.password}`
+    const text = `Usuario: ${generatedCredentials.username}\nEmail: ${formData.email}`
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -189,13 +171,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+            <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
               <div className="flex gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-amber-200">
-                  <p className="font-semibold mb-1">Guarda estas credenciales</p>
-                  <p className="text-amber-300/80">
-                    Esta es la única vez que verás la contraseña. Compártela con el empleado de manera segura.
+                <AlertCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-cyan-200">
+                  <p className="font-semibold mb-1">Email de verificación enviado</p>
+                  <p className="text-cyan-300/80">
+                    Se envió un correo a <span className="font-medium">{formData.email}</span> para que el empleado
+                    verifique su cuenta y establezca su contraseña.
                   </p>
                 </div>
               </div>
@@ -214,14 +197,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-300">Contraseña</Label>
+                <Label className="text-gray-300">Email</Label>
                 <div className="relative">
-                  <Input
-                    value={generatedCredentials.password}
-                    type="text"
-                    readOnly
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono pr-10"
-                  />
+                  <Input value={formData.email} readOnly className="bg-[#0d1424] border-cyan-500/20 text-white pr-10" />
                 </div>
               </div>
             </div>
@@ -240,7 +218,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-2" />
-                    Copiar Credenciales
+                    Copiar Info
                   </>
                 )}
               </Button>
@@ -291,6 +269,23 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               />
             </div>
           </div>
+
+          {!employee && (
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-300">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="empleado@ejemplo.com"
+                className="bg-[#0d1424] border-cyan-500/20 text-white"
+                required
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="custom_role" className="text-gray-300">
@@ -392,9 +387,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
           {!employee && (
             <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3 text-sm text-cyan-200">
-              <p className="font-semibold mb-1">Se generarán credenciales automáticamente</p>
+              <p className="font-semibold mb-1">Verificación por email</p>
               <p className="text-cyan-300/80">
-                El sistema creará un usuario único (ej: juan.perez) y una contraseña segura para este empleado.
+                Se enviará un correo de verificación al empleado para que establezca su propia contraseña y active su
+                cuenta.
               </p>
             </div>
           )}
