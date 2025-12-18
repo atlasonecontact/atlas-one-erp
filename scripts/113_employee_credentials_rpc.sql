@@ -95,8 +95,11 @@ BEGIN
     ), ''
   );
 
-  -- Build a safe temp email: prefix with 'u_' so it doesn't start with a digit and replace unsafe chars with '_'
-  v_temp_email := lower('u_' || regexp_replace(v_username, '[^a-z0-9_]', '_', 'g')) || '@example.com';
+  -- Build a conservative temp email local-part: only letters+digits (some validators reject underscores)
+  v_temp_email :=
+    'u' ||
+    substring(regexp_replace(lower(v_username), '[^a-z0-9]', '', 'g') from 1 for 32) ||
+    '@example.com';
 
   RETURN QUERY SELECT v_username, v_password, v_temp_email;
 END;
