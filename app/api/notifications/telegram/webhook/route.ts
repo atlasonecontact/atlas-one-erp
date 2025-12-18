@@ -19,21 +19,24 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    const { data: kiosko } = await supabase
-      .from("kioscos")
-      .select(
-        `
-        id,
-        name,
-        phone_verified,
-        chains!inner (
-          owner_id
-        )
-      `,
-      )
+    const { data: notif, error: notifError } = await supabase
+      .from("notification_configs")
+      .select("kiosko_id")
       .eq("telegram_chat_id", chatId)
-      .eq("phone_verified", true)
-      .single()
+      .eq("telegram_verified", true)
+      .maybeSingle()
+
+    if (notifError) {
+      throw notifError
+    }
+
+    const { data: kiosko, error: kioskoError } = notif?.kiosko_id
+      ? await supabase.from("kioscos").select("id, name").eq("id", notif.kiosko_id).single()
+      : { data: null, error: null }
+
+    if (kioskoError) {
+      throw kioskoError
+    }
 
     if (!kiosko) {
       const responseMessage = `⚠️ <b>Acceso No Autorizado</b>
@@ -73,12 +76,12 @@ Por favor, contacta al administrador para verificar tu cuenta en la sección de 
 
       const { data: sales } = await supabase
         .from("sales")
-        .select("total")
+        .select("total_amount")
         .eq("kiosko_id", kiosko.id)
         .gte("created_at", `${today}T00:00:00`)
         .lte("created_at", `${today}T23:59:59`)
 
-      const dailyTotal = sales?.reduce((sum, sale) => sum + sale.total, 0) || 0
+      const dailyTotal = sales?.reduce((sum, sale: any) => sum + (sale.total_amount || 0), 0) || 0
       const dailySales = sales?.length || 0
 
       responseMessage = `📊 <b>Ventas de Hoy - ${kiosko.name}</b>
@@ -92,11 +95,11 @@ Por favor, contacta al administrador para verificar tu cuenta en la sección de 
 
       const { data: sales } = await supabase
         .from("sales")
-        .select("total")
+        .select("total_amount")
         .eq("kiosko_id", kiosko.id)
         .gte("created_at", firstDay)
 
-      const monthlyTotal = sales?.reduce((sum, sale) => sum + sale.total, 0) || 0
+      const monthlyTotal = sales?.reduce((sum, sale: any) => sum + (sale.total_amount || 0), 0) || 0
       const monthlySales = sales?.length || 0
 
       responseMessage = `📊 <b>Estadísticas del Mes - ${kiosko.name}</b>
@@ -108,10 +111,10 @@ Por favor, contacta al administrador para verificar tu cuenta en la sección de 
     } else if (text === "/stock") {
       const { data: products } = await supabase
         .from("products")
-        .select("name, stock, min_stock")
+        .select("name, stock_quantity, min_stock_level")
         .eq("kiosko_id", kiosko.id)
-        .lt("stock", 10)
-        .order("stock", { ascending: true })
+        .lt("stock_quantity", 10)
+        .order("stock_quantity", { ascending: true })
         .limit(5)
 
       if (!products || products.length === 0) {
@@ -121,7 +124,7 @@ Todos los productos tienen stock suficiente.`
       } else {
         responseMessage = `⚠️ <b>Productos con Bajo Stock - ${kiosko.name}</b>
 
-${products.map((p) => `• ${p.name}: ${p.stock} unidades`).join("\n")}
+    ${products.map((p: any) => `• ${p.name}: ${p.stock_quantity} unidades`).join("\n")}
 
 📍 Kiosco: ${kiosko.name}`
       }

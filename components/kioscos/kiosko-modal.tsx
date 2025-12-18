@@ -13,10 +13,11 @@ import { MapPin, Phone, Building2 } from "lucide-react"
 
 type Plan = {
   id: string
-  name: string
+  plan_name: string
+  display_name: string
   price: number
-  max_employees: number
-  max_products: number
+  max_employees: number | null
+  max_products: number | null
 }
 
 type Kiosko = {
@@ -26,7 +27,6 @@ type Kiosko = {
   cuit: string
   phone: string
   whatsapp_phone: string | null
-  telegram_chat_id: string | null
   background_color: string
   accent_color: string
   subscription_plan_id: string | null
@@ -48,7 +48,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
     cuit: "",
     phone: "",
     whatsapp_phone: "",
-    telegram_chat_id: "",
     background_color: "#030712",
     accent_color: "#00d9ff",
     subscription_plan_id: "",
@@ -66,7 +65,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
           cuit: kiosko.cuit || "",
           phone: kiosko.phone || "",
           whatsapp_phone: kiosko.whatsapp_phone || "",
-          telegram_chat_id: kiosko.telegram_chat_id || "",
           background_color: kiosko.background_color,
           accent_color: kiosko.accent_color,
           subscription_plan_id: kiosko.subscription_plan_id || "",
@@ -78,7 +76,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
           cuit: "",
           phone: "",
           whatsapp_phone: "",
-          telegram_chat_id: "",
           background_color: "#030712",
           accent_color: "#00d9ff",
           subscription_plan_id: "",
@@ -88,11 +85,17 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
   }, [isOpen, kiosko])
 
   const loadPlans = async () => {
-    const { data } = await supabase.from("subscription_plans").select("*").order("price")
+    const { data, error } = await supabase
+      .from("subscription_plans")
+      .select("id, plan_name, display_name, price, max_employees, max_products")
+      .order("price")
 
-    if (data) {
-      setPlans(data)
+    if (error) {
+      console.error("[v0] Error loading subscription plans:", error)
+      return
     }
+
+    setPlans(data || [])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,13 +112,24 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
         return
       }
 
+      const kioskoPayload = {
+        name: formData.name,
+        location: formData.location,
+        cuit: formData.cuit,
+        phone: formData.phone,
+        whatsapp_phone: formData.whatsapp_phone ? formData.whatsapp_phone : null,
+        background_color: formData.background_color,
+        accent_color: formData.accent_color,
+        subscription_plan_id: formData.subscription_plan_id ? formData.subscription_plan_id : null,
+      }
+
       if (kiosko) {
-        const { error } = await supabase.from("kioscos").update(formData).eq("id", kiosko.id)
+        const { error } = await supabase.from("kioscos").update(kioskoPayload).eq("id", kiosko.id)
 
         if (error) throw error
       } else {
         const { error } = await supabase.from("kioscos").insert({
-          ...formData,
+          ...kioskoPayload,
           owner_id: user.id, // Use owner_id instead of chain_id
           status: "active",
         })
@@ -223,7 +237,7 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
               <SelectContent className="bg-[#0d1424] border-cyan-500/20">
                 {plans.map((plan) => (
                   <SelectItem key={plan.id} value={plan.id} className="text-white">
-                    {plan.name} - ${plan.price}/mes ({plan.max_employees} empleados, {plan.max_products} productos)
+                    {plan.display_name || plan.plan_name} - ${plan.price}/mes ({plan.max_employees ?? "-"} empleados, {plan.max_products ?? "-"} productos)
                   </SelectItem>
                 ))}
               </SelectContent>

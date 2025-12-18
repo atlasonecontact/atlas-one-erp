@@ -11,9 +11,7 @@ type Kiosko = {
   name: string
   location: string
   status: string
-  phone_verified: boolean
   whatsapp_phone: string | null
-  telegram_chat_id: string | null
   background_color: string
   accent_color: string
   subscription_plan_id: string | null
@@ -196,7 +194,6 @@ export default function KioscosPage() {
                     <span className="text-white flex items-center gap-1">
                       <Phone className="w-3 h-3" />
                       {kiosko.whatsapp_phone}
-                      {kiosko.phone_verified && <span className="text-green-400 text-xs">(✓)</span>}
                     </span>
                   </div>
                 )}

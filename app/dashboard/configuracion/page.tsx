@@ -63,6 +63,7 @@ export default function ConfiguracionPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [selectedKiosko, setSelectedKiosko] = useState<string>("")
   const [kioscos, setKioscos] = useState<any[]>([])
+  const [notificationConfig, setNotificationConfig] = useState<any | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
@@ -86,10 +87,12 @@ export default function ConfiguracionPage() {
     } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: kioscosData } = await supabase
-      .from("kioscos")
-      .select("id, name, whatsapp_phone, telegram_chat_id, phone_verified")
-      .eq("owner_id", user.id)
+    const { data: kioscosData, error } = await supabase.from("kioscos").select("id, name").eq("owner_id", user.id)
+
+    if (error) {
+      console.error("[v0] Error loading kioscos:", error)
+      return
+    }
 
     if (kioscosData && kioscosData.length > 0) {
       setKioscos(kioscosData)
@@ -97,35 +100,87 @@ export default function ConfiguracionPage() {
     }
   }
 
-  const loadKioskoConfig = async () => {
-    const kiosko = kioscos.find((k) => k.id === selectedKiosko)
-    if (kiosko) {
-      setWhatsappConfig({
-        enabled: !!kiosko.whatsapp_phone,
-        phoneNumber: kiosko.whatsapp_phone || "",
-        notifyOnSale: true,
-        verified: kiosko.phone_verified,
-      })
-      setTelegramConfig({
-        enabled: !!kiosko.telegram_chat_id,
-        chatId: kiosko.telegram_chat_id || "",
-        notifyOnSale: true,
-        verified: kiosko.phone_verified,
-      })
+  const ensureNotificationConfig = async (kioskoId: string) => {
+    const { data: existing, error: selectError } = await supabase
+      .from("notification_configs")
+      .select("*")
+      .eq("kiosko_id", kioskoId)
+      .maybeSingle()
+
+    if (selectError) {
+      console.error("[v0] Error loading notification config:", selectError)
+      return null
     }
+
+    if (existing) return existing
+
+    const { data: created, error: insertError } = await supabase
+      .from("notification_configs")
+      .insert({
+        kiosko_id: kioskoId,
+        whatsapp_enabled: false,
+        whatsapp_verified: false,
+        telegram_enabled: false,
+        telegram_verified: false,
+      })
+      .select("*")
+      .single()
+
+    if (insertError) {
+      console.error("[v0] Error creating notification config:", insertError)
+      return null
+    }
+
+    return created
+  }
+
+  const loadKioskoConfig = async () => {
+    const config = await ensureNotificationConfig(selectedKiosko)
+    setNotificationConfig(config)
+
+    if (!config) return
+
+    setWhatsappConfig({
+      enabled: !!config.whatsapp_enabled,
+      phoneNumber: config.whatsapp_phone || "",
+      notifyOnSale: true,
+      verified: !!config.whatsapp_verified,
+    })
+
+    setTelegramConfig({
+      enabled: !!config.telegram_enabled,
+      chatId: config.telegram_chat_id || "",
+      notifyOnSale: true,
+      verified: !!config.telegram_verified,
+    })
   }
 
   const handleSave = async () => {
     setIsSaving(true)
 
     try {
-      await supabase
-        .from("kioscos")
+      const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
+      if (!config) throw new Error("No se pudo cargar la configuración de notificaciones")
+
+      const whatsappPhoneChanged = (config.whatsapp_phone || "") !== (whatsappConfig.phoneNumber || "")
+      const telegramChatChanged = (config.telegram_chat_id || "") !== (telegramConfig.chatId || "")
+
+      const { error } = await supabase
+        .from("notification_configs")
         .update({
+          whatsapp_enabled: whatsappConfig.enabled,
           whatsapp_phone: whatsappConfig.phoneNumber || null,
+          whatsapp_verified: whatsappPhoneChanged ? false : !!config.whatsapp_verified,
+          telegram_enabled: telegramConfig.enabled,
           telegram_chat_id: telegramConfig.chatId || null,
+          telegram_verified: telegramChatChanged ? false : !!config.telegram_verified,
+          updated_at: new Date().toISOString(),
         })
-        .eq("id", selectedKiosko)
+        .eq("kiosko_id", selectedKiosko)
+
+      if (error) throw error
+
+      await loadKioskoConfig()
 
       alert("Configuración guardada correctamente")
     } catch (error) {
@@ -147,21 +202,31 @@ export default function ConfiguracionPage() {
     try {
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+
       await supabase.from("phone_verifications").insert({
         kiosko_id: selectedKiosko,
         phone_number: whatsappConfig.phoneNumber,
         verification_code: verificationCode,
+        expires_at: expiresAt,
       })
 
       alert(
         `Código de verificación generado. En un entorno de producción, este código se enviaría por WhatsApp: ${verificationCode}`,
       )
 
-      await supabase.from("kioscos").update({ phone_verified: true }).eq("id", selectedKiosko)
+      await supabase
+        .from("notification_configs")
+        .update({
+          whatsapp_verified: true,
+          telegram_verified: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("kiosko_id", selectedKiosko)
 
       setWhatsappConfig({ ...whatsappConfig, verified: true })
       setTelegramConfig({ ...telegramConfig, verified: true })
-      loadKioscos()
+      await loadKioskoConfig()
     } catch (error) {
       console.error("[v0] Error verifying phone:", error)
       alert("Error al verificar el teléfono")

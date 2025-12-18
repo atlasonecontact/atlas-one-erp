@@ -7,12 +7,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    // Get kiosko configuration with phone verification
-    const { data: kiosko } = await supabase
-      .from("kioscos")
-      .select("name, whatsapp_phone, telegram_chat_id, phone_verified")
-      .eq("id", kioskoId)
-      .single()
+    const { data: kiosko, error: kioskoError } = await supabase.from("kioscos").select("id, name").eq("id", kioskoId).single()
+
+    if (kioskoError) {
+      throw kioskoError
+    }
+
+    const { data: notif, error: notifError } = await supabase
+      .from("notification_configs")
+      .select("whatsapp_enabled, whatsapp_phone, whatsapp_verified, telegram_enabled, telegram_chat_id, telegram_verified")
+      .eq("kiosko_id", kioskoId)
+      .maybeSingle()
+
+    if (notifError) {
+      throw notifError
+    }
 
     if (!kiosko) {
       return NextResponse.json({ error: "Kiosko not found" }, { status: 404 })
@@ -31,7 +40,13 @@ Hora: ${new Date().toLocaleString("es-AR")}
     const notifications = []
 
     // Send WhatsApp notification if configured and verified
-    if (kiosko.whatsapp_phone && kiosko.phone_verified && process.env.WHATSAPP_ACCESS_TOKEN) {
+    if (
+      notif?.whatsapp_enabled &&
+      notif?.whatsapp_phone &&
+      notif?.whatsapp_verified &&
+      process.env.WHATSAPP_ACCESS_TOKEN &&
+      process.env.WHATSAPP_PHONE_NUMBER_ID
+    ) {
       try {
         const whatsappResponse = await fetch(
           `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -43,7 +58,7 @@ Hora: ${new Date().toLocaleString("es-AR")}
             },
             body: JSON.stringify({
               messaging_product: "whatsapp",
-              to: kiosko.whatsapp_phone.replace(/[^0-9]/g, ""),
+              to: notif.whatsapp_phone.replace(/[^0-9]/g, ""),
               type: "text",
               text: { body: message },
             }),
@@ -60,7 +75,7 @@ Hora: ${new Date().toLocaleString("es-AR")}
     }
 
     // Send Telegram notification if configured and verified
-    if (kiosko.telegram_chat_id && kiosko.phone_verified && process.env.TELEGRAM_BOT_TOKEN) {
+    if (notif?.telegram_enabled && notif?.telegram_chat_id && notif?.telegram_verified && process.env.TELEGRAM_BOT_TOKEN) {
       try {
         const telegramResponse = await fetch(
           `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -68,7 +83,7 @@ Hora: ${new Date().toLocaleString("es-AR")}
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              chat_id: kiosko.telegram_chat_id,
+              chat_id: notif.telegram_chat_id,
               text: message,
               parse_mode: "HTML",
             }),
