@@ -1,27 +1,33 @@
 -- ====================================================
--- FIX PERMISSIONS (GRANTS) FOR SUPABASE ROLES
+-- FIX PERMISSIONS (GRANTS) FOR ALL TABLES
 -- ====================================================
--- This script fixes "permission denied for table ..." errors coming from PostgREST.
--- It grants the needed privileges to Supabase roles: anon + authenticated.
---
--- Run this in Supabase SQL Editor (or as a migration) on the target database.
+-- This script grants the needed privileges to Supabase roles.
+-- Run this in Supabase SQL Editor.
 
 BEGIN;
 
 -- Ensure the API roles can use the public schema
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 
--- Subscription plans should be readable by everyone (public catalog)
+-- Publicly readable tables
 GRANT SELECT ON TABLE public.subscription_plans TO anon, authenticated;
 
--- Kioscos CRUD (client uses authenticated JWT)
+-- Tables that authenticated users (owners/employees) need to access
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.kioscos TO authenticated;
-
--- Notifications-related tables used from the dashboard UI
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.employees TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.products TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.sales TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.sale_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.purchases TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.purchase_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.stock_movements TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.cash_registers TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.cash_register_transactions TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.notification_configs TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.phone_verifications TO authenticated;
 
--- (Optional) If you later re-enable RLS, GRANTs are still required.
--- RLS controls row visibility; GRANT controls basic table access.
+-- Sequences (needed for serial/identity columns if any)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 COMMIT;

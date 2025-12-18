@@ -95,7 +95,8 @@ BEGIN
     ), ''
   );
 
-  v_temp_email := v_username || '@atlasone.internal';
+  -- Build a safe temp email: prefix with 'u_' so it doesn't start with a digit and replace unsafe chars with '_'
+  v_temp_email := lower('u_' || regexp_replace(v_username, '[^a-z0-9_]', '_', 'g')) || '@example.com';
 
   RETURN QUERY SELECT v_username, v_password, v_temp_email;
 END;

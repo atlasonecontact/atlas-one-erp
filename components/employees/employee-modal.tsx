@@ -116,7 +116,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
         if (credError) throw credError
 
-        const { username, password, temp_email } = credentials[0]
+        const { username, password } = credentials[0]
+
+        // Supabase Auth can be strict about email formats; generate a safe temp email client-side
+        // so employee creation doesn't depend on the DB function's email formatting.
+        const safeLocal = `u_${String(username).toLowerCase().replace(/[^a-z0-9_]/g, "_")}`
+        const temp_email = `${safeLocal}@example.com`
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: temp_email,
