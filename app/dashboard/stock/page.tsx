@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { StockHeatmap } from "@/components/stock/stock-heatmap"
-import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react"
+import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
@@ -47,7 +47,9 @@ export default function StockPage() {
 
   const loadUserAndData = async () => {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
       return
@@ -67,11 +69,7 @@ export default function StockPage() {
       targetKioskoId = employeeData.kiosko_id
     } else {
       // User is owner
-      const { data: kioscos } = await supabase
-        .from("kioscos")
-        .select("id")
-        .eq("owner_id", user.id)
-        .limit(1)
+      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
 
       if (kioscos && kioscos.length > 0) {
         targetKioskoId = kioscos[0].id
@@ -80,10 +78,7 @@ export default function StockPage() {
 
     if (targetKioskoId) {
       setKioskoId(targetKioskoId)
-      await Promise.all([
-        loadProducts(targetKioskoId),
-        loadMovements(targetKioskoId),
-      ])
+      await Promise.all([loadProducts(targetKioskoId), loadMovements(targetKioskoId)])
     }
     setLoading(false)
   }
@@ -134,7 +129,7 @@ export default function StockPage() {
 
   const calculateCategoryStats = (prods: Product[]) => {
     const categoryMap = new Map<string, { stock: number; count: number }>()
-    
+
     prods.forEach((p) => {
       const cat = p.category || "Sin categoría"
       const existing = categoryMap.get(cat) || { stock: 0, count: 0 }
@@ -147,7 +142,7 @@ export default function StockPage() {
     const stats: CategoryStock[] = Array.from(categoryMap.entries()).map(([category, data]) => ({
       category,
       stock: data.stock,
-      rotation: data.stock > 100 ? "Rápido" : data.stock > 30 ? "Normal" : "Lento",
+      rotation: data.stock > 100 ? "Rápido" : data.stock > 50 ? "Normal" : "Lento",
     }))
 
     setCategoryStats(stats)
@@ -164,7 +159,7 @@ export default function StockPage() {
   )
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("es-AR")
+    return new Date(dateStr).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
   }
 
   return (
@@ -189,7 +184,7 @@ export default function StockPage() {
             <Package className="w-5 h-5 text-cyan-400" />
           </div>
           <p className="text-2xl font-bold text-white">{totalStock.toLocaleString()}</p>
-          <p className="text-xs text-green-400 mt-1">+2,270 esta semana</p>
+          <p className="text-xs text-gray-500 mt-1">{products.length} productos activos</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -198,7 +193,7 @@ export default function StockPage() {
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
           </div>
           <p className="text-2xl font-bold text-yellow-400">{lowStockCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Stock menor a 10 unidades</p>
+          <p className="text-xs text-gray-500 mt-1">Stock bajo nivel mínimo</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -207,18 +202,24 @@ export default function StockPage() {
             <AlertTriangle className="w-5 h-5 text-red-400" />
           </div>
           <p className="text-2xl font-bold text-red-400">{criticalStockCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Stock menor a 5 unidades</p>
+          <p className="text-xs text-gray-500 mt-1">Requieren reposición urgente</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Rotación Promedio</span>
+            <span className="text-sm text-gray-400">Movimientos Hoy</span>
             <TrendingUp className="w-5 h-5 text-cyan-400" />
           </div>
           <p className="text-2xl font-bold text-white">
-            18.2 <span className="text-sm font-normal text-gray-500">días</span>
+            {
+              movements.filter((m) => {
+                const movDate = new Date(m.created_at).toDateString()
+                const today = new Date().toDateString()
+                return movDate === today
+              }).length
+            }
           </p>
-          <p className="text-xs text-green-400 mt-1">-1.3% vs mes anterior</p>
+          <p className="text-xs text-gray-500 mt-1">Últimas 24 horas</p>
         </div>
       </div>
 
@@ -336,13 +337,27 @@ export default function StockPage() {
                       ) : (
                         <ArrowDownRight className="w-4 h-4 text-red-400" />
                       )}
-                      <span className={movement.movement_type === "in" || movement.movement_type === "purchase" ? "text-green-400" : "text-red-400"}>
-                        {movement.movement_type === "in" || movement.movement_type === "purchase" ? "Entrada" : "Salida"}
+                      <span
+                        className={
+                          movement.movement_type === "in" || movement.movement_type === "purchase"
+                            ? "text-green-400"
+                            : "text-red-400"
+                        }
+                      >
+                        {movement.movement_type === "in" || movement.movement_type === "purchase"
+                          ? "Entrada"
+                          : "Salida"}
                       </span>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={movement.movement_type === "in" || movement.movement_type === "purchase" ? "text-green-400" : "text-red-400"}>
+                    <span
+                      className={
+                        movement.movement_type === "in" || movement.movement_type === "purchase"
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }
+                    >
                       {movement.movement_type === "in" || movement.movement_type === "purchase" ? "+" : "-"}
                       {movement.quantity}
                     </span>

@@ -118,10 +118,16 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       } else {
         // Creating new employee
         const username = formData.email
-          ? formData.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "")
-          : formData.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15)
+          ? formData.email
+              .split("@")[0]
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "")
+          : formData.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "")
+              .slice(0, 15)
 
-        let userId: string | undefined = undefined
+        let userId: string | null = null
 
         // Only create auth user if email is provided
         if (formData.email) {
@@ -138,7 +144,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           })
 
           if (authError) throw authError
-          userId = authData.user?.id
+          userId = authData.user?.id || null
         }
 
         const { error: insertError } = await supabase.from("employees").insert({
