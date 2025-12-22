@@ -5,7 +5,25 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { StockHeatmap } from "@/components/stock/stock-heatmap"
 import { StockMovementModal } from "@/components/stock/stock-movement-modal"
-import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
+import { 
+  InventoryRotationChart, 
+  StockBreakdownChart, 
+  InventoryKPICards,
+  OutOfStockList 
+} from "@/components/stock/inventory-charts"
+import { 
+  Search, 
+  Download, 
+  Package, 
+  AlertTriangle, 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Plus,
+  RefreshCw,
+  Filter,
+  Calendar
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
@@ -169,9 +187,40 @@ export default function StockPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Control de Stock</h1>
-          <p className="text-gray-400 text-sm">Monitorea y gestiona tu inventario</p>
+          <div className="flex items-center gap-4 mt-1">
+            <button className="text-sm text-cyan-400 border-b-2 border-cyan-400 pb-1">
+              Inventario
+            </button>
+            <button className="text-sm text-gray-400 hover:text-white pb-1">
+              Movimientos
+            </button>
+            <button className="text-sm text-gray-400 hover:text-white pb-1">
+              Alertas
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Date Range */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0f1a] border border-cyan-500/20">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-white">Últimos 30 días</span>
+          </div>
+          
+          <Button variant="outline" size="sm" className="border-cyan-500/20 text-gray-400 bg-[#0a0f1a]">
+            <Filter className="w-4 h-4 mr-2" />
+            Filtrar
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={loadUserAndData}
+            disabled={loading}
+            className="text-gray-400 hover:text-white"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+
           <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
@@ -181,114 +230,164 @@ export default function StockPage() {
             className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
           >
             <Plus className="w-4 h-4" />
-            Movimiento de Stock
+            Movimiento
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Top KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-400">Stock Total</span>
-            <Package className="w-5 h-5 text-cyan-400" />
+            <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+              <Package className="w-5 h-5 text-cyan-400" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-white">{totalStock.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">{products.length} productos activos</p>
+          <p className="text-3xl font-bold text-white">{totalStock.toLocaleString()}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-green-400 flex items-center">
+              <ArrowUpRight className="w-3 h-3" />
+              +5.2%
+            </span>
+            <span className="text-xs text-gray-500">{products.length} productos</span>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Productos en Riesgo</span>
-            <AlertTriangle className="w-5 h-5 text-yellow-400" />
+            <span className="text-sm text-gray-400">Stock Bajo</span>
+            <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-yellow-400">{lowStockCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Stock bajo nivel mínimo</p>
+          <p className="text-3xl font-bold text-yellow-400">{lowStockCount}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-gray-500">Bajo nivel mínimo</span>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-red-500/10 to-red-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-400">Stock Crítico</span>
-            <AlertTriangle className="w-5 h-5 text-red-400" />
+            <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-red-400">{criticalStockCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Requieren reposición urgente</p>
+          <p className="text-3xl font-bold text-red-400">{criticalStockCount}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-red-400">Requiere acción</span>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-green-500/10 to-green-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-400">Movimientos Hoy</span>
-            <TrendingUp className="w-5 h-5 text-cyan-400" />
+            <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-green-400" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-white">
-            {
-              movements.filter((m) => {
-                const movDate = new Date(m.created_at).toDateString()
-                const today = new Date().toDateString()
-                return movDate === today
-              }).length
-            }
+          <p className="text-3xl font-bold text-white">
+            {movements.filter((m) => {
+              const movDate = new Date(m.created_at).toDateString()
+              const today = new Date().toDateString()
+              return movDate === today
+            }).length}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Últimas 24 horas</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-gray-500">Últimas 24 horas</span>
+          </div>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <InventoryKPICards isLoading={loading} />
+        <InventoryRotationChart isLoading={loading} />
+        <StockBreakdownChart isLoading={loading} />
+      </div>
+
+      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Stock insights */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Stock Insights</h3>
-          <div className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Stock Insights</h3>
+              <p className="text-xs text-gray-500">Predicciones y alertas</p>
+            </div>
+          </div>
+          <div className="space-y-3">
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-              <p className="text-sm text-white font-medium">Cigarrillos caerán a nivel crítico</p>
-              <p className="text-xs text-red-400 mt-1">en 45 horas</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <p className="text-sm text-white font-medium">Cigarrillos caerán a crítico</p>
+              </div>
+              <p className="text-xs text-red-400 ml-4">en 45 horas</p>
             </div>
             <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <p className="text-sm text-white font-medium">Energizantes incrementaron ventas</p>
-              <p className="text-xs text-green-400 mt-1">+32% esta semana</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <p className="text-sm text-white font-medium">Energizantes ↑ ventas</p>
+              </div>
+              <p className="text-xs text-green-400 ml-4">+32% esta semana</p>
             </div>
             <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-              <p className="text-sm text-white font-medium">Golosinas: stock envejecido</p>
-              <p className="text-xs text-yellow-400 mt-1">rotación lenta</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <p className="text-sm text-white font-medium">Golosinas: stock envejecido</p>
+              </div>
+              <p className="text-xs text-yellow-400 ml-4">rotación lenta</p>
             </div>
             <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-              <p className="text-sm text-white font-medium">Snacks riesgo de quiebre</p>
-              <p className="text-xs text-orange-400 mt-1">el sábado</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                <p className="text-sm text-white font-medium">Snacks riesgo de quiebre</p>
+              </div>
+              <p className="text-xs text-orange-400 ml-4">el sábado</p>
             </div>
           </div>
         </div>
 
         {/* Rotation by category */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Rotación por Categoría</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Rotación por Categoría</h3>
+              <p className="text-xs text-gray-500">Velocidad de venta</p>
+            </div>
+          </div>
           <div className="space-y-4">
             {categoryStats.length === 0 ? (
               <p className="text-gray-500 text-sm">No hay productos cargados</p>
             ) : (
-              categoryStats.map((cat, i) => (
+              categoryStats.slice(0, 5).map((cat, i) => (
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-400">{cat.category}</span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        cat.rotation === "Rápido"
-                          ? "bg-green-500/20 text-green-400"
-                          : cat.rotation === "Normal"
-                            ? "bg-cyan-500/20 text-cyan-400"
-                            : "bg-yellow-500/20 text-yellow-400"
-                      }`}
-                    >
-                      {cat.rotation}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{cat.stock} unid.</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          cat.rotation === "Rápido"
+                            ? "bg-green-500/20 text-green-400"
+                            : cat.rotation === "Normal"
+                              ? "bg-cyan-500/20 text-cyan-400"
+                              : "bg-yellow-500/20 text-yellow-400"
+                        }`}
+                      >
+                        {cat.rotation}
+                      </span>
+                    </div>
                   </div>
                   <div className="h-2 rounded-full bg-white/5 overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
+                      className={`h-full rounded-full transition-all duration-500 ${
                         cat.rotation === "Rápido"
-                          ? "bg-green-500"
+                          ? "bg-gradient-to-r from-green-500 to-green-400"
                           : cat.rotation === "Normal"
-                            ? "bg-cyan-500"
-                            : "bg-yellow-500"
+                            ? "bg-gradient-to-r from-cyan-500 to-cyan-400"
+                            : "bg-gradient-to-r from-yellow-500 to-yellow-400"
                       }`}
                       style={{ width: `${Math.min((cat.stock / 300) * 100, 100)}%` }}
                     />
@@ -299,9 +398,12 @@ export default function StockPage() {
           </div>
         </div>
 
-        {/* Stock heatmap */}
-        <StockHeatmap />
+        {/* Products out of stock */}
+        <OutOfStockList isLoading={loading} />
       </div>
+
+      {/* Stock Heatmap */}
+      <StockHeatmap />
 
       {/* Movements table */}
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">

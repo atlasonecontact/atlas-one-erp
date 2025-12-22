@@ -41,7 +41,6 @@ type Employee = {
   id: string
   name: string
   username: string
-  pin?: string
   email?: string
   phone?: string
   document_id?: string
@@ -86,15 +85,34 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const [activeTab, setActiveTab] = useState<"info" | "shifts" | "permissions">("info")
   const [isLoading, setIsLoading] = useState(false)
   const [showCredentials, setShowCredentials] = useState(false)
-  const [showPin, setShowPin] = useState(false)
   const [copied, setCopied] = useState(false)
   const [shifts, setShifts] = useState<Shift[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState<{
     username: string
     email: string
     password: string
-    pin: string
   } | null>(null)
+
+  const MAX_MONEY = 9999999999.99
+
+  const normalizeMoneyInput = (raw: string) => {
+    // Allow only digits and one decimal separator
+    const cleaned = raw.replace(/[^0-9.,]/g, "")
+    const normalized = cleaned.replace(/,/g, ".")
+    const parts = normalized.split(".")
+    const integerPart = parts[0] || ""
+    const decimalPart = parts[1] ? parts[1].slice(0, 2) : ""
+    const next = decimalPart ? `${integerPart}.${decimalPart}` : integerPart
+
+    if (!next) return ""
+    const num = Number.parseFloat(next)
+    if (Number.isNaN(num)) return ""
+
+    if (num > MAX_MONEY) {
+      return MAX_MONEY.toFixed(2)
+    }
+    return next
+  }
 
   const supabase = createClient()
   const toast = useToast()
@@ -111,17 +129,16 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     email: {
       email: "Email inválido",
     },
-    pin: {
-      pattern: { value: /^[0-9]{4}$/, message: "El PIN debe ser de 4 dígitos" },
-    },
     phone: {
       phone: "Teléfono inválido",
     },
     salary: {
       min: { value: 0, message: "El salario no puede ser negativo" },
+      max: { value: MAX_MONEY, message: `Máximo permitido: ${MAX_MONEY.toLocaleString("es-AR")}` },
     },
     hourly_rate: {
       min: { value: 0, message: "El valor por hora no puede ser negativo" },
+      max: { value: MAX_MONEY, message: `Máximo permitido: ${MAX_MONEY.toLocaleString("es-AR")}` },
     },
   })
 
@@ -155,7 +172,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    pin: "",
     phone: "",
     document_id: "",
     address: "",
@@ -177,19 +193,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     status: "active",
   })
 
-  // Generate random 4-digit PIN
-  const generatePin = () => {
-    const pin = Math.floor(1000 + Math.random() * 9000).toString()
-    setFormData({ ...formData, pin })
-  }
-
   // Load employee data and shifts
   useEffect(() => {
     if (employee) {
       setFormData({
         name: employee.name || "",
         email: employee.email || "",
-        pin: employee.pin || "",
         phone: employee.phone || "",
         document_id: employee.document_id || "",
         address: employee.address || "",
@@ -223,7 +232,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     setFormData({
       name: "",
       email: "",
-      pin: "",
       phone: "",
       document_id: "",
       address: "",
@@ -287,7 +295,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           .from("employees")
           .update({
             name: formData.name.trim(),
-            pin: formData.pin || null,
             phone: formData.phone || null,
             document_id: formData.document_id || null,
             address: formData.address || null,
@@ -323,50 +330,31 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           .substring(0, 20)
 
         const uniqueUsername = `${username}_${Date.now().toString(36)}`
-        const pin = formData.pin || Math.floor(1000 + Math.random() * 9000).toString()
         const password = generatePassword()
 
         // Generate email for the employee (use provided or generate one)
         const employeeEmail = formData.email || `${uniqueUsername}@empleado.atlasone.app`
 
-        // Try to create auth user for the employee using signUp
-        // Note: This may not work if email confirmation is required
         let authUserId: string | null = null
 
-        try {
-          // First, try using signUp (works from client)
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // Create auth user server-side (doesn't switch the current session)
+        const createAuthRes = await fetch("/api/employees/create-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kioskoId,
             email: employeeEmail,
-            password: password,
-            options: {
-              data: {
-                full_name: formData.name,
-                role: "employee",
-              },
-            },
-          })
+            password,
+            fullName: formData.name.trim(),
+          }),
+        })
 
-          if (!signUpError && signUpData?.user) {
-            authUserId = signUpData.user.id
-          } else {
-            console.log("SignUp info:", signUpError?.message || "User may need email confirmation")
-          }
-        } catch (authError) {
-          console.log("Auth creation skipped:", authError)
-          // Continue without auth user - employee will use PIN and saved credentials
+        const createAuthJson = await createAuthRes.json().catch(() => ({}))
+        if (!createAuthRes.ok) {
+          throw new Error(createAuthJson?.error || "No se pudo crear el usuario del empleado")
         }
 
-        // Save credentials to database for owner reference
-        // This allows the owner to see the employee's login credentials
-        try {
-          await supabase.rpc("register_employee_user", {
-            p_employee_id: null, // Will be set after insert
-            p_email: employeeEmail,
-            p_password: password,
-          })
-        } catch {
-          // Ignore if RPC doesn't exist yet
-        }
+        authUserId = createAuthJson.userId
 
         const { data: newEmployee, error: insertError } = await supabase
           .from("employees")
@@ -377,7 +365,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             username: uniqueUsername,
             email: employeeEmail,
             temp_password: password, // Store temp password for owner reference
-            pin: pin,
             phone: formData.phone || null,
             document_id: formData.document_id || null,
             address: formData.address || null,
@@ -407,7 +394,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           username: uniqueUsername,
           email: employeeEmail,
           password: password,
-          pin,
         })
         setShowCredentials(true)
         toast.success("Empleado creado", `${formData.name} fue agregado correctamente`)
@@ -480,7 +466,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const copyCredentials = async () => {
     if (!generatedCredentials) return
-    const text = `Empleado: ${formData.name}\nEmail: ${generatedCredentials.email}\nContraseña: ${generatedCredentials.password}\nUsuario: ${generatedCredentials.username}\nPIN: ${generatedCredentials.pin}`
+    const text = `Empleado: ${formData.name}\nEmail: ${generatedCredentials.email}\nContraseña: ${generatedCredentials.password}\nUsuario: ${generatedCredentials.username}`
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -546,16 +532,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-300">PIN de Caja</Label>
-                  <div className="relative">
-                    <Input
-                      value={generatedCredentials.pin}
-                      readOnly
-                      className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-2xl text-center tracking-widest"
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -565,7 +541,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 <div>
                   <p className="font-medium">¡IMPORTANTE! Guarda estas credenciales.</p>
                   <p className="text-yellow-300/80 mt-1">
-                    El empleado usará el email y contraseña para iniciar sesión, y el PIN para operaciones de caja.
+                    El empleado usará el email y contraseña para iniciar sesión.
                   </p>
                 </div>
               </div>
@@ -679,43 +655,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pin" className="text-gray-300">
-                    PIN de Acceso
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        id="pin"
-                        type={showPin ? "text" : "password"}
-                        value={formData.pin}
-                        onChange={(e) =>
-                          setFormData({ ...formData, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
-                        }
-                        placeholder="1234"
-                        className={`bg-[#0d1424] border-cyan-500/20 text-white font-mono text-center text-xl tracking-widest pr-10 ${errors.pin ? "border-red-500" : ""}`}
-                        maxLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPin(!showPin)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                      >
-                        {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={generatePin}
-                      className="border-cyan-500/30 text-cyan-400 bg-transparent px-3"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <FieldError error={errors.pin} />
-                  <p className="text-xs text-gray-500">4-6 dígitos para fichar entrada/salida</p>
-                </div>
               </div>
 
               {/* Contact Info */}
@@ -734,6 +673,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onBlur={() => {
+                        setFieldTouched("email")
+                        validateField("email", formData.email)
+                      }}
                       placeholder="empleado@email.com"
                       className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.email ? "border-red-500" : ""}`}
                     />
@@ -750,6 +693,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onBlur={() => {
+                        setFieldTouched("phone")
+                        validateField("phone", formData.phone)
+                      }}
                       placeholder="+54 11 1234-5678"
                       className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? "border-red-500" : ""}`}
                     />
@@ -855,9 +802,19 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     </Label>
                     <Input
                       id="salary"
-                      type="number"
                       value={formData.salary}
-                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                      inputMode="decimal"
+                      onChange={(e) => {
+                        const next = normalizeMoneyInput(e.target.value)
+                        if (next === MAX_MONEY.toFixed(2) && e.target.value !== next) {
+                          toast.warning("Monto muy grande", `Máximo permitido: ${MAX_MONEY.toLocaleString("es-AR")}`)
+                        }
+                        setFormData({ ...formData, salary: next })
+                      }}
+                      onBlur={() => {
+                        setFieldTouched("salary")
+                        validateField("salary", formData.salary)
+                      }}
                       placeholder="50000"
                       className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? "border-red-500" : ""}`}
                     />

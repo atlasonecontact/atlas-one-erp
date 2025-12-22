@@ -17,6 +17,7 @@ interface DashboardStats {
   lowStockProducts: Array<{ id: string; name: string; stock: number; min_stock: number }>
   recentSales: Array<{ id: string; total: number; payment_method: string; created_at: string }>
   margin: number
+  unitsSold: number
 }
 
 const defaultStats: DashboardStats = {
@@ -33,6 +34,7 @@ const defaultStats: DashboardStats = {
   lowStockProducts: [],
   recentSales: [],
   margin: 0,
+  unitsSold: 0,
 }
 
 export function useDashboardData(period: string) {
@@ -147,12 +149,14 @@ export function useDashboardData(period: string) {
         .gte("created_at", periodStart)
 
       const productSales: Record<string, { name: string; quantity: number }> = {}
+      let totalUnitsSold = 0
       saleItemsData?.forEach((item: any) => {
         const productName = item.products?.name || "Desconocido"
         if (!productSales[item.product_id]) {
           productSales[item.product_id] = { name: productName, quantity: 0 }
         }
         productSales[item.product_id].quantity += item.quantity
+        totalUnitsSold += item.quantity
       })
 
       const topProductData = Object.values(productSales).sort((a, b) => b.quantity - a.quantity)[0]
@@ -246,6 +250,7 @@ export function useDashboardData(period: string) {
         lowStockProducts: mappedLowStock,
         recentSales: mappedRecentSales || [],
         margin,
+        unitsSold: totalUnitsSold,
       })
     } catch (err) {
       console.error("Error fetching dashboard data:", err)

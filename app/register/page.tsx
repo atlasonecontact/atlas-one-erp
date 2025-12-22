@@ -39,8 +39,10 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError("")
 
-    if (formData.email === "demo@atlasone.com" || formData.email.includes("demo")) {
-      setError("No puedes registrarte con credenciales de demo. Usa la cuenta demo existente para probar.")
+    const normalizedEmail = formData.email.trim().toLowerCase()
+    const reservedDemoEmailPattern = /^demo\.(maxi-kiosco|mini-market|licoreria|vinoteca|libreria|jugueteria|dietetica)@atlasone\.com$/
+    if (reservedDemoEmailPattern.test(normalizedEmail)) {
+      setError("Ese email está reservado para cuentas demo. Elegí otro email o usá /demo.")
       setIsLoading(false)
       return
     }

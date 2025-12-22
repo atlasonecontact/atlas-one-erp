@@ -28,6 +28,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Building2,
   LogOut,
   Plug,
@@ -52,8 +53,12 @@ interface UserProfile {
   theme: string
 }
 
+const dashboardNavItems = [
+  { href: "/dashboard", label: "General", icon: LayoutDashboard },
+  { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
+]
+
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
   { href: "/dashboard/productos", label: "Productos", icon: Package },
   { href: "/dashboard/stock", label: "Stock", icon: Warehouse },
@@ -72,6 +77,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { config } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
+  const [dashboardOpen, setDashboardOpen] = useState(true)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -141,6 +147,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (!user) return null
 
+  const isDashboardActive =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/estadisticas")
+
+  const effectiveDashboardOpen = collapsed ? false : dashboardOpen
+
   return (
     <div className="min-h-screen bg-[#030712] flex">
       {/* Sidebar */}
@@ -161,8 +172,86 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {/* Dashboard group */}
+          {collapsed ? (
+            <Link href="/dashboard">
+              <div
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                  isDashboardActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                  "justify-center px-3",
+                )}
+                style={
+                  isDashboardActive
+                    ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                    : {}
+                }
+              >
+                <LayoutDashboard className="w-5 h-5 shrink-0" />
+              </div>
+            </Link>
+          ) : (
+            <div>
+              <button
+                type="button"
+                onClick={() => setDashboardOpen((v) => !v)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                  isDashboardActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                )}
+                style={
+                  isDashboardActive
+                    ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                    : {}
+                }
+              >
+                <LayoutDashboard className="w-5 h-5 shrink-0" />
+                <span className="text-sm font-medium flex-1 text-left">Dashboard</span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 transition-transform",
+                    effectiveDashboardOpen ? "rotate-0" : "-rotate-90",
+                  )}
+                />
+              </button>
+
+              {effectiveDashboardOpen && (
+                <div className="mt-1 space-y-1">
+                  {dashboardNavItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <div
+                          className={cn(
+                            "ml-4 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+                            isActive
+                              ? "border"
+                              : "text-gray-400 hover:text-white hover:bg-white/5",
+                          )}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: config.primaryMuted,
+                                  color: config.primary,
+                                  borderColor: config.border,
+                                }
+                              : {}
+                          }
+                        >
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          <span className="text-sm">{item.label}</span>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Rest of navigation */}
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
+            const isActive = pathname === item.href || pathname.startsWith(item.href)
             return (
               <Link key={item.href} href={item.href}>
                 <div

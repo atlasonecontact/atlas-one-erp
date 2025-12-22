@@ -4,13 +4,26 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
+type DemoBusinessType =
+  | "maxi-kiosco"
+  | "mini-market"
+  | "licoreria"
+  | "vinoteca"
+  | "libreria"
+  | "jugueteria"
+  | "dietetica"
+
 export default function DemoPage() {
   const router = useRouter()
-  const [status, setStatus] = useState("Iniciando demo...")
+  const [status, setStatus] = useState("Elegí un rubro para iniciar la demo")
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedType, setSelectedType] = useState<DemoBusinessType>("maxi-kiosco")
+  const [demoEmail, setDemoEmail] = useState<string | null>(null)
+  const [demoPassword, setDemoPassword] = useState<string | null>(null)
 
   useEffect(() => {
-    const initDemo = async () => {
+    const checkSession = async () => {
       const supabase = createClient()
 
       try {
@@ -22,108 +35,117 @@ export default function DemoPage() {
           router.push("/dashboard")
           return
         }
-
-        // Try to login with demo credentials
-        setStatus("Conectando con cuenta demo...")
-        
-        const demoEmail = "demo@atlasone.com"
-        const demoPassword = "demo123456"
-
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: demoEmail,
-          password: demoPassword,
-        })
-
-        if (signInError) {
-          // Demo user doesn't exist or wrong password
-          // Try to create it (will fail if already exists, that's ok)
-          setStatus("Creando cuenta demo...")
-          
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: demoEmail,
-            password: demoPassword,
-            options: {
-              data: {
-                full_name: "Usuario Demo",
-                role: "owner",
-                business_name: "Kiosco Demo"
-              }
-            }
-          })
-
-          if (signUpError && !signUpError.message.includes("already")) {
-            throw new Error(`No se pudo crear cuenta demo: ${signUpError.message}`)
-          }
-
-          // If signup worked, try login again
-          if (signUpData?.user) {
-            const { error: retryError } = await supabase.auth.signInWithPassword({
-              email: demoEmail,
-              password: demoPassword,
-            })
-
-            if (retryError) {
-              // Possibly needs email confirmation
-              setError("La cuenta demo requiere confirmación de email. Por favor usa tu propia cuenta.")
-              setTimeout(() => router.push("/login"), 3000)
-              return
-            }
-          } else {
-            // Try login once more in case user existed
-            const { error: finalError } = await supabase.auth.signInWithPassword({
-              email: demoEmail,
-              password: demoPassword,
-            })
-
-            if (finalError) {
-              setError("No se pudo acceder a la cuenta demo. Redirigiendo al login...")
-              setTimeout(() => router.push("/login"), 2000)
-              return
-            }
-          }
-        }
-
-        setStatus("¡Listo! Entrando al dashboard...")
-        router.push("/dashboard")
-
       } catch (err: any) {
         console.error("Demo error:", err)
         setError(err.message || "Error al iniciar demo")
-        setTimeout(() => router.push("/login"), 3000)
       }
     }
 
-    initDemo()
+    checkSession()
   }, [router])
+
+  const typeLabel: Record<DemoBusinessType, string> = {
+    "maxi-kiosco": "Maxi kiosco",
+    "mini-market": "Mini market",
+    licoreria: "Licorería",
+    vinoteca: "Vinoteca",
+    libreria: "Librería",
+    jugueteria: "Juguetería",
+    dietetica: "Dietética",
+  }
+
+  const startDemo = async () => {
+    setError(null)
+    setIsLoading(true)
+    setStatus("Preparando cuenta demo...")
+
+    const supabase = createClient()
+
+    try {
+      const ensureRes = await fetch("/api/demo/ensure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: selectedType }),
+      })
+
+      const ensureJson = await ensureRes.json().catch(() => ({}))
+      if (!ensureRes.ok) {
+        throw new Error(ensureJson?.error || "No se pudo preparar la cuenta demo")
+      }
+
+      const email = ensureJson.email as string
+      const password = (ensureJson.password as string) || null
+      if (!email) {
+        throw new Error("Respuesta inválida al preparar la cuenta demo")
+      }
+      setDemoEmail(email)
+      setDemoPassword(password)
+
+      setStatus("Conectando con la cuenta demo...")
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: password || "Demo123456!",
+      })
+
+      if (signInError) {
+        throw new Error(signInError.message)
+      }
+
+      setStatus("¡Listo! Entrando al dashboard...")
+      router.push("/dashboard")
+    } catch (err: any) {
+      console.error("Demo error:", err)
+      setError(err?.message || "Error al iniciar demo")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#030712] flex items-center justify-center">
       <div className="text-center max-w-md mx-auto px-4">
-        {!error ? (
-          <>
-            <div className="w-16 h-16 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-6" />
-            <h2 className="text-xl font-semibold text-white mb-2">Modo Demo</h2>
-            <p className="text-gray-400">{status}</p>
-          </>
-        ) : (
-          <>
-            <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
-              <span className="text-3xl">⚠️</span>
+        <h2 className="text-xl font-semibold text-white mb-2">Modo Demo</h2>
+        <p className="text-gray-400 mb-6">{status}</p>
+
+        <div className="rounded-lg bg-[#0a0f1a]/80 border border-cyan-500/20 p-4 text-left">
+          <label className="block text-sm text-gray-300 mb-2">Rubro</label>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value as DemoBusinessType)}
+            disabled={isLoading}
+            className="w-full rounded-md bg-[#0d1424] border border-cyan-500/20 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+          >
+            {Object.entries(typeLabel).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={startDemo}
+            disabled={isLoading}
+            className="mt-4 w-full bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-black font-semibold py-2 rounded-md"
+          >
+            {isLoading ? "Iniciando..." : "Iniciar Demo"}
+          </button>
+
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+              {error}
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">Aviso</h2>
-            <p className="text-amber-300">{error}</p>
-            <p className="text-gray-500 text-sm mt-4">Redirigiendo...</p>
-          </>
-        )}
+          )}
+        </div>
 
         {/* Demo info */}
         <div className="mt-8 p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-left">
-          <p className="text-cyan-400 font-medium text-sm mb-2">💡 Credenciales de Demo</p>
+          <p className="text-cyan-400 font-medium text-sm mb-2">Credenciales de Demo</p>
           <p className="text-gray-400 text-sm">
-            Email: <span className="text-white font-mono">demo@atlasone.com</span>
+            Email: <span className="text-white font-mono">{demoEmail || `demo.${selectedType}@atlasone.com`}</span>
           </p>
           <p className="text-gray-400 text-sm">
-            Contraseña: <span className="text-white font-mono">demo123456</span>
+            Contraseña: <span className="text-white font-mono">{demoPassword || "Demo123456!"}</span>
           </p>
         </div>
       </div>
