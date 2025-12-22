@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
-  Building2,
   MapPin,
   User,
   CreditCard,
@@ -108,14 +107,12 @@ export default function ConfiguracionPage() {
   }, [selectedKiosko])
 
   const loadUserProfile = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
     if (!authUser) return
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, role")
-      .eq("id", authUser.id)
-      .single()
+    const { data: profile } = await supabase.from("profiles").select("full_name, role").eq("id", authUser.id).single()
 
     setUser({
       name: profile?.full_name || authUser.email?.split("@")[0] || "",
@@ -261,7 +258,9 @@ export default function ConfiguracionPage() {
       if (error) throw error
 
       // 3. TAMBIÉN guardar telegram_chat_id en profiles para vinculación del bot
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user && telegramConfig.chatId) {
         await supabase
           .from("profiles")
@@ -277,9 +276,7 @@ export default function ConfiguracionPage() {
       await loadKioskoData()
 
       // Update kioscos list with new name
-      setKioscos(prev => prev.map(k => 
-        k.id === selectedKiosko ? { ...k, name: kioskoData.name } : k
-      ))
+      setKioscos((prev) => prev.map((k) => (k.id === selectedKiosko ? { ...k, name: kioskoData.name } : k)))
 
       toast.success("Configuración guardada", "Los cambios se aplicaron correctamente")
     } catch (error) {
@@ -341,6 +338,35 @@ export default function ConfiguracionPage() {
     setIsTestingTelegram(true)
 
     try {
+      const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
+      if (!config) {
+        throw new Error("No se pudo cargar la configuración de notificaciones")
+      }
+
+      // Update notification_configs
+      await supabase
+        .from("notification_configs")
+        .update({
+          telegram_chat_id: telegramConfig.chatId,
+          telegram_enabled: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("kiosko_id", selectedKiosko)
+
+      // IMPORTANTE: También actualizar profiles para que el bot pueda encontrar el owner
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({
+            telegram_chat_id: telegramConfig.chatId,
+          })
+          .eq("id", user.id)
+      }
+
+      // Now send the test message
       const response = await fetch("/api/notifications/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -360,7 +386,7 @@ export default function ConfiguracionPage() {
           })
           .eq("kiosko_id", selectedKiosko)
 
-        setTelegramConfig({ ...telegramConfig, verified: true })
+        setTelegramConfig({ ...telegramConfig, verified: true, enabled: true })
         await loadKioskoConfig()
         toast.success("¡Mensaje enviado!", "Revisá tu Telegram para confirmarlo")
       } else {
@@ -383,13 +409,13 @@ export default function ConfiguracionPage() {
       const response = await fetch("/api/telegram/setup")
       const data = await response.json()
       setTelegramStatus(data)
-      
+
       if (!data.configured) {
         toast.warning("Telegram no configurado", data.error || "Falta el token del bot")
       } else if (data.webhook?.lastErrorMessage) {
         toast.error("Error en webhook", data.webhook.lastErrorMessage)
       } else {
-        toast.success("Telegram OK", `Bot: @${data.bot?.username || 'desconocido'}`)
+        toast.success("Telegram OK", `Bot: @${data.bot?.username || "desconocido"}`)
       }
     } catch (error) {
       console.error("[v0] Error checking telegram:", error)
@@ -409,7 +435,7 @@ export default function ConfiguracionPage() {
         body: JSON.stringify({}),
       })
       const data = await response.json()
-      
+
       if (data.success) {
         toast.success("Webhook configurado", "El bot de Telegram está listo")
         await checkTelegramStatus()
@@ -431,9 +457,9 @@ export default function ConfiguracionPage() {
 
   // Al hacer blur del campo teléfono, verificar si cambió
   const handlePhoneBlur = () => {
-    const cleanedOriginal = originalPhoneRef.current.replace(/\D/g, '')
-    const cleanedNew = kioskoData.phone.replace(/\D/g, '')
-    
+    const cleanedOriginal = originalPhoneRef.current.replace(/\D/g, "")
+    const cleanedNew = kioskoData.phone.replace(/\D/g, "")
+
     // Si el teléfono cambió y no está vacío
     if (cleanedNew && cleanedOriginal !== cleanedNew) {
       setPendingPhone(kioskoData.phone)
@@ -448,14 +474,14 @@ export default function ConfiguracionPage() {
     setShowPhoneVerification(false)
     setKioskoData({ ...kioskoData, phone: verifiedPhone })
     originalPhoneRef.current = verifiedPhone
-    
+
     // Guardar el teléfono verificado en la base de datos
     try {
       await supabase
         .from("kioscos")
-        .update({ 
+        .update({
           phone: verifiedPhone,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", selectedKiosko)
 
@@ -469,7 +495,7 @@ export default function ConfiguracionPage() {
         .eq("kiosko_id", selectedKiosko)
 
       setWhatsappConfig({ ...whatsappConfig, verified: false })
-      
+
       toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado")
       await loadKioskoConfig()
     } catch (error) {
@@ -641,7 +667,8 @@ export default function ConfiguracionPage() {
 
             <div className="mt-6 p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
               <p className="text-sm text-cyan-200">
-                💡 <strong>Tip:</strong> Estos datos aparecen en los tickets de venta y reportes. Mantenerlos actualizados ayuda a identificar tu negocio.
+                💡 <strong>Tip:</strong> Estos datos aparecen en los tickets de venta y reportes. Mantenerlos
+                actualizados ayuda a identificar tu negocio.
               </p>
             </div>
           </div>
@@ -679,7 +706,8 @@ export default function ConfiguracionPage() {
                   <p className="text-sm font-medium text-green-400 mb-3">📱 Cómo configurar WhatsApp (2 pasos):</p>
                   <ol className="text-sm text-green-200/90 space-y-2 list-decimal list-inside">
                     <li>
-                      <span className="font-medium">Ingresá tu número de WhatsApp</span> con el código de país (+54 para Argentina)
+                      <span className="font-medium">Ingresá tu número de WhatsApp</span> con el código de país (+54 para
+                      Argentina)
                     </li>
                     <li>
                       <span className="font-medium">Tocá "Verificar"</span> y te llegará un código para confirmar
@@ -775,7 +803,7 @@ export default function ConfiguracionPage() {
                         variant="outline"
                         onClick={checkTelegramStatus}
                         disabled={isCheckingTelegram}
-                        className="border-purple-500/30 text-purple-300 text-xs"
+                        className="border-purple-500/30 text-purple-300 text-xs bg-transparent"
                       >
                         {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verificar"}
                       </Button>
@@ -791,8 +819,8 @@ export default function ConfiguracionPage() {
                   </div>
                   {telegramStatus && (
                     <div className="text-xs space-y-1 text-purple-200/80">
-                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : 'No configurado'}</p>
-                      <p>Webhook: {telegramStatus.webhook?.url || 'No configurado'}</p>
+                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : "No configurado"}</p>
+                      <p>Webhook: {telegramStatus.webhook?.url || "No configurado"}</p>
                       {telegramStatus.webhook?.lastErrorMessage && (
                         <p className="text-red-400">Error: {telegramStatus.webhook.lastErrorMessage}</p>
                       )}
@@ -802,16 +830,21 @@ export default function ConfiguracionPage() {
 
                 {/* Step by step guide */}
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-sm font-medium text-blue-400 mb-3">📱 Cómo configurar Telegram (3 pasos simples):</p>
+                  <p className="text-sm font-medium text-blue-400 mb-3">
+                    📱 Cómo configurar Telegram (3 pasos simples):
+                  </p>
                   <ol className="text-sm text-blue-200/90 space-y-3 list-decimal list-inside">
                     <li>
-                      <span className="font-medium">Abrí Telegram</span> y buscá nuestro bot: <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">@AtlasOneBot</span>
+                      <span className="font-medium">Abrí Telegram</span> y buscá nuestro bot:{" "}
+                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">@AtlasOneBot</span>
                     </li>
                     <li>
-                      <span className="font-medium">Mandá el mensaje</span> <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">/start</span> al bot
+                      <span className="font-medium">Mandá el mensaje</span>{" "}
+                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">/start</span> al bot
                     </li>
                     <li>
-                      <span className="font-medium">El bot te va a responder con tu Chat ID</span> - Copialo y pegalo abajo
+                      <span className="font-medium">El bot te va a responder con tu Chat ID</span> - Copialo y pegalo
+                      abajo
                     </li>
                   </ol>
                 </div>
@@ -882,9 +915,7 @@ export default function ConfiguracionPage() {
                 </div>
 
                 <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <p className="text-sm font-medium text-cyan-400 mb-3">
-                    🤖 ¿Qué podés hacer desde Telegram?
-                  </p>
+                  <p className="text-sm font-medium text-cyan-400 mb-3">🤖 ¿Qué podés hacer desde Telegram?</p>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/ventas</span>
