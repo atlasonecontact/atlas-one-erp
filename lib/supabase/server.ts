@@ -20,4 +20,6 @@ export async function createServerClient() {
   })
 }
 
+export const createClient = createServerClient
+
 export default createServerClient
