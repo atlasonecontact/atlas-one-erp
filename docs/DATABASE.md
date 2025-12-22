@@ -56,7 +56,7 @@ Los empleados que trabajan en cada kiosco. Pueden tener su propia cuenta para ac
 | `status` | Estado: `active` o `inactive` |
 
 **Permisos disponibles:**
-```json
+\`\`\`json
 {
   "ventas": true,
   "compras": true,
@@ -64,7 +64,7 @@ Los empleados que trabajan en cada kiosco. Pueden tener su propia cuenta para ac
   "stock": true,
   "reportes": true
 }
-```
+\`\`\`
 
 ---
 
@@ -259,7 +259,7 @@ Los planes disponibles para los kioscos.
 
 ## 🔗 Relaciones entre Tablas
 
-```
+\`\`\`
 profiles (usuario)
     └── kioscos (1 usuario tiene muchos kioscos)
             ├── employees (1 kiosco tiene muchos empleados)
@@ -272,44 +272,44 @@ profiles (usuario)
             ├── cash_registers (1 kiosco tiene muchas cajas)
             │       └── cash_register_transactions
             └── notification_configs (1 kiosco tiene 1 config)
-```
+\`\`\`
 
 ---
 
 ## 📝 Ejemplos de Consultas Comunes
 
 ### Ver todos los productos de un kiosco:
-```sql
+\`\`\`sql
 SELECT * FROM products WHERE kiosko_id = 'xxx' AND is_active = true;
-```
+\`\`\`
 
 ### Ver ventas del día:
-```sql
+\`\`\`sql
 SELECT * FROM sales 
 WHERE kiosko_id = 'xxx' 
 AND DATE(created_at) = CURRENT_DATE;
-```
+\`\`\`
 
 ### Ver productos con stock bajo:
-```sql
+\`\`\`sql
 SELECT * FROM products 
 WHERE kiosko_id = 'xxx' 
 AND stock_quantity <= min_stock_level;
-```
+\`\`\`
 
 ### Ver historial de movimientos de un producto:
-```sql
+\`\`\`sql
 SELECT * FROM stock_movements 
 WHERE product_id = 'xxx' 
 ORDER BY created_at DESC;
-```
+\`\`\`
 
 ### Ver ventas de un empleado:
-```sql
+\`\`\`sql
 SELECT * FROM sales 
 WHERE employee_id = 'xxx' 
 AND status = 'completed';
-```
+\`\`\`
 
 ---
 

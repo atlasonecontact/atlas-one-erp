@@ -3,9 +3,16 @@
 import type React from "react"
 import { useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { 
-  Upload, X, FileText, CheckCircle, AlertCircle, Download, 
-  Loader2, FileSpreadsheet, AlertTriangle 
+import {
+  Upload,
+  X,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Download,
+  Loader2,
+  FileSpreadsheet,
+  AlertTriangle,
 } from "lucide-react"
 
 // Extended product structure matching Excel format
@@ -34,60 +41,60 @@ interface CSVImportModalProps {
 
 // Column mapping configuration - supports both Spanish and English
 const COLUMN_MAPPINGS: Record<string, keyof CSVProduct> = {
-  'sku': 'sku',
-  'codigo': 'sku',
-  'código': 'sku',
-  'id': 'sku',
-  'nombre': 'name',
-  'producto nombre': 'name',
-  'producto': 'name',
-  'name': 'name',
-  'marca': 'brand',
-  'brand': 'brand',
-  'linea': 'variant',
-  'línea': 'variant',
-  'variante': 'variant',
-  'linea / variante': 'variant',
-  'línea / variante': 'variant',
-  'variant': 'variant',
-  'presentacion': 'presentation',
-  'presentación': 'presentation',
-  'presentacion / formato': 'presentation',
-  'presentación / formato': 'presentation',
-  'formato': 'presentation',
-  'presentation': 'presentation',
-  'categoria': 'category',
-  'categoría': 'category',
-  'category': 'category',
-  'subcategoria': 'subcategory',
-  'subcategoría': 'subcategory',
-  'subcategory': 'subcategory',
-  'contenido neto': 'net_content',
-  'contenido': 'net_content',
-  'net_content': 'net_content',
-  'unidad': 'unit',
-  'unit': 'unit',
-  'ean': 'barcode',
-  'ean / código de barras': 'barcode',
-  'codigo de barras': 'barcode',
-  'código de barras': 'barcode',
-  'barcode': 'barcode',
-  'costo sin iva': 'cost_ex_vat',
-  'costo_sin_iva': 'cost_ex_vat',
-  'cost_ex_vat': 'cost_ex_vat',
-  'costo': 'cost_ex_vat',
-  'cost': 'cost_ex_vat',
-  'costo con iva': 'cost_inc_vat',
-  'costo_con_iva': 'cost_inc_vat',
-  'cost_inc_vat': 'cost_inc_vat',
-  'precio de venta': 'sale_price',
-  'precio': 'sale_price',
-  'precio_venta': 'sale_price',
-  'sale_price': 'sale_price',
-  'price': 'sale_price',
-  'stock': 'stock',
-  'stock_quantity': 'stock',
-  'cantidad': 'stock',
+  sku: "sku",
+  codigo: "sku",
+  código: "sku",
+  id: "sku",
+  nombre: "name",
+  "producto nombre": "name",
+  producto: "name",
+  name: "name",
+  marca: "brand",
+  brand: "brand",
+  linea: "variant",
+  línea: "variant",
+  variante: "variant",
+  "linea / variante": "variant",
+  "línea / variante": "variant",
+  variant: "variant",
+  presentacion: "presentation",
+  presentación: "presentation",
+  "presentacion / formato": "presentation",
+  "presentación / formato": "presentation",
+  formato: "presentation",
+  presentation: "presentation",
+  categoria: "category",
+  categoría: "category",
+  category: "category",
+  subcategoria: "subcategory",
+  subcategoría: "subcategory",
+  subcategory: "subcategory",
+  "contenido neto": "net_content",
+  contenido: "net_content",
+  net_content: "net_content",
+  unidad: "unit",
+  unit: "unit",
+  ean: "barcode",
+  "ean / código de barras": "barcode",
+  "codigo de barras": "barcode",
+  "código de barras": "barcode",
+  barcode: "barcode",
+  "costo sin iva": "cost_ex_vat",
+  costo_sin_iva: "cost_ex_vat",
+  cost_ex_vat: "cost_ex_vat",
+  costo: "cost_ex_vat",
+  cost: "cost_ex_vat",
+  "costo con iva": "cost_inc_vat",
+  costo_con_iva: "cost_inc_vat",
+  cost_inc_vat: "cost_inc_vat",
+  "precio de venta": "sale_price",
+  precio: "sale_price",
+  precio_venta: "sale_price",
+  sale_price: "sale_price",
+  price: "sale_price",
+  stock: "stock",
+  stock_quantity: "stock",
+  cantidad: "stock",
 }
 
 export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps) {
@@ -100,18 +107,18 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
   const [importing, setImporting] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [separator, setSeparator] = useState<',' | ';'>(',')
+  const [separator, setSeparator] = useState<"," | ";">(",")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Parse a single CSV line respecting quoted fields
-  const parseCSVLine = useCallback((line: string, sep: ',' | ';'): string[] => {
+  const parseCSVLine = useCallback((line: string, sep: "," | ";"): string[] => {
     const result: string[] = []
-    let current = ''
+    let current = ""
     let inQuotes = false
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i]
-      
+
       if (char === '"') {
         if (inQuotes && line[i + 1] === '"') {
           current += '"'
@@ -121,7 +128,7 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
         }
       } else if (char === sep && !inQuotes) {
         result.push(current.trim())
-        current = ''
+        current = ""
       } else {
         current += char
       }
@@ -131,234 +138,219 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
   }, [])
 
   // Detect separator from first line
-  const detectSeparator = useCallback((text: string): ',' | ';' => {
-    const firstLine = text.split('\n')[0]
+  const detectSeparator = useCallback((text: string): "," | ";" => {
+    const firstLine = text.split("\n")[0]
     const commas = (firstLine.match(/,/g) || []).length
     const semicolons = (firstLine.match(/;/g) || []).length
-    return semicolons > commas ? ';' : ','
+    return semicolons > commas ? ";" : ","
   }, [])
 
-<<<<<<< HEAD
-  // Parse number handling Argentine format ($1.234,56) and other formats
-=======
   // Parse number handling Argentine formats: $1.234,56 or 1.234,56 or 1234.56
->>>>>>> 0a87aa3ae469018ec80f386649acd8887161312c
   const parseNumber = useCallback((value: string): number => {
-    if (!value || value.trim() === '') return 0
-    
-    let cleaned = value.trim()
-<<<<<<< HEAD
-      .replace(/[$€\s]/g, '')  // Remove currency symbols and spaces
-    
-    // Detect Argentine format: dots as thousands, comma as decimal
-    // Examples: 1.234,56 or 1.234.567,89
-    const argentinaFormat = /^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(cleaned)
-    
-    if (argentinaFormat) {
-      // Argentine format: 1.234,56 → 1234.56
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
-    } else {
-      // Try US format or just comma as thousands
-      // 1,234.56 → 1234.56
-      cleaned = cleaned.replace(/,(?=\d{3})/g, '')
-      // If only comma remains and looks like decimal
-      if (cleaned.includes(',') && !cleaned.includes('.')) {
-        cleaned = cleaned.replace(',', '.')
-=======
+    if (!value || value.trim() === "") return 0
+
+    let cleaned = value
+      .trim()
       // Remove currency symbols and spaces
-      .replace(/[$€\s]/g, '')
+      .replace(/[$€\s]/g, "")
       // Remove any quotes
-      .replace(/["']/g, '')
-    
+      .replace(/["']/g, "")
+
     // Detect format: if there's a comma followed by exactly 2 digits at the end, it's Argentine format
     // Examples: 1.234,56 or 1234,56 (Argentine) vs 1,234.56 (US)
     const hasArgentineFormat = /,\d{1,2}$/.test(cleaned)
     const hasUSFormat = /\.\d{1,2}$/.test(cleaned) && /,\d{3}/.test(cleaned)
-    
+
     if (hasArgentineFormat) {
       // Argentine format: 1.234.567,89 → remove dots, replace comma with dot
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+      cleaned = cleaned.replace(/\./g, "").replace(",", ".")
     } else if (hasUSFormat) {
       // US format: 1,234,567.89 → remove commas
-      cleaned = cleaned.replace(/,/g, '')
+      cleaned = cleaned.replace(/,/g, "")
     } else {
       // Ambiguous or simple format - try to detect
       const commaCount = (cleaned.match(/,/g) || []).length
       const dotCount = (cleaned.match(/\./g) || []).length
-      
+
       if (commaCount === 1 && dotCount === 0) {
         // Single comma, could be decimal: 1234,56 → replace with dot
-        cleaned = cleaned.replace(',', '.')
+        cleaned = cleaned.replace(",", ".")
       } else if (dotCount === 1 && commaCount === 0) {
         // Single dot, could be decimal: 1234.56 → keep as is
       } else if (commaCount > 0 && dotCount === 0) {
         // Multiple commas as thousands: 1,234,567 → remove commas
-        cleaned = cleaned.replace(/,/g, '')
+        cleaned = cleaned.replace(/,/g, "")
       } else if (dotCount > 0 && commaCount === 0) {
         // Multiple dots as thousands (Argentine): 1.234.567 → remove dots
-        cleaned = cleaned.replace(/\./g, '')
->>>>>>> 0a87aa3ae469018ec80f386649acd8887161312c
+        cleaned = cleaned.replace(/\./g, "")
       }
     }
-    
-    const num = parseFloat(cleaned)
+
+    const num = Number.parseFloat(cleaned)
     return isNaN(num) ? 0 : Math.round(num * 100) / 100
   }, [])
 
   // Main CSV parser - handles large files efficiently
-  const parseCSV = useCallback(async (text: string): Promise<{ products: CSVProduct[]; errors: string[]; warnings: string[] }> => {
-    const detectedSep = detectSeparator(text)
-    setSeparator(detectedSep)
+  const parseCSV = useCallback(
+    async (text: string): Promise<{ products: CSVProduct[]; errors: string[]; warnings: string[] }> => {
+      const detectedSep = detectSeparator(text)
+      setSeparator(detectedSep)
 
-    const lines = text.split(/\r?\n/).filter(line => line.trim())
-    const errors: string[] = []
-    const warnings: string[] = []
-    const products: CSVProduct[] = []
-    const seenSkus = new Set<string>()
+      const lines = text.split(/\r?\n/).filter((line) => line.trim())
+      const errors: string[] = []
+      const warnings: string[] = []
+      const products: CSVProduct[] = []
+      const seenSkus = new Set<string>()
 
-    if (lines.length < 2) {
-      return { products: [], errors: ['El archivo debe tener al menos una fila de encabezado y una de datos'], warnings: [] }
-    }
-
-    // Parse headers
-    const headers: string[] = parseCSVLine(lines[0], detectedSep).map((h: string) => h.toLowerCase().trim())
-    
-    // Map headers to our fields
-    const columnMap: Record<number, keyof CSVProduct> = {}
-    headers.forEach((header: string, idx: number) => {
-      const mapped = COLUMN_MAPPINGS[header]
-      if (mapped) {
-        columnMap[idx] = mapped
-      }
-    })
-
-    // Check for required columns
-    const mappedFields = new Set(Object.values(columnMap))
-    if (!mappedFields.has('name') && !mappedFields.has('sku')) {
-      return { 
-        products: [], 
-        errors: ['El archivo debe tener al menos una columna "nombre" o "sku"'], 
-        warnings: [] 
-      }
-    }
-
-    // Process rows
-    const BATCH_SIZE = 1000
-    const totalLines = lines.length - 1
-
-    for (let i = 1; i < lines.length; i++) {
-      if (i % BATCH_SIZE === 0) {
-        setProgress(Math.round((i / totalLines) * 100))
-        await new Promise(resolve => setTimeout(resolve, 0))
-      }
-
-      const line = lines[i]
-      if (!line.trim()) continue
-
-      const values = parseCSVLine(line, detectedSep)
-      const product: Partial<CSVProduct> = {}
-      
-      for (const [idxStr, field] of Object.entries(columnMap)) {
-        const idx = parseInt(idxStr)
-        const value = values[idx] || ''
-        
-        switch (field) {
-          case 'sku':
-          case 'name':
-          case 'brand':
-          case 'variant':
-          case 'presentation':
-          case 'category':
-          case 'subcategory':
-          case 'unit':
-          case 'barcode':
-            product[field] = value
-            break
-          case 'net_content':
-          case 'cost_ex_vat':
-          case 'cost_inc_vat':
-          case 'sale_price':
-          case 'stock':
-            product[field] = parseNumber(value)
-            break
+      if (lines.length < 2) {
+        return {
+          products: [],
+          errors: ["El archivo debe tener al menos una fila de encabezado y una de datos"],
+          warnings: [],
         }
       }
 
-      const rowNum = i + 1
-      
-      if (!product.sku && !product.name) {
-        errors.push(`Fila ${rowNum}: Falta SKU o nombre`)
-        continue
+      // Parse headers
+      const headers: string[] = parseCSVLine(lines[0], detectedSep).map((h: string) => h.toLowerCase().trim())
+
+      // Map headers to our fields
+      const columnMap: Record<number, keyof CSVProduct> = {}
+      headers.forEach((header: string, idx: number) => {
+        const mapped = COLUMN_MAPPINGS[header]
+        if (mapped) {
+          columnMap[idx] = mapped
+        }
+      })
+
+      // Check for required columns
+      const mappedFields = new Set(Object.values(columnMap))
+      if (!mappedFields.has("name") && !mappedFields.has("sku")) {
+        return {
+          products: [],
+          errors: ['El archivo debe tener al menos una columna "nombre" o "sku"'],
+          warnings: [],
+        }
       }
 
-      if (!product.sku && product.name) {
-        product.sku = product.name
-          .substring(0, 50)
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, '-')
-          .replace(/-+/g, '-')
-      }
+      // Process rows
+      const BATCH_SIZE = 1000
+      const totalLines = lines.length - 1
 
-      if (seenSkus.has(product.sku!)) {
-        warnings.push(`Fila ${rowNum}: SKU duplicado "${product.sku}"`)
-      } else {
-        seenSkus.add(product.sku!)
-      }
+      for (let i = 1; i < lines.length; i++) {
+        if (i % BATCH_SIZE === 0) {
+          setProgress(Math.round((i / totalLines) * 100))
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        }
 
-      // Calculate sale_price if missing - try multiple sources
-      if (!product.sale_price || product.sale_price <= 0) {
-        if (product.cost_inc_vat && product.cost_inc_vat > 0) {
-          // Calculate with 30% margin over cost with VAT
-          product.sale_price = Math.round(product.cost_inc_vat * 1.3 * 100) / 100
-          warnings.push(`Fila ${rowNum}: Precio calculado desde costo con IVA (30% margen)`)
-        } else if (product.cost_ex_vat && product.cost_ex_vat > 0) {
-          // Calculate with 21% VAT + 30% margin
-          product.sale_price = Math.round(product.cost_ex_vat * 1.21 * 1.3 * 100) / 100
-          warnings.push(`Fila ${rowNum}: Precio calculado desde costo sin IVA (21% IVA + 30% margen)`)
+        const line = lines[i]
+        if (!line.trim()) continue
+
+        const values = parseCSVLine(line, detectedSep)
+        const product: Partial<CSVProduct> = {}
+
+        for (const [idxStr, field] of Object.entries(columnMap)) {
+          const idx = Number.parseInt(idxStr)
+          const value = values[idx] || ""
+
+          switch (field) {
+            case "sku":
+            case "name":
+            case "brand":
+            case "variant":
+            case "presentation":
+            case "category":
+            case "subcategory":
+            case "unit":
+            case "barcode":
+              product[field] = value
+              break
+            case "net_content":
+            case "cost_ex_vat":
+            case "cost_inc_vat":
+            case "sale_price":
+            case "stock":
+              product[field] = parseNumber(value)
+              break
+          }
+        }
+
+        const rowNum = i + 1
+
+        if (!product.sku && !product.name) {
+          errors.push(`Fila ${rowNum}: Falta SKU o nombre`)
+          continue
+        }
+
+        if (!product.sku && product.name) {
+          product.sku = product.name
+            .substring(0, 50)
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, "-")
+            .replace(/-+/g, "-")
+        }
+
+        if (seenSkus.has(product.sku!)) {
+          warnings.push(`Fila ${rowNum}: SKU duplicado "${product.sku}"`)
         } else {
-          // No price and no cost - set a default placeholder price
-          product.sale_price = 100
-          warnings.push(`Fila ${rowNum}: Sin precio ni costo - precio temporal $100`)
+          seenSkus.add(product.sku!)
         }
+
+        // Calculate sale_price if missing - try multiple sources
+        if (!product.sale_price || product.sale_price <= 0) {
+          if (product.cost_inc_vat && product.cost_inc_vat > 0) {
+            // Calculate with 30% margin over cost with VAT
+            product.sale_price = Math.round(product.cost_inc_vat * 1.3 * 100) / 100
+            warnings.push(`Fila ${rowNum}: Precio calculado desde costo con IVA (30% margen)`)
+          } else if (product.cost_ex_vat && product.cost_ex_vat > 0) {
+            // Calculate with 21% VAT + 30% margin
+            product.sale_price = Math.round(product.cost_ex_vat * 1.21 * 1.3 * 100) / 100
+            warnings.push(`Fila ${rowNum}: Precio calculado desde costo sin IVA (21% IVA + 30% margen)`)
+          } else {
+            // No price and no cost - set a default placeholder price
+            product.sale_price = 100
+            warnings.push(`Fila ${rowNum}: Sin precio ni costo - precio temporal $100`)
+          }
+        }
+
+        if (product.cost_ex_vat && !product.cost_inc_vat) {
+          product.cost_inc_vat = Math.round(product.cost_ex_vat * 1.21 * 100) / 100
+        }
+        if (product.cost_inc_vat && !product.cost_ex_vat) {
+          product.cost_ex_vat = Math.round((product.cost_inc_vat / 1.21) * 100) / 100
+        }
+
+        if (!product.category) {
+          product.category = "Sin categoría"
+        }
+
+        if (product.stock === undefined) {
+          product.stock = 0
+        }
+
+        products.push(product as CSVProduct)
       }
 
-      if (product.cost_ex_vat && !product.cost_inc_vat) {
-        product.cost_inc_vat = Math.round(product.cost_ex_vat * 1.21 * 100) / 100
-      }
-      if (product.cost_inc_vat && !product.cost_ex_vat) {
-        product.cost_ex_vat = Math.round(product.cost_inc_vat / 1.21 * 100) / 100
-      }
-
-      if (!product.category) {
-        product.category = 'Sin categoría'
-      }
-
-      if (product.stock === undefined) {
-        product.stock = 0
-      }
-
-      products.push(product as CSVProduct)
-    }
-
-    setProgress(100)
-    return { products, errors, warnings }
-  }, [parseCSVLine, detectSeparator, parseNumber])
+      setProgress(100)
+      return { products, errors, warnings }
+    },
+    [parseCSVLine, detectSeparator, parseNumber],
+  )
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
-    const isCSV = selectedFile.name.endsWith('.csv')
-    const isExcel = selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')
+    const isCSV = selectedFile.name.endsWith(".csv")
+    const isExcel = selectedFile.name.endsWith(".xlsx") || selectedFile.name.endsWith(".xls")
 
     if (!isCSV && !isExcel) {
-      setErrors(['Por favor selecciona un archivo CSV'])
+      setErrors(["Por favor selecciona un archivo CSV"])
       return
     }
 
     if (isExcel) {
-      setErrors(['Para archivos Excel, primero exporta a CSV UTF-8 desde Excel'])
-      setWarnings(['En Excel: Archivo → Guardar como → CSV UTF-8'])
+      setErrors(["Para archivos Excel, primero exporta a CSV UTF-8 desde Excel"])
+      setWarnings(["En Excel: Archivo → Guardar como → CSV UTF-8"])
       return
     }
 
@@ -379,7 +371,7 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
       setWarnings(warnings.slice(0, 20))
       setParsing(false)
     }
-    reader.readAsText(selectedFile, 'UTF-8')
+    reader.readAsText(selectedFile, "UTF-8")
   }
 
   const handleImport = async () => {
@@ -391,8 +383,8 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
       setImporting(false)
       handleClose()
     } catch (error) {
-      console.error('Import error:', error)
-      setErrors(['Error al importar productos'])
+      console.error("Import error:", error)
+      setErrors(["Error al importar productos"])
       setImporting(false)
     }
   }
@@ -415,11 +407,11 @@ BEB-COC-REG-354MLX,"Coca-Cola Regular 354 ml",Coca-Cola,Regular,"354 ml Lata",Be
 BEB-COC-REG-354MLX-P6,"Coca-Cola Regular Pack x6",Coca-Cola,Regular,"Pack x6",Bebidas,Gaseosas,354,ml,,6591.91,7976.21,11464.77,20
 SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,150,g,7790310000123,600.00,726.00,1050.00,25`
 
-    const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8' })
+    const blob = new Blob(["\ufeff" + template], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
+    const a = document.createElement("a")
     a.href = url
-    a.download = 'plantilla_productos_atlas.csv'
+    a.download = "plantilla_productos_atlas.csv"
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -433,9 +425,7 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/10 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-white">Importar Productos desde CSV</h2>
-            <p className="text-sm text-gray-400 mt-1">
-              Sin límite de productos • Formato Excel compatible
-            </p>
+            <p className="text-sm text-gray-400 mt-1">Sin límite de productos • Formato Excel compatible</p>
           </div>
           <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -468,32 +458,32 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
 
           {/* Column info */}
           <div className="text-xs text-gray-500 px-2">
-            <strong>Columnas soportadas:</strong> SKU, Nombre, Marca, Línea/Variante, Presentación, 
-            Categoría, Subcategoría, Contenido Neto, Unidad, EAN, Costo sin IVA, Costo con IVA, Precio, Stock
+            <strong>Columnas soportadas:</strong> SKU, Nombre, Marca, Línea/Variante, Presentación, Categoría,
+            Subcategoría, Contenido Neto, Unidad, EAN, Costo sin IVA, Costo con IVA, Precio, Stock
           </div>
 
           {/* File upload */}
           <div
             onClick={() => !parsing && fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-              parsing ? 'border-cyan-500/40 cursor-wait' : 'border-cyan-500/20 cursor-pointer hover:border-cyan-500/40'
+              parsing ? "border-cyan-500/40 cursor-wait" : "border-cyan-500/20 cursor-pointer hover:border-cyan-500/40"
             }`}
           >
-            <input 
-              ref={fileInputRef} 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange} 
-              className="hidden" 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="hidden"
               disabled={parsing}
             />
-            
+
             {parsing ? (
               <div className="space-y-3">
                 <Loader2 className="w-12 h-12 text-cyan-500 mx-auto animate-spin" />
                 <p className="text-white font-medium">Procesando archivo...</p>
                 <div className="w-64 mx-auto bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
@@ -511,9 +501,7 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
                 <Upload className="w-12 h-12 text-cyan-500/50 mx-auto mb-4" />
                 <p className="text-white font-medium mb-1">Arrastra un archivo CSV aquí</p>
                 <p className="text-gray-500 text-sm">o haz clic para seleccionar</p>
-                <p className="text-gray-600 text-xs mt-2">
-                  Para Excel: guardar como &quot;CSV UTF-8&quot;
-                </p>
+                <p className="text-gray-600 text-xs mt-2">Para Excel: guardar como &quot;CSV UTF-8&quot;</p>
               </>
             )}
           </div>
@@ -554,13 +542,9 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-green-400">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="font-medium">
-                    {totalRows.toLocaleString()} productos listos
-                  </span>
+                  <span className="font-medium">{totalRows.toLocaleString()} productos listos</span>
                 </div>
-                <span className="text-xs text-gray-500">
-                  Mostrando {Math.min(preview.length, 10)}
-                </span>
+                <span className="text-xs text-gray-500">Mostrando {Math.min(preview.length, 10)}</span>
               </div>
               <div className="rounded-lg border border-cyan-500/10 overflow-x-auto">
                 <table className="w-full text-sm min-w-[700px]">
@@ -581,7 +565,7 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
                         <td className="p-3 text-white">{product.name?.substring(0, 25)}</td>
                         <td className="p-3 text-gray-400">{product.category}</td>
                         <td className="p-3 text-gray-400 text-right">
-                          ${product.cost_inc_vat?.toLocaleString() || '-'}
+                          ${product.cost_inc_vat?.toLocaleString() || "-"}
                         </td>
                         <td className="p-3 text-cyan-400 text-right font-medium">
                           ${product.sale_price?.toLocaleString()}
@@ -604,14 +588,10 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-cyan-500/10 shrink-0">
           <div className="text-sm text-gray-500">
-            {file && `Separador: ${separator === ',' ? 'coma' : 'punto y coma'}`}
+            {file && `Separador: ${separator === "," ? "coma" : "punto y coma"}`}
           </div>
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleClose} 
-              className="border-cyan-500/30 text-gray-300 bg-transparent"
-            >
+            <Button variant="outline" onClick={handleClose} className="border-cyan-500/30 text-gray-300 bg-transparent">
               Cancelar
             </Button>
             <Button
