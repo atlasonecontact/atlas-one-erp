@@ -60,9 +60,7 @@ export function validateCuit(cuit: string): boolean {
   return digits[10] === verifier
 }
 
-export function useFormValidation<T extends Record<string, any>>(
-  validations: FormValidations<T>
-) {
+export function useFormValidation<T extends Record<string, any>>(validations: FormValidations<T>) {
   const [errors, setErrors] = useState<FormErrors<T>>({})
   const [touched, setTouched] = useState<Set<keyof T>>(new Set())
 
@@ -73,12 +71,10 @@ export function useFormValidation<T extends Record<string, any>>(
 
       // Required
       if (rules.required) {
-        const isEmpty = value === undefined || value === null || value === "" || 
-          (Array.isArray(value) && value.length === 0)
+        const isEmpty =
+          value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)
         if (isEmpty) {
-          return typeof rules.required === "string"
-            ? rules.required
-            : "Este campo es obligatorio"
+          return typeof rules.required === "string" ? rules.required : "Este campo es obligatorio"
         }
       }
 
@@ -92,27 +88,21 @@ export function useFormValidation<T extends Record<string, any>>(
       // Min length
       if (rules.minLength) {
         const min = typeof rules.minLength === "number" ? rules.minLength : rules.minLength.value
-        const msg = typeof rules.minLength === "number"
-          ? `Mínimo ${min} caracteres`
-          : rules.minLength.message
+        const msg = typeof rules.minLength === "number" ? `Mínimo ${min} caracteres` : rules.minLength.message
         if (strValue.length < min) return msg
       }
 
       // Max length
       if (rules.maxLength) {
         const max = typeof rules.maxLength === "number" ? rules.maxLength : rules.maxLength.value
-        const msg = typeof rules.maxLength === "number"
-          ? `Máximo ${max} caracteres`
-          : rules.maxLength.message
+        const msg = typeof rules.maxLength === "number" ? `Máximo ${max} caracteres` : rules.maxLength.message
         if (strValue.length > max) return msg
       }
 
       // Min value (for numbers)
       if (rules.min !== undefined) {
         const min = typeof rules.min === "number" ? rules.min : rules.min.value
-        const msg = typeof rules.min === "number"
-          ? `El valor mínimo es ${min}`
-          : rules.min.message
+        const msg = typeof rules.min === "number" ? `El valor mínimo es ${min}` : rules.min.message
         const numValue = Number(value)
         if (!isNaN(numValue) && numValue < min) return msg
       }
@@ -120,9 +110,7 @@ export function useFormValidation<T extends Record<string, any>>(
       // Max value (for numbers)
       if (rules.max !== undefined) {
         const max = typeof rules.max === "number" ? rules.max : rules.max.value
-        const msg = typeof rules.max === "number"
-          ? `El valor máximo es ${max}`
-          : rules.max.message
+        const msg = typeof rules.max === "number" ? `El valor máximo es ${max}` : rules.max.message
         const numValue = Number(value)
         if (!isNaN(numValue) && numValue > max) return msg
       }
@@ -130,18 +118,14 @@ export function useFormValidation<T extends Record<string, any>>(
       // Pattern
       if (rules.pattern) {
         const pattern = rules.pattern instanceof RegExp ? rules.pattern : rules.pattern.value
-        const msg = rules.pattern instanceof RegExp
-          ? "Formato inválido"
-          : rules.pattern.message
+        const msg = rules.pattern instanceof RegExp ? "Formato inválido" : rules.pattern.message
         if (!pattern.test(strValue)) return msg
       }
 
       // Email
       if (rules.email) {
         if (!PATTERNS.EMAIL.test(strValue)) {
-          return typeof rules.email === "string"
-            ? rules.email
-            : "Email inválido"
+          return typeof rules.email === "string" ? rules.email : "Email inválido"
         }
       }
 
@@ -150,18 +134,14 @@ export function useFormValidation<T extends Record<string, any>>(
         // More lenient phone validation
         const cleanedPhone = strValue.replace(/[\s\-()]/g, "")
         if (cleanedPhone.length < 8 || cleanedPhone.length > 15) {
-          return typeof rules.phone === "string"
-            ? rules.phone
-            : "Teléfono inválido (8-15 dígitos)"
+          return typeof rules.phone === "string" ? rules.phone : "Teléfono inválido (8-15 dígitos)"
         }
       }
 
       // CUIT
       if (rules.cuit) {
         if (!validateCuit(strValue)) {
-          return typeof rules.cuit === "string"
-            ? rules.cuit
-            : "CUIT/CUIL inválido"
+          return typeof rules.cuit === "string" ? rules.cuit : "CUIT/CUIL inválido"
         }
       }
 
@@ -177,7 +157,7 @@ export function useFormValidation<T extends Record<string, any>>(
 
       return undefined
     },
-    [validations]
+    [validations],
   )
 
   const validateForm = useCallback(
@@ -198,7 +178,7 @@ export function useFormValidation<T extends Record<string, any>>(
       setTouched(new Set(Object.keys(validations) as Array<keyof T>))
       return isValid
     },
-    [validations, validateField]
+    [validations, validateField],
   )
 
   const validateSingleField = useCallback(
@@ -207,7 +187,7 @@ export function useFormValidation<T extends Record<string, any>>(
       setErrors((prev) => ({ ...prev, [name]: error }))
       return !error
     },
-    [validateField]
+    [validateField],
   )
 
   const setFieldTouched = useCallback((name: keyof T) => {
@@ -231,7 +211,7 @@ export function useFormValidation<T extends Record<string, any>>(
     (name: keyof T): string | undefined => {
       return touched.has(name) ? errors[name] : undefined
     },
-    [errors, touched]
+    [errors, touched],
   )
 
   const hasErrors = Object.keys(errors).length > 0
