@@ -56,6 +56,8 @@ interface UserProfile {
 const dashboardNavItems = [
   { href: "/dashboard", label: "General", icon: LayoutDashboard },
   { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
+  { href: "/dashboard/estadisticas/ventas", label: "Ventas", icon: ShoppingCart },
+  { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
 ]
 
 const navItems = [

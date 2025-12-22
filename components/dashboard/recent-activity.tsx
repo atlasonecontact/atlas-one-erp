@@ -1,37 +1,186 @@
-import { ShoppingCart, Package, AlertTriangle, UserPlus } from "lucide-react"
+"use client"
 
-const activities = [
-  {
-    icon: <ShoppingCart className="w-4 h-4" />,
-    title: "Nueva venta registrada",
-    description: "Venta #1234 - $2,500",
-    time: "Hace 5 min",
-    color: "cyan",
-  },
-  {
-    icon: <Package className="w-4 h-4" />,
-    title: "Stock actualizado",
-    description: "Gaseosa Cola 500ml (+50 unidades)",
-    time: "Hace 15 min",
-    color: "green",
-  },
-  {
-    icon: <AlertTriangle className="w-4 h-4" />,
-    title: "Alerta de stock bajo",
-    description: "Cigarrillos Marlboro (8 unidades)",
-    time: "Hace 1 hora",
-    color: "yellow",
-  },
-  {
-    icon: <UserPlus className="w-4 h-4" />,
-    title: "Empleado conectado",
-    description: "María García inició sesión",
-    time: "Hace 2 horas",
-    color: "cyan",
-  },
-]
+import { useState, useEffect } from "react"
+import { ShoppingCart, Package, AlertTriangle, UserPlus, RefreshCw, ArrowDownToLine, ArrowUpFromLine } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+
+interface Activity {
+  icon: React.ReactNode
+  title: string
+  description: string
+  time: string
+  color: "cyan" | "green" | "yellow" | "red"
+}
+
+function formatTimeAgo(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return "Ahora"
+  if (diffMins < 60) return `Hace ${diffMins} min`
+  if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`
+  return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`
+}
 
 export function RecentActivity() {
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadActivities()
+  }, [])
+
+  const loadActivities = async () => {
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: kioscos } = await supabase
+        .from("kioscos")
+        .select("id")
+        .eq("owner_id", user.id)
+      
+      if (!kioscos || kioscos.length === 0) {
+        setLoading(false)
+        return
+      }
+      const kioskoIds = kioscos.map(k => k.id)
+
+      const allActivities: (Activity & { timestamp: Date })[] = []
+
+      // Get recent sales
+      const { data: recentSales } = await supabase
+        .from("sales")
+        .select("id, total_amount, created_at, payment_method")
+        .in("kiosko_id", kioskoIds)
+        .order("created_at", { ascending: false })
+        .limit(5)
+
+      recentSales?.forEach(sale => {
+        allActivities.push({
+          icon: <ShoppingCart className="w-4 h-4" />,
+          title: "Nueva venta registrada",
+          description: `Venta #${sale.id.slice(0, 8)} - $${Number(sale.total_amount).toLocaleString('es-AR')} (${sale.payment_method || 'Efectivo'})`,
+          time: formatTimeAgo(new Date(sale.created_at)),
+          color: "cyan",
+          timestamp: new Date(sale.created_at)
+        })
+      })
+
+      // Get recent stock movements
+      const { data: stockMovements } = await supabase
+        .from("stock_movements")
+        .select("id, product_id, quantity, type, created_at, products(name)")
+        .in("kiosko_id", kioskoIds)
+        .order("created_at", { ascending: false })
+        .limit(5)
+
+      stockMovements?.forEach(mov => {
+        const productName = (mov.products as any)?.name || "Producto"
+        const isIncome = mov.type === "entrada" || mov.type === "purchase" || mov.type === "adjustment_in"
+        allActivities.push({
+          icon: isIncome ? <ArrowDownToLine className="w-4 h-4" /> : <ArrowUpFromLine className="w-4 h-4" />,
+          title: isIncome ? "Ingreso de stock" : "Egreso de stock",
+          description: `${productName} (${isIncome ? "+" : "-"}${mov.quantity} uds)`,
+          time: formatTimeAgo(new Date(mov.created_at)),
+          color: isIncome ? "green" : "yellow",
+          timestamp: new Date(mov.created_at)
+        })
+      })
+
+      // Get low stock products (as alerts)
+      const { data: lowStockProducts } = await supabase
+        .from("products")
+        .select("id, name, stock, minimum_stock, updated_at")
+        .in("kiosko_id", kioskoIds)
+        .order("updated_at", { ascending: false })
+        .limit(10)
+
+      lowStockProducts?.forEach(product => {
+        if (product.stock <= (product.minimum_stock || 10)) {
+          allActivities.push({
+            icon: <AlertTriangle className="w-4 h-4" />,
+            title: "Alerta de stock bajo",
+            description: `${product.name} (${product.stock} unidades)`,
+            time: formatTimeAgo(new Date(product.updated_at)),
+            color: "yellow",
+            timestamp: new Date(product.updated_at)
+          })
+        }
+      })
+
+      // Get recent employee shifts
+      const { data: shifts } = await supabase
+        .from("employee_shifts")
+        .select("id, employee_id, start_time, end_time, employees(first_name, last_name)")
+        .in("kiosko_id", kioskoIds)
+        .order("start_time", { ascending: false })
+        .limit(3)
+
+      shifts?.forEach(shift => {
+        const empName = (shift.employees as any)?.first_name 
+          ? `${(shift.employees as any).first_name} ${(shift.employees as any).last_name || ""}`
+          : "Empleado"
+        
+        if (!shift.end_time) {
+          allActivities.push({
+            icon: <UserPlus className="w-4 h-4" />,
+            title: "Turno iniciado",
+            description: `${empName} comenzó su turno`,
+            time: formatTimeAgo(new Date(shift.start_time)),
+            color: "cyan",
+            timestamp: new Date(shift.start_time)
+          })
+        }
+      })
+
+      // Get recent purchases
+      const { data: purchases } = await supabase
+        .from("purchases")
+        .select("id, total_amount, status, created_at, providers(name)")
+        .in("kiosko_id", kioskoIds)
+        .order("created_at", { ascending: false })
+        .limit(3)
+
+      purchases?.forEach(purchase => {
+        const providerName = (purchase.providers as any)?.name || "Proveedor"
+        allActivities.push({
+          icon: <Package className="w-4 h-4" />,
+          title: "Compra registrada",
+          description: `${providerName} - $${Number(purchase.total_amount).toLocaleString('es-AR')}`,
+          time: formatTimeAgo(new Date(purchase.created_at)),
+          color: "green",
+          timestamp: new Date(purchase.created_at)
+        })
+      })
+
+      // Sort by timestamp and take first 8
+      allActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      setActivities(allActivities.slice(0, 8).map(({ timestamp, ...rest }) => rest))
+
+    } catch (err) {
+      console.error("Error loading activities:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <h3 className="text-lg font-semibold text-white mb-4">Actividad reciente</h3>
+        <div className="flex items-center justify-center h-32">
+          <RefreshCw className="w-6 h-6 text-cyan-500 animate-spin" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
       <h3 className="text-lg font-semibold text-white mb-4">Actividad reciente</h3>
@@ -45,7 +194,9 @@ export function RecentActivity() {
                   ? "bg-cyan-500/20 text-cyan-400"
                   : activity.color === "green"
                     ? "bg-green-500/20 text-green-400"
-                    : "bg-yellow-500/20 text-yellow-400"
+                    : activity.color === "red"
+                      ? "bg-red-500/20 text-red-400"
+                      : "bg-yellow-500/20 text-yellow-400"
               }`}
             >
               {activity.icon}
@@ -57,6 +208,10 @@ export function RecentActivity() {
             <span className="text-xs text-gray-600 whitespace-nowrap">{activity.time}</span>
           </div>
         ))}
+
+        {activities.length === 0 && (
+          <p className="text-gray-500 text-center py-4">Sin actividad reciente</p>
+        )}
       </div>
     </div>
   )
