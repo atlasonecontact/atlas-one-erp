@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { Cart } from "@/components/pos/cart"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
-import { Search, Barcode, History } from "lucide-react"
+import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { useScanner } from "@/lib/hooks/use-scanner"
+import { useToast } from "@/components/ui/toast-provider"
 
 export interface CartItem {
   id: string
@@ -29,11 +31,67 @@ export default function VentasPage() {
   const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string>("")
+  const [kioskoName, setKioskoName] = useState<string>("ATLAS ONE")
+  const [kioskoAddress, setKioskoAddress] = useState<string>("")
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
 
   const supabase = createClient()
+  const toast = useToast()
+
+  // Scanner integration
+  const handleBarcodeScanned = useCallback((barcode: string) => {
+    console.log("[v0] Barcode scanned:", barcode)
+    
+    // Search for product by barcode
+    const product = products.find(p => 
+      p.barcode === barcode || 
+      p.id === barcode ||
+      p.sku === barcode
+    )
+
+    if (product) {
+      addToCart(product)
+      toast.success("Producto agregado", `${product.name} x1`)
+    } else {
+      // If not found, search by name (partial match)
+      const matchByName = products.find(p => 
+        p.name.toLowerCase().includes(barcode.toLowerCase())
+      )
+      
+      if (matchByName) {
+        addToCart(matchByName)
+        toast.success("Producto agregado", `${matchByName.name} x1`)
+      } else {
+        toast.warning("Producto no encontrado", `Código: ${barcode}`)
+        setSearchQuery(barcode)
+      }
+    }
+  }, [products])
+
+  const { 
+    isListening, 
+    lastScan, 
+    isBluetoothSupported,
+    bluetoothDevice,
+    isConnecting,
+    startListening, 
+    stopListening,
+    connectBluetoothScanner,
+    disconnectBluetoothScanner,
+    error: scannerError,
+  } = useScanner({
+    onScan: handleBarcodeScanned,
+    minLength: 4,
+    maxLength: 30,
+  })
+
+  // Auto-start scanner listening
+  useEffect(() => {
+    startListening()
+    return () => stopListening()
+  }, [])
 
   useEffect(() => {
     loadUserAndProducts()
@@ -63,20 +121,40 @@ export default function VentasPage() {
       setEmployeeId(employeeData.id)
       setEmployeeName(employeeData.name || "")
       setKioskoId(employeeData.kiosko_id)
+      loadKioskoInfo(employeeData.kiosko_id)
       loadProducts(employeeData.kiosko_id)
     } else {
       console.log("[v0] User is owner, loading kioscos")
-      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+      const { data: kioscos } = await supabase
+        .from("kioscos")
+        .select("id, name, location")
+        .eq("owner_id", user.id)
+        .limit(1)
 
       if (kioscos && kioscos.length > 0) {
         console.log("[v0] Found kiosco:", kioscos[0].id)
         setUserRole("owner")
         setKioskoId(kioscos[0].id)
+        setKioskoName(kioscos[0].name || "ATLAS ONE")
+        setKioskoAddress(kioscos[0].location || "")
         loadProducts(kioscos[0].id)
       } else {
         console.log("[v0] No kioscos found")
         setIsLoading(false)
       }
+    }
+  }
+
+  const loadKioskoInfo = async (kiosko_id: string) => {
+    const { data } = await supabase
+      .from("kioscos")
+      .select("name, location")
+      .eq("id", kiosko_id)
+      .single()
+
+    if (data) {
+      setKioskoName(data.name || "ATLAS ONE")
+      setKioskoAddress(data.location || "")
     }
   }
 
@@ -217,21 +295,70 @@ export default function VentasPage() {
     <div className="h-[calc(100vh-120px)] flex gap-6">
       {/* Left side - Products */}
       <div className="flex-1 flex flex-col">
+        {/* Scanner status */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-[#0a0f1a]/50 border border-cyan-500/10">
+          <div className="flex items-center gap-2">
+            {isListening ? (
+              <Wifi className="w-4 h-4 text-green-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-gray-500" />
+            )}
+            <span className={`text-sm ${isListening ? "text-green-400" : "text-gray-500"}`}>
+              {isListening ? "Scanner activo" : "Scanner inactivo"}
+            </span>
+          </div>
+          
+          {lastScan && (
+            <span className="text-xs text-gray-500 ml-auto">
+              Último: {lastScan.barcode} ({lastScan.timestamp.toLocaleTimeString()})
+            </span>
+          )}
+
+          {isBluetoothSupported && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={bluetoothDevice ? disconnectBluetoothScanner : connectBluetoothScanner}
+              disabled={isConnecting}
+              className={`ml-2 h-7 text-xs ${
+                bluetoothDevice 
+                  ? "border-green-500/30 text-green-400" 
+                  : "border-cyan-500/30 text-cyan-400"
+              } bg-transparent`}
+            >
+              {isConnecting ? (
+                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+              ) : (
+                <Bluetooth className="w-3 h-3 mr-1" />
+              )}
+              {bluetoothDevice ? "Desconectar" : "Bluetooth"}
+            </Button>
+          )}
+        </div>
+
         {/* Search and filters */}
         <div className="flex items-center gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <Input
               type="text"
-              placeholder="Buscar por nombre o código..."
+              placeholder="Buscar por nombre, código o escanear..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
             />
           </div>
-          <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => isListening ? stopListening() : startListening()}
+            className={`gap-2 bg-transparent ${
+              isListening 
+                ? "border-green-500/30 text-green-400 hover:bg-green-500/10" 
+                : "border-cyan-500/20 text-gray-400 hover:text-white"
+            }`}
+          >
             <Barcode className="w-4 h-4" />
-            Escanear
+            {isListening ? "Escuchando..." : "Escanear"}
           </Button>
           <Link href="/dashboard/ventas/historial">
             <Button
@@ -296,6 +423,8 @@ export default function VentasPage() {
           items={lastSale.items}
           total={lastSale.total}
           method={lastSale.method}
+          storeName={kioskoName}
+          storeAddress={kioskoAddress}
         />
       )}
     </div>

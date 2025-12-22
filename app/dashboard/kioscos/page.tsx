@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, MapPin, Phone, Trash2, Edit } from "lucide-react"
+import { Plus, MapPin, Phone, Trash2, Edit, Store, AlertTriangle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { KioskoModal } from "@/components/kioscos/kiosko-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { useToast } from "@/components/ui/toast-provider"
 
 type Kiosko = {
   id: string
@@ -26,7 +28,10 @@ export default function KioscosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedKiosko, setSelectedKiosko] = useState<Kiosko | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; kiosko: Kiosko | null }>({ open: false, kiosko: null })
+  const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     loadKioscos()
@@ -73,17 +78,54 @@ export default function KioscosPage() {
     setIsLoading(false)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este kiosco? Esta acción no se puede deshacer.")) return
+  const handleDeleteClick = (kiosko: Kiosko) => {
+    setDeleteConfirm({ open: true, kiosko })
+  }
 
-    const { error } = await supabase.from("kioscos").delete().eq("id", id)
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.kiosko) return
 
-    if (error) {
-      alert("Error al eliminar el kiosco")
-      return
+    setIsDeleting(true)
+
+    try {
+      // First, delete related records to avoid foreign key constraints
+      const kioskoId = deleteConfirm.kiosko.id
+
+      // Delete employees
+      await supabase.from("employees").delete().eq("kiosko_id", kioskoId)
+      
+      // Delete products
+      await supabase.from("products").delete().eq("kiosko_id", kioskoId)
+      
+      // Delete notification_configs
+      await supabase.from("notification_configs").delete().eq("kiosko_id", kioskoId)
+      
+      // Delete sales and sale_items
+      const { data: sales } = await supabase.from("sales").select("id").eq("kiosko_id", kioskoId)
+      if (sales && sales.length > 0) {
+        const saleIds = sales.map(s => s.id)
+        await supabase.from("sale_items").delete().in("sale_id", saleIds)
+        await supabase.from("sales").delete().eq("kiosko_id", kioskoId)
+      }
+
+      // Finally, delete the kiosko
+      const { error } = await supabase.from("kioscos").delete().eq("id", kioskoId)
+
+      if (error) {
+        console.error("[v0] Error deleting kiosko:", error)
+        throw error
+      }
+
+      // Update local state
+      setKioscos(prev => prev.filter(k => k.id !== kioskoId))
+      setDeleteConfirm({ open: false, kiosko: null })
+      toast.success("Kiosco eliminado", `"${deleteConfirm.kiosko.name}" fue eliminado correctamente`)
+    } catch (error: any) {
+      console.error("[v0] Error deleting kiosko:", error)
+      toast.error("Error al eliminar", error.message || "No se pudo eliminar el kiosco. Intenta de nuevo.")
+    } finally {
+      setIsDeleting(false)
     }
-
-    loadKioscos()
   }
 
   const handleEdit = (kiosko: Kiosko) => {
@@ -228,7 +270,7 @@ export default function KioscosPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(kiosko.id)}
+                  onClick={() => handleDeleteClick(kiosko)}
                   className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -247,6 +289,22 @@ export default function KioscosPage() {
         }}
         onSuccess={loadKioscos}
         kiosko={selectedKiosko}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, kiosko: null })}
+        onConfirm={handleDeleteConfirm}
+        title="¿Eliminar kiosco?"
+        description={deleteConfirm.kiosko 
+          ? `Estás a punto de eliminar "${deleteConfirm.kiosko.name}". Se eliminarán todos los productos, empleados, ventas y configuraciones asociadas. Esta acción no se puede deshacer.`
+          : "Esta acción no se puede deshacer."
+        }
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   )

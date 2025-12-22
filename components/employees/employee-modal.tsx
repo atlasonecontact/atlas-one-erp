@@ -12,6 +12,8 @@ import {
   Copy, Check, User, Clock, Shield, Eye, EyeOff, 
   RefreshCw, Calendar, Phone, MapPin, FileText, AlertCircle
 } from "lucide-react"
+import { useFormValidation, FieldError } from "@/lib/hooks/use-form-validation"
+import { useToast } from "@/components/ui/toast-provider" from "lucide-react"
 
 // Types
 type Shift = {
@@ -82,6 +84,34 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     password: string
     pin: string
   } | null>(null)
+
+  const supabase = createClient()
+  const toast = useToast()
+
+  // Form validation
+  const { errors, validateForm, validateField, setFieldTouched, getFieldError, clearErrors } = 
+    useFormValidation<typeof formData>({
+      name: { 
+        required: "El nombre es obligatorio",
+        minLength: { value: 2, message: "Mínimo 2 caracteres" },
+        maxLength: { value: 100, message: "Máximo 100 caracteres" },
+      },
+      email: {
+        email: "Email inválido",
+      },
+      pin: {
+        pattern: { value: /^[0-9]{4}$/, message: "El PIN debe ser de 4 dígitos" },
+      },
+      phone: {
+        phone: "Teléfono inválido",
+      },
+      salary: {
+        min: { value: 0, message: "El salario no puede ser negativo" },
+      },
+      hourly_rate: {
+        min: { value: 0, message: "El valor por hora no puede ser negativo" },
+      },
+    })
 
   // Generate secure random password (12+ chars with mixed case, numbers, symbols)
   const generatePassword = () => {
@@ -226,6 +256,13 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    if (!validateForm(formData)) {
+      toast.warning("Revisa los campos", "Hay errores en el formulario")
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -234,7 +271,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         const { error } = await supabase
           .from("employees")
           .update({
-            name: formData.name,
+            name: formData.name.trim(),
             pin: formData.pin || null,
             phone: formData.phone || null,
             document_id: formData.document_id || null,
@@ -258,6 +295,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         // Save shifts
         await saveShifts(employee.id)
 
+        toast.success("Empleado actualizado", `${formData.name} fue actualizado correctamente`)
         onSuccess()
         onClose()
       } else {
@@ -305,18 +343,22 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
         // Save credentials to database for owner reference
         // This allows the owner to see the employee's login credentials
-        await supabase.rpc('register_employee_user', {
-          p_employee_id: null, // Will be set after insert
-          p_email: employeeEmail,
-          p_password: password
-        }).catch(() => {}) // Ignore if RPC doesn't exist yet
+        try {
+          await supabase.rpc('register_employee_user', {
+            p_employee_id: null, // Will be set after insert
+            p_email: employeeEmail,
+            p_password: password
+          })
+        } catch {
+          // Ignore if RPC doesn't exist yet
+        }
 
         const { data: newEmployee, error: insertError } = await supabase
           .from("employees")
           .insert({
             kiosko_id: kioskoId,
             user_id: authUserId,
-            name: formData.name,
+            name: formData.name.trim(),
             username: uniqueUsername,
             email: employeeEmail,
             temp_password: password, // Store temp password for owner reference
@@ -353,6 +395,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           pin 
         })
         setShowCredentials(true)
+        toast.success("Empleado creado", `${formData.name} fue agregado correctamente`)
         onSuccess()
       }
     } catch (error: any) {
@@ -370,7 +413,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         errorMessage = "Error de conexión. Verificá tu internet e intentá de nuevo"
       }
       
-      alert(`❌ Error al guardar empleado:\n\n${errorMessage}`)
+      toast.error("Error al guardar empleado", errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -610,9 +653,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Juan Pérez"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.name ? 'border-red-500' : ''}`}
                     required
                   />
+                  <FieldError error={errors.name} />
                 </div>
 
                 <div className="space-y-2">
@@ -636,7 +680,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         value={formData.pin}
                         onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                         placeholder="1234"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-center text-xl tracking-widest pr-10"
+                        className={`bg-[#0d1424] border-cyan-500/20 text-white font-mono text-center text-xl tracking-widest pr-10 ${errors.pin ? 'border-red-500' : ''}`}
                         maxLength={6}
                       />
                       <button
@@ -656,6 +700,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>
+                  <FieldError error={errors.pin} />
                   <p className="text-xs text-gray-500">4-6 dígitos para fichar entrada/salida</p>
                 </div>
               </div>
@@ -677,8 +722,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="empleado@email.com"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.email ? 'border-red-500' : ''}`}
                     />
+                    <FieldError error={errors.email} />
                     <p className="text-xs text-gray-500">Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.</p>
                   </div>
                   <div className="space-y-2">
@@ -688,8 +734,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+54 11 1234-5678"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? 'border-red-500' : ''}`}
                     />
+                    <FieldError error={errors.phone} />
                   </div>
                 </div>
                 <div className="mt-3">
@@ -783,8 +830,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.salary}
                       onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                       placeholder="50000"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? 'border-red-500' : ''}`}
                     />
+                    <FieldError error={errors.salary} />
                   </div>
                 </div>
               </div>

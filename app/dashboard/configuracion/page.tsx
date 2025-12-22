@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,12 +21,14 @@ import {
   Phone,
   Store,
   Loader2,
+  Settings,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/toast-provider"
+import { PhoneVerificationModal } from "@/components/ui/phone-verification-modal"
 
 interface KioskoData {
   id: string
@@ -83,6 +85,11 @@ export default function ConfiguracionPage() {
   const [isTestingTelegram, setIsTestingTelegram] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
+  const [pendingPhone, setPendingPhone] = useState("")
+  const originalPhoneRef = useRef("")
+  const [telegramStatus, setTelegramStatus] = useState<any>(null)
+  const [isCheckingTelegram, setIsCheckingTelegram] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -133,6 +140,8 @@ export default function ConfiguracionPage() {
         phone: data.phone || "",
         cuit: data.cuit || "",
       })
+      // Guardar el teléfono original para detectar cambios
+      originalPhoneRef.current = data.phone || ""
     }
   }
 
@@ -355,6 +364,108 @@ export default function ConfiguracionPage() {
     }
   }
 
+  // Función para verificar el estado del webhook de Telegram
+  const checkTelegramStatus = async () => {
+    setIsCheckingTelegram(true)
+    try {
+      const response = await fetch("/api/telegram/setup")
+      const data = await response.json()
+      setTelegramStatus(data)
+      
+      if (!data.configured) {
+        toast.warning("Telegram no configurado", data.error || "Falta el token del bot")
+      } else if (data.webhook?.lastErrorMessage) {
+        toast.error("Error en webhook", data.webhook.lastErrorMessage)
+      } else {
+        toast.success("Telegram OK", `Bot: @${data.bot?.username || 'desconocido'}`)
+      }
+    } catch (error) {
+      console.error("[v0] Error checking telegram:", error)
+      toast.error("Error", "No se pudo verificar el estado de Telegram")
+    } finally {
+      setIsCheckingTelegram(false)
+    }
+  }
+
+  // Función para configurar el webhook de Telegram
+  const setupTelegramWebhook = async () => {
+    setIsCheckingTelegram(true)
+    try {
+      const response = await fetch("/api/telegram/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success("Webhook configurado", "El bot de Telegram está listo")
+        await checkTelegramStatus()
+      } else {
+        toast.error("Error", data.error || "No se pudo configurar el webhook")
+      }
+    } catch (error) {
+      console.error("[v0] Error setting up telegram:", error)
+      toast.error("Error", "No se pudo configurar el webhook")
+    } finally {
+      setIsCheckingTelegram(false)
+    }
+  }
+
+  // Manejar el cambio de teléfono - requiere verificación
+  const handlePhoneChange = (newPhone: string) => {
+    setKioskoData({ ...kioskoData, phone: newPhone })
+  }
+
+  // Al hacer blur del campo teléfono, verificar si cambió
+  const handlePhoneBlur = () => {
+    const cleanedOriginal = originalPhoneRef.current.replace(/\D/g, '')
+    const cleanedNew = kioskoData.phone.replace(/\D/g, '')
+    
+    // Si el teléfono cambió y no está vacío
+    if (cleanedNew && cleanedOriginal !== cleanedNew) {
+      setPendingPhone(kioskoData.phone)
+      setShowPhoneVerification(true)
+      // Restaurar el teléfono original hasta que se verifique
+      setKioskoData({ ...kioskoData, phone: originalPhoneRef.current })
+    }
+  }
+
+  // Cuando se verifica el teléfono exitosamente
+  const handlePhoneVerified = async (verifiedPhone: string) => {
+    setShowPhoneVerification(false)
+    setKioskoData({ ...kioskoData, phone: verifiedPhone })
+    originalPhoneRef.current = verifiedPhone
+    
+    // Guardar el teléfono verificado en la base de datos
+    try {
+      await supabase
+        .from("kioscos")
+        .update({ 
+          phone: verifiedPhone,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", selectedKiosko)
+
+      // Marcar WhatsApp como no verificado ya que el teléfono cambió
+      await supabase
+        .from("notification_configs")
+        .update({
+          whatsapp_verified: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("kiosko_id", selectedKiosko)
+
+      setWhatsappConfig({ ...whatsappConfig, verified: false })
+      
+      toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado")
+      await loadKioskoConfig()
+    } catch (error) {
+      console.error("[v0] Error saving verified phone:", error)
+      toast.error("Error", "No se pudo guardar el teléfono")
+    }
+  }
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== "ELIMINAR") {
       toast.warning("Confirmación requerida", "Escribí ELIMINAR para confirmar")
@@ -504,11 +615,15 @@ export default function ConfiguracionPage() {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
                     value={kioskoData.phone}
-                    onChange={(e) => setKioskoData({ ...kioskoData, phone: e.target.value })}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={handlePhoneBlur}
                     placeholder="+54 11 1234-5678"
                     className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
                   />
                 </div>
+                <p className="text-xs text-gray-500">
+                  📱 Este teléfono se usa para WhatsApp/Telegram. Cambios requieren verificación.
+                </p>
               </div>
             </div>
 
@@ -635,6 +750,44 @@ export default function ConfiguracionPage() {
 
             {telegramConfig.enabled && (
               <div className="space-y-4 pt-4 border-t border-cyan-500/10">
+                {/* Admin: Telegram webhook status */}
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-purple-400 flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      Estado del Bot (Admin)
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={checkTelegramStatus}
+                        disabled={isCheckingTelegram}
+                        className="border-purple-500/30 text-purple-300 text-xs"
+                      >
+                        {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verificar"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={setupTelegramWebhook}
+                        disabled={isCheckingTelegram}
+                        className="bg-purple-500 hover:bg-purple-400 text-white text-xs"
+                      >
+                        Activar Webhook
+                      </Button>
+                    </div>
+                  </div>
+                  {telegramStatus && (
+                    <div className="text-xs space-y-1 text-purple-200/80">
+                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : 'No configurado'}</p>
+                      <p>Webhook: {telegramStatus.webhook?.url || 'No configurado'}</p>
+                      {telegramStatus.webhook?.lastErrorMessage && (
+                        <p className="text-red-400">Error: {telegramStatus.webhook.lastErrorMessage}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Step by step guide */}
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                   <p className="text-sm font-medium text-blue-400 mb-3">📱 Cómo configurar Telegram (3 pasos simples):</p>
@@ -933,6 +1086,19 @@ export default function ConfiguracionPage() {
         <Save className="w-4 h-4" />
         {isSaving ? "Guardando..." : "Guardar Cambios"}
       </Button>
+
+      {/* Phone Verification Modal */}
+      <PhoneVerificationModal
+        open={showPhoneVerification}
+        onClose={() => {
+          setShowPhoneVerification(false)
+          setPendingPhone("")
+        }}
+        onVerified={handlePhoneVerified}
+        currentPhone={originalPhoneRef.current}
+        newPhone={pendingPhone}
+        kioskoName={kioskoData.name}
+      />
     </div>
   )
 }

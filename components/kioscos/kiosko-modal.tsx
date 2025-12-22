@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
-import { MapPin, Phone, Building2 } from "lucide-react"
+import { MapPin, Phone, Building2, AlertCircle } from "lucide-react"
+import { useFormValidation, validateCuit, FieldError } from "@/lib/hooks/use-form-validation"
+import { useToast } from "@/components/ui/toast-provider"
 
 type Plan = {
   id: string
@@ -39,10 +41,21 @@ type KioskoModalProps = {
   kiosko?: Kiosko | null
 }
 
+type FormDataType = {
+  name: string
+  location: string
+  cuit: string
+  phone: string
+  whatsapp_phone: string
+  background_color: string
+  accent_color: string
+  subscription_plan_id: string
+}
+
 export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalProps) {
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     name: "",
     location: "",
     cuit: "",
@@ -54,10 +67,34 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
   })
 
   const supabase = createClient()
+  const toast = useToast()
+
+  // Form validation
+  const { errors, validateForm, validateField, setFieldTouched, getFieldError, clearErrors } = 
+    useFormValidation<FormDataType>({
+      name: { 
+        required: "El nombre del kiosco es obligatorio",
+        minLength: { value: 2, message: "Mínimo 2 caracteres" },
+        maxLength: { value: 100, message: "Máximo 100 caracteres" },
+      },
+      location: { 
+        required: "La ubicación es obligatoria",
+        minLength: { value: 5, message: "Ingresa una dirección más completa" },
+      },
+      cuit: { 
+        required: "El CUIT/CUIL es obligatorio",
+        cuit: "CUIT/CUIL inválido. Formato: XX-XXXXXXXX-X",
+      },
+      phone: { 
+        required: "El teléfono es obligatorio",
+        phone: "Teléfono inválido. Ejemplo: +54 9 11 1234-5678",
+      },
+    })
 
   useEffect(() => {
     if (isOpen) {
       loadPlans()
+      clearErrors()
       if (kiosko) {
         setFormData({
           name: kiosko.name,
@@ -98,8 +135,26 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
     setPlans(data || [])
   }
 
+  const handleFieldChange = (field: keyof FormDataType, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // Validate on change after first touch
+    validateField(field, value, formData)
+  }
+
+  const handleFieldBlur = (field: keyof FormDataType) => {
+    setFieldTouched(field)
+    validateField(field, formData[field], formData)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate all fields
+    if (!validateForm(formData)) {
+      toast.warning("Revisa los campos", "Hay errores en el formulario")
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -107,41 +162,43 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        alert("Error: No se encontró el usuario")
+        toast.error("Error", "No se encontró el usuario")
         setIsLoading(false)
         return
       }
 
       const kioskoPayload = {
-        name: formData.name,
-        location: formData.location,
-        cuit: formData.cuit,
-        phone: formData.phone,
-        whatsapp_phone: formData.whatsapp_phone ? formData.whatsapp_phone : null,
+        name: formData.name.trim(),
+        location: formData.location.trim(),
+        cuit: formData.cuit.trim(),
+        phone: formData.phone.trim(),
+        whatsapp_phone: formData.whatsapp_phone.trim() || formData.phone.trim(),
         background_color: formData.background_color,
         accent_color: formData.accent_color,
-        subscription_plan_id: formData.subscription_plan_id ? formData.subscription_plan_id : null,
+        subscription_plan_id: formData.subscription_plan_id || null,
       }
 
       if (kiosko) {
         const { error } = await supabase.from("kioscos").update(kioskoPayload).eq("id", kiosko.id)
 
         if (error) throw error
+        toast.success("Kiosco actualizado", `"${formData.name}" fue actualizado correctamente`)
       } else {
         const { error } = await supabase.from("kioscos").insert({
           ...kioskoPayload,
-          owner_id: user.id, // Use owner_id instead of chain_id
+          owner_id: user.id,
           status: "active",
         })
 
         if (error) throw error
+        toast.success("Kiosco creado", `"${formData.name}" fue creado correctamente`)
       }
 
       onSuccess()
       onClose()
     } catch (error: any) {
       console.error("[v0] Error creating/updating kiosko:", error)
-      alert(error.message || "Error al guardar el kiosco")
+      toast.error("Error al guardar", error.message || "No se pudo guardar el kiosco")
     } finally {
       setIsLoading(false)
     }
@@ -157,33 +214,35 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-300">
-              Nombre del Kiosco
+              Nombre del Kiosco <span className="text-red-400">*</span>
             </Label>
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => handleFieldChange("name", e.target.value)}
+              onBlur={() => handleFieldBlur("name")}
               placeholder="Ej: Kiosco La Esquina"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
-              required
+              className={`bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("name") ? "border-red-500/50" : ""}`}
             />
+            <FieldError error={getFieldError("name")} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="location" className="text-gray-300">
-              Ubicación
+              Ubicación <span className="text-red-400">*</span>
             </Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
                 id="location"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) => handleFieldChange("location", e.target.value)}
+                onBlur={() => handleFieldBlur("location")}
                 placeholder="Dirección completa"
-                className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
-                required
+                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("location") ? "border-red-500/50" : ""}`}
               />
             </div>
+            <FieldError error={getFieldError("location")} />
           </div>
 
           <div className="space-y-2">
@@ -195,12 +254,13 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
               <Input
                 id="cuit"
                 value={formData.cuit}
-                onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
+                onChange={(e) => handleFieldChange("cuit", e.target.value)}
+                onBlur={() => handleFieldBlur("cuit")}
                 placeholder="XX-XXXXXXXX-X"
-                className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
-                required
+                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("cuit") ? "border-red-500/50" : ""}`}
               />
             </div>
+            <FieldError error={getFieldError("cuit")} />
           </div>
 
           <div className="space-y-2">
@@ -212,12 +272,18 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
               <Input
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value, whatsapp_phone: e.target.value })}
+                onChange={(e) => {
+                  handleFieldChange("phone", e.target.value)
+                  if (!formData.whatsapp_phone) {
+                    setFormData(prev => ({ ...prev, whatsapp_phone: e.target.value }))
+                  }
+                }}
+                onBlur={() => handleFieldBlur("phone")}
                 placeholder="+54 9 11 1234-5678"
-                className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
-                required
+                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("phone") ? "border-red-500/50" : ""}`}
               />
             </div>
+            <FieldError error={getFieldError("phone")} />
             <p className="text-xs text-gray-500">
               Este número se usará para WhatsApp y Telegram. Formato: +5491112345678
             </p>
