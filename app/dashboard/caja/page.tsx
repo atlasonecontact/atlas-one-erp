@@ -91,6 +91,9 @@ export default function CajaPage() {
       setKioskoId(targetKioskoId)
       await loadCashRegister(targetKioskoId)
       await loadTodaySales(targetKioskoId)
+    } else {
+      // No hay kioscos, pero no es un error
+      console.warn("[Caja] No se encontró kiosko para el usuario")
     }
     setLoading(false)
   }
@@ -241,6 +244,38 @@ export default function CajaPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
+      </div>
+    )
+  }
+
+  // Si no hay kioskoId, mostrar mensaje
+  if (!kioskoId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Caja</h1>
+            <p className="text-gray-400 text-sm">Control de caja y movimientos del día</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-8 text-center">
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-yellow-500/20 text-yellow-400 mx-auto mb-4">
+            <Wallet className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No hay kiosko configurado</h3>
+          <p className="text-gray-400 mb-6">
+            Para usar la caja, primero necesitás configurar un kiosko en tu cuenta.
+            <br />
+            Andá a Configuración para crear tu primer kiosko.
+          </p>
+          <Button
+            onClick={() => window.location.href = "/dashboard/configuracion"}
+            className="bg-cyan-500 hover:bg-cyan-400 text-black"
+          >
+            Ir a Configuración
+          </Button>
+        </div>
       </div>
     )
   }

@@ -8,17 +8,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AtlasLogo } from "@/components/atlas-logo"
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Store } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { getSingleOrNull } from "@/lib/supabase/utils"
+
+type DemoBusinessType = "maxi-kiosco" | "mini-market" | "licoreria" | "vinoteca" | "libreria" | "jugueteria" | "dietetica"
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [showDemoOptions, setShowDemoOptions] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,6 +76,62 @@ export default function LoginPage() {
     setIdentifier("demo@atlasone.com")
     setPassword("demo123456")
   }
+
+  const handleQuickDemo = async (type: DemoBusinessType) => {
+    setIsDemoLoading(true)
+    setError("")
+
+    const supabase = createClient()
+
+    try {
+      // Llamar al endpoint para crear/asegurar la cuenta demo
+      const ensureRes = await fetch("/api/demo/ensure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      })
+
+      const ensureJson = await ensureRes.json().catch(() => ({}))
+      if (!ensureRes.ok) {
+        throw new Error(ensureJson?.error || "No se pudo preparar la cuenta demo")
+      }
+
+      const email = ensureJson.email as string
+      const demoPassword = (ensureJson.password as string) || "Demo123456!"
+
+      if (!email) {
+        throw new Error("Respuesta inválida al preparar la cuenta demo")
+      }
+
+      // Hacer login automático
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: demoPassword,
+      })
+
+      if (signInError) {
+        throw new Error(signInError.message)
+      }
+
+      router.push("/dashboard")
+      router.refresh()
+    } catch (err: any) {
+      console.error("[v0] Demo login error:", err)
+      setError(err?.message || "Error al iniciar demo. Intenta nuevamente.")
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
+
+  const demoTypes: Array<{ type: DemoBusinessType; label: string; icon: string }> = [
+    { type: "maxi-kiosco", label: "Maxi Kiosco", icon: "🏪" },
+    { type: "mini-market", label: "Mini Market", icon: "🏬" },
+    { type: "licoreria", label: "Licorería", icon: "🍷" },
+    { type: "vinoteca", label: "Vinoteca", icon: "🍾" },
+    { type: "libreria", label: "Librería", icon: "📚" },
+    { type: "jugueteria", label: "Juguetería", icon: "🧸" },
+    { type: "dietetica", label: "Dietética", icon: "🌿" },
+  ]
 
   return (
     <div className="min-h-screen bg-[#030712] flex">
@@ -193,16 +253,52 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 rounded-xl border border-cyan-500/10 bg-cyan-500/5">
             <p className="text-sm text-gray-400 text-center mb-3">
-              <span className="text-cyan-400 font-medium">Demo:</span> Prueba con la cuenta de demostración
+              <span className="text-cyan-400 font-medium">✨ Demo Rápida:</span> Prueba con datos precargados
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleDemoLogin}
-              className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent"
-            >
-              Usar credenciales demo
-            </Button>
+            
+            {!showDemoOptions ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDemoOptions(true)}
+                className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent"
+                disabled={isDemoLoading}
+              >
+                <Store className="w-4 h-4 mr-2" />
+                Ver opciones de demo
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {demoTypes.map((demo) => (
+                    <Button
+                      key={demo.type}
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleQuickDemo(demo.type)}
+                      disabled={isDemoLoading}
+                      className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent text-xs py-2 h-auto"
+                    >
+                      {isDemoLoading ? (
+                        <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                      ) : (
+                        <span>
+                          {demo.icon} {demo.label}
+                        </span>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowDemoOptions(false)}
+                  className="w-full text-xs text-gray-500 hover:text-gray-300"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
