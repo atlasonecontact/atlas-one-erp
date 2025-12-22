@@ -36,17 +36,13 @@ export default function ProductosPage() {
   const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
     const targetKioskoId = kiosko_id || kioskoId
-    
+
     if (!targetKioskoId) {
       setLoading(false)
       return
     }
 
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("kiosko_id", targetKioskoId)
-      .order("name")
+    const { data, error } = await supabase.from("products").select("*").eq("kiosko_id", targetKioskoId).order("name")
 
     if (error) {
       console.error("Error fetching products:", error)
@@ -60,7 +56,7 @@ export default function ProductosPage() {
         price: p.price || 0,
         stock: p.stock_quantity || 0,
         barcode: p.barcode,
-        status: p.is_active ? (p.stock_quantity <= 10 ? "low_stock" : "active") : "inactive",
+        status: p.stock_quantity <= 0 ? "inactive" : p.stock_quantity <= 10 ? "low_stock" : "active",
         kiosko_id: p.kiosko_id,
       }))
       setProducts(mappedProducts)
@@ -70,7 +66,9 @@ export default function ProductosPage() {
 
   useEffect(() => {
     const loadUserAndProducts = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         setLoading(false)
         return
@@ -81,7 +79,7 @@ export default function ProductosPage() {
         .from("employees")
         .select("id, kiosko_id")
         .eq("user_id", user.id)
-        .eq("is_active", true)
+        .eq("status", "active")
         .maybeSingle()
 
       if (employeeData) {
@@ -89,11 +87,7 @@ export default function ProductosPage() {
         fetchProducts(employeeData.kiosko_id)
       } else {
         // User is owner
-        const { data: kioscos } = await supabase
-          .from("kioscos")
-          .select("id")
-          .eq("owner_id", user.id)
-          .limit(1)
+        const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
 
         if (kioscos && kioscos.length > 0) {
           setKioskoId(kioscos[0].id)
@@ -142,7 +136,6 @@ export default function ProductosPage() {
           price: product.price,
           stock_quantity: product.stock,
           barcode: product.barcode,
-          is_active: product.status === "active" || product.status === "low_stock",
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingProduct.id)

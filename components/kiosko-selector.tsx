@@ -18,7 +18,6 @@ interface Kiosko {
   id: string
   name: string
   location: string
-  is_active: boolean
 }
 
 export function KioskoSelector() {
@@ -46,8 +45,8 @@ export function KioskoSelector() {
 
       const { data, error: kioskoError } = await supabase
         .from("kioscos")
-        .select("id, name, location, is_active")
-        .eq("owner_id", user.id) // Use owner_id instead of chain_id
+        .select("id, name, location")
+        .eq("owner_id", user.id)
         .order("name")
 
       if (kioskoError) {

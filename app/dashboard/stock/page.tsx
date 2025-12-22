@@ -88,7 +88,6 @@ export default function StockPage() {
       .from("products")
       .select("id, name, category, stock_quantity, min_stock_level")
       .eq("kiosko_id", kiosko_id)
-      .eq("is_active", true)
       .order("name")
 
     if (!error && data) {

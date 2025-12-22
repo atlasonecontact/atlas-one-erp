@@ -57,7 +57,6 @@ export function useDashboardData(period: string) {
       if (ownedKioscos && ownedKioscos.length > 0) {
         kioskoIds = ownedKioscos.map((k) => k.id)
       } else {
-        // Check if user is an employee
         const { data: employeeData } = await supabase
           .from("employees")
           .select("kiosko_id")
@@ -162,7 +161,6 @@ export function useDashboardData(period: string) {
         .from("products")
         .select("id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
-        .eq("is_active", true)
         .lt("stock_quantity", 15)
         .order("stock_quantity", { ascending: true })
         .limit(5)
@@ -193,7 +191,6 @@ export function useDashboardData(period: string) {
         .from("products")
         .select("id, name, price, cost, stock_quantity")
         .in("kiosko_id", kioskoIds)
-        .eq("is_active", true)
 
       let totalRevenue = 0
       let totalCost = 0
