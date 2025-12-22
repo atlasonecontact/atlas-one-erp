@@ -86,7 +86,7 @@ export default function EmpleadosPage() {
     if (!selectedKiosko) return
 
     setIsLoading(true)
-    
+
     // Load employees
     const { data: employeesData } = await supabase
       .from("employees")
@@ -102,10 +102,7 @@ export default function EmpleadosPage() {
     if (employeesData) {
       // Load shifts for all employees
       const employeeIds = employeesData.map((e: any) => e.id)
-      const { data: shiftsData } = await supabase
-        .from("employee_shifts")
-        .select("*")
-        .in("employee_id", employeeIds)
+      const { data: shiftsData } = await supabase.from("employee_shifts").select("*").in("employee_id", employeeIds)
 
       const shiftsMap: Record<string, Shift[]> = {}
       if (shiftsData) {
@@ -144,7 +141,10 @@ export default function EmpleadosPage() {
   }
 
   const copyCredentials = async (employee: Employee) => {
-    const text = `Empleado: ${employee.name}\nUsuario: ${employee.username}${employee.pin ? `\nPIN: ${employee.pin}` : ''}`
+    let text = `Empleado: ${employee.name}\nUsuario: ${employee.username}`
+    if (employee.pin) {
+      text += `\nPIN: ${employee.pin}`
+    }
     await navigator.clipboard.writeText(text)
     setCopiedId(employee.id)
     setTimeout(() => setCopiedId(null), 2000)
@@ -152,9 +152,7 @@ export default function EmpleadosPage() {
 
   const formatShifts = (shifts: Shift[] = []) => {
     if (shifts.length === 0) return null
-    const days = shifts
-      .sort((a, b) => a.day_of_week - b.day_of_week)
-      .map(s => DAY_NAMES[s.day_of_week])
+    const days = shifts.sort((a, b) => a.day_of_week - b.day_of_week).map((s) => DAY_NAMES[s.day_of_week])
     return days.join(", ")
   }
 
@@ -292,12 +290,10 @@ export default function EmpleadosPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg">
-                    {employee.name?.charAt(0) || "?"}}
+                    {employee.name?.charAt(0) || "?"}
                   </div>
                   <div>
-                    <p className="text-white font-medium">
-                      {employee.name}
-                    </p>
+                    <p className="text-white font-medium">{employee.name}</p>
                     <p className="text-xs text-gray-500 truncate max-w-[150px]">@{employee.username}</p>
                   </div>
                 </div>
@@ -343,7 +339,7 @@ export default function EmpleadosPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Phone */}
                 {employee.phone && (
                   <div className="flex items-center gap-2 text-gray-400">
@@ -351,7 +347,7 @@ export default function EmpleadosPage() {
                     <span className="text-gray-300">{employee.phone}</span>
                   </div>
                 )}
-                
+
                 {/* Shifts */}
                 {employee.shifts && employee.shifts.length > 0 && (
                   <div className="flex items-center gap-2 text-gray-400">
@@ -359,12 +355,14 @@ export default function EmpleadosPage() {
                     <span className="text-gray-300">{formatShifts(employee.shifts)}</span>
                   </div>
                 )}
-                
+
                 {/* Hire date */}
                 {employee.hire_date && (
                   <div className="flex items-center gap-2 text-gray-400">
                     <Calendar className="w-3 h-3" />
-                    <span className="text-gray-300">Desde {new Date(employee.hire_date).toLocaleDateString('es-AR')}</span>
+                    <span className="text-gray-300">
+                      Desde {new Date(employee.hire_date).toLocaleDateString("es-AR")}
+                    </span>
                   </div>
                 )}
 
