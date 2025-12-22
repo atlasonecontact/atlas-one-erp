@@ -254,7 +254,6 @@ export default function ConfiguracionPage() {
           telegram_enabled: telegramConfig.enabled,
           telegram_chat_id: telegramConfig.chatId || null,
           telegram_verified: telegramChatChanged ? false : !!config.telegram_verified,
-          notify_sales: whatsappConfig.notifyOnSale || telegramConfig.notifyOnSale,
           updated_at: new Date().toISOString(),
         })
         .eq("kiosko_id", selectedKiosko)

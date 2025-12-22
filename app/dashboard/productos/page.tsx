@@ -56,25 +56,49 @@ export default function ProductosPage() {
       return
     }
 
-    const { data, error } = await supabase.from("products").select("*").eq("kiosko_id", targetKioskoId).order("name")
+    // Load ALL products - Supabase limits to 1000 by default, use range to get more
+    let allProducts: any[] = []
+    let from = 0
+    const pageSize = 1000
+    let hasMore = true
 
-    if (error) {
-      console.error("Error fetching products:", error)
-    } else {
-      // Map database fields to component fields
-      const mappedProducts = (data || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category || "Sin categoría",
-        cost: p.cost || 0,
-        price: p.price || 0,
-        stock: p.stock_quantity || 0,
-        barcode: p.barcode,
-        status: p.stock_quantity <= 0 ? "inactive" : p.stock_quantity <= 10 ? "low_stock" : "active",
-        kiosko_id: p.kiosko_id,
-      }))
-      setProducts(mappedProducts)
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("kiosko_id", targetKioskoId)
+        .order("name")
+        .range(from, from + pageSize - 1)
+
+      if (error) {
+        console.error("Error fetching products:", error)
+        break
+      }
+
+      if (data && data.length > 0) {
+        allProducts = [...allProducts, ...data]
+        from += pageSize
+        hasMore = data.length === pageSize
+      } else {
+        hasMore = false
+      }
     }
+
+    const data = allProducts
+
+    // Map database fields to component fields
+    const mappedProducts = data.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category || "Sin categoría",
+      cost: p.cost || 0,
+      price: p.price || 0,
+      stock: p.stock_quantity || 0,
+      barcode: p.barcode,
+      status: p.stock_quantity <= 0 ? "inactive" : p.stock_quantity <= 10 ? "low_stock" : "active",
+      kiosko_id: p.kiosko_id,
+    }))
+    setProducts(mappedProducts)
     setLoading(false)
   }
 

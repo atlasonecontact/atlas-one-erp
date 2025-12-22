@@ -67,7 +67,6 @@ const navItems = [
   { href: "/dashboard/caja", label: "Caja", icon: Wallet },
   { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2 },
   { href: "/dashboard/empleados", label: "Empleados", icon: Users },
-  { href: "/dashboard/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
 ]

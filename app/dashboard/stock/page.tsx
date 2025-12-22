@@ -104,16 +104,36 @@ export default function StockPage() {
   }
 
   const loadProducts = async (kiosko_id: string) => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, name, category, stock_quantity, min_stock_level")
-      .eq("kiosko_id", kiosko_id)
-      .order("name")
+    // Load ALL products - Supabase limits to 1000 by default, use range to get more
+    let allProducts: any[] = []
+    let from = 0
+    const pageSize = 1000
+    let hasMore = true
 
-    if (!error && data) {
-      setProducts(data)
-      calculateCategoryStats(data)
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, category, stock_quantity, min_stock_level")
+        .eq("kiosko_id", kiosko_id)
+        .order("name")
+        .range(from, from + pageSize - 1)
+
+      if (error) {
+        console.error("Error fetching products:", error)
+        break
+      }
+
+      if (data && data.length > 0) {
+        allProducts = [...allProducts, ...data]
+        from += pageSize
+        hasMore = data.length === pageSize
+      } else {
+        hasMore = false
+      }
     }
+
+    setProducts(allProducts)
+    calculateCategoryStats(allProducts)
   }
 
   const loadMovements = async (kiosko_id: string) => {

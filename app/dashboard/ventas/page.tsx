@@ -12,6 +12,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useScanner } from "@/lib/hooks/use-scanner"
 import { useToast } from "@/components/ui/toast-provider"
+import { enqueueSale, flushQueuedSales } from "@/lib/offline/sales-queue"
 
 export interface CartItem {
   id: string
@@ -158,27 +159,78 @@ export default function VentasPage() {
     }
   }
 
-  const loadProducts = async (kiosko_id: string) => {
-    const { data: productsData } = await supabase
-      .from("products")
-      .select("*")
-      .eq("kiosko_id", kiosko_id)
-      .gt("stock_quantity", 0)
-      .order("name")
+  const loadProducts = useCallback(async (kiosko_id: string) => {
+    try {
+      const { data: productsData, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("kiosko_id", kiosko_id)
+        .gt("stock_quantity", 0)
+        .order("name")
 
-    if (productsData) {
-      const mappedProducts = productsData.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category || "Sin categoría",
-        price: p.price || 0,
-        stock: p.stock_quantity || 0,
-        status: p.stock_quantity <= 10 ? "low_stock" : "active",
-      }))
-      setProducts(mappedProducts)
+      if (error) throw error
+
+      if (productsData) {
+        const mappedProducts = productsData.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category || "Sin categoría",
+          price: p.price || 0,
+          stock: p.stock_quantity || 0,
+          status: p.stock_quantity <= 10 ? "low_stock" : "active",
+        }))
+        setProducts(mappedProducts)
+
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(`atlas.cache.products.${kiosko_id}.v1`, JSON.stringify(mappedProducts))
+        }
+      }
+    } catch {
+      if (typeof window !== "undefined") {
+        const cached = window.localStorage.getItem(`atlas.cache.products.${kiosko_id}.v1`)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (Array.isArray(parsed)) {
+              setProducts(parsed)
+              toast.warning("Modo offline", "Mostrando productos guardados")
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
-  }
+  }, [supabase, toast])
+
+  const syncOfflineSales = useCallback(async () => {
+    if (typeof window === "undefined") return
+    if (!window.navigator.onLine) return
+    if (!kioskoId) return
+
+    const result = await flushQueuedSales(supabase)
+    if (!result) return
+
+    if (result.flushed > 0) {
+      toast.success("Ventas sincronizadas", `${result.flushed} venta(s) enviada(s)`)
+      await loadProducts(kioskoId)
+    }
+  }, [kioskoId, loadProducts, supabase, toast])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const onOnline = () => {
+      syncOfflineSales()
+    }
+    window.addEventListener("online", onOnline)
+    return () => window.removeEventListener("online", onOnline)
+  }, [syncOfflineSales])
+
+  useEffect(() => {
+    syncOfflineSales()
+  }, [kioskoId, syncOfflineSales])
 
   const categories = ["all", "Bebidas", "Snacks", "Golosinas", "Cigarrillos", "Lácteos"]
 
@@ -219,11 +271,61 @@ export default function VentasPage() {
   const tax = subtotal * 0.21
   const total = subtotal + tax
 
+  const applyCartToProducts = (currentProducts: any[], items: CartItem[]) => {
+    const updated = currentProducts
+      .map((p) => {
+        const cartItem = items.find((c) => c.id === p.id)
+        if (!cartItem) return p
+        const nextStock = Math.max(0, Number(p.stock ?? 0) - cartItem.quantity)
+        return {
+          ...p,
+          stock: nextStock,
+          status: nextStock <= 10 ? "low_stock" : "active",
+        }
+      })
+      .filter((p) => Number(p.stock ?? 0) > 0)
+
+    if (typeof window !== "undefined" && kioskoId) {
+      window.localStorage.setItem(`atlas.cache.products.${kioskoId}.v1`, JSON.stringify(updated))
+    }
+
+    return updated
+  }
+
   const handlePayment = async (method: string) => {
     try {
       console.log("[v0] Processing payment:", { kioskoId, employeeId, total, method })
 
-      const saleNumber = `V-${Date.now()}`
+      const isOffline = typeof window !== "undefined" && !window.navigator.onLine
+
+      const saleNumber = `V-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+
+      if (isOffline) {
+        enqueueSale({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          createdAt: Date.now(),
+          kioskoId,
+          employeeId,
+          saleNumber,
+          totalAmount: total,
+          paymentMethod: method,
+          items: cart.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            unitPrice: item.price,
+          })),
+        })
+
+        setProducts((prev) => applyCartToProducts(prev, cart))
+        toast.warning("Venta guardada offline", "Se sincronizará al reconectar")
+
+        setLastSale({ items: cart, total, method })
+        setShowPayment(false)
+        setShowReceipt(true)
+        setCart([])
+        return
+      }
+
       const { data: saleData, error: saleError } = await supabase
         .from("sales")
         .insert({
@@ -279,6 +381,41 @@ export default function VentasPage() {
       loadProducts(kioskoId)
     } catch (error) {
       console.error("[v0] Error saving sale:", error)
+
+      const message = (error as any)?.message ? String((error as any).message) : ""
+      const looksOffline =
+        typeof window !== "undefined" &&
+        (!window.navigator.onLine ||
+          message.toLowerCase().includes("failed to fetch") ||
+          message.toLowerCase().includes("network"))
+
+      if (looksOffline) {
+        const saleNumber = `V-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+        enqueueSale({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          createdAt: Date.now(),
+          kioskoId,
+          employeeId,
+          saleNumber,
+          totalAmount: total,
+          paymentMethod: method,
+          items: cart.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            unitPrice: item.price,
+          })),
+        })
+
+        setProducts((prev) => applyCartToProducts(prev, cart))
+        toast.warning("Venta guardada offline", "Se sincronizará al reconectar")
+
+        setLastSale({ items: cart, total, method })
+        setShowPayment(false)
+        setShowReceipt(true)
+        setCart([])
+        return
+      }
+
       alert("Error al procesar la venta")
     }
   }

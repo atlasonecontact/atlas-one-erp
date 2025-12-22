@@ -28,3 +28,23 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Getting Started
+
+### Variables de entorno (requerido para empleados y demo)
+
+1) Copiá `.env.local.example` a `.env.local`
+
+2) Completá como mínimo:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (requerido para crear usuarios de empleados y cuentas demo)
+
+Opcional:
+- `DEMO_PASSWORD` (si querés cambiar la contraseña de las cuentas demo)
+
+### Cómo crear / usar usuarios demo
+
+- Entrá a `/demo`
+- Elegí el rubro (maxi kiosco, mini market, licorería, etc.)
+- El sistema crea/asegura la cuenta `demo.<rubro>@atlasone.com` y te loguea automáticamente.

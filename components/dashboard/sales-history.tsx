@@ -1,30 +1,146 @@
 "use client"
 
-import { ShoppingCart, Package, DollarSign, TrendingUp, ChevronDown } from "lucide-react"
-import Image from "next/image"
+import { useState, useEffect } from "react"
+import { Package, ChevronDown, Receipt } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
-interface Sale {
+interface SaleRecord {
   id: string
-  product: string
-  customer?: string
-  units: number
-  amount: number
-  date: string
+  sale_number: string
+  total_amount: number
+  payment_method: string
+  created_at: string
+  employee?: { name: string } | null
+  items?: Array<{
+    product_name: string
+    quantity: number
+    subtotal: number
+  }>
 }
 
 interface SalesHistoryProps {
-  sales?: Sale[]
   isLoading?: boolean
+  kioskoId?: string
 }
 
-const defaultSales: Sale[] = [
-  { id: "1", product: "Tesla", customer: "Juan Pérez", units: 12, amount: 18450, date: "26 Sep" },
-  { id: "2", product: "iPhone 15 Pro", customer: "Marta Gómez", units: 34, amount: 46582, date: "25 Sep" },
-  { id: "3", product: "PlayStation 5", customer: "Carlos Vázquez", units: 16, amount: 8560, date: "25 Sep" },
-  { id: "4", product: "Nike Air Max", customer: "Laura Rivas", units: 21, amount: 5460, date: "24 Sep" },
-]
+export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: SalesHistoryProps) {
+  const [sales, setSales] = useState<SaleRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<"all" | "day" | "week">("week")
+  
+  const supabase = createClient()
 
-export function SalesHistory({ sales = defaultSales, isLoading = false }: SalesHistoryProps) {
+  useEffect(() => {
+    loadSales()
+  }, [filter])
+
+  const loadSales = async () => {
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get user's kioscos
+      let kioskoIds: string[] = []
+      if (kioskoId) {
+        kioskoIds = [kioskoId]
+      } else {
+        const { data: kioscos } = await supabase
+          .from("kioscos")
+          .select("id")
+          .eq("owner_id", user.id)
+        
+        if (kioscos && kioscos.length > 0) {
+          kioskoIds = kioscos.map(k => k.id)
+        }
+      }
+
+      if (kioskoIds.length === 0) {
+        setLoading(false)
+        return
+      }
+
+      // Calculate date range
+      const now = new Date()
+      let startDate: Date
+      if (filter === "day") {
+        startDate = new Date(now.setHours(0, 0, 0, 0))
+      } else if (filter === "week") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      } else {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      }
+
+      const { data: salesData, error } = await supabase
+        .from("sales")
+        .select(`
+          id,
+          sale_number,
+          total_amount,
+          payment_method,
+          created_at,
+          employees (name),
+          sale_items (
+            quantity,
+            subtotal,
+            products (name)
+          )
+        `)
+        .in("kiosko_id", kioskoIds)
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(20)
+
+      if (error) {
+        console.error("Error loading sales:", error)
+        return
+      }
+
+      const mappedSales: SaleRecord[] = (salesData || []).map((s: any) => ({
+        id: s.id,
+        sale_number: s.sale_number,
+        total_amount: Number(s.total_amount),
+        payment_method: s.payment_method || "efectivo",
+        created_at: s.created_at,
+        employee: s.employees,
+        items: s.sale_items?.map((item: any) => ({
+          product_name: item.products?.name || "Producto",
+          quantity: item.quantity,
+          subtotal: Number(item.subtotal)
+        })) || []
+      }))
+
+      setSales(mappedSales)
+    } catch (err) {
+      console.error("Error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isLoading = externalLoading || loading
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+  }
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+  }
+
+  const getPaymentMethodLabel = (method: string) => {
+    const methods: Record<string, string> = {
+      efectivo: "Efectivo",
+      cash: "Efectivo",
+      tarjeta: "Tarjeta",
+      card: "Tarjeta",
+      qr: "QR",
+      transfer: "Transferencia"
+    }
+    return methods[method?.toLowerCase()] || method || "Efectivo"
+  }
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -46,68 +162,89 @@ export function SalesHistory({ sales = defaultSales, isLoading = false }: SalesH
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-white">Historial de Ventas</h3>
         <div className="flex gap-2">
-          <button className="px-3 py-1.5 text-xs bg-white/5 text-gray-400 rounded-lg hover:bg-white/10">
+          <button 
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1.5 text-xs rounded-lg ${filter === "all" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+          >
             Todo
           </button>
-          <button className="px-3 py-1.5 text-xs bg-white/5 text-gray-400 rounded-lg hover:bg-white/10">
+          <button 
+            onClick={() => setFilter("day")}
+            className={`px-3 py-1.5 text-xs rounded-lg ${filter === "day" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+          >
             Diaria
           </button>
-          <button className="px-3 py-1.5 text-xs bg-cyan-500/20 text-cyan-400 rounded-lg">
+          <button 
+            onClick={() => setFilter("week")}
+            className={`px-3 py-1.5 text-xs rounded-lg ${filter === "week" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+          >
             Semanal
-          </button>
-          <button className="px-3 py-1.5 text-xs text-cyan-400 flex items-center gap-1">
-            Filtrar
-            <ChevronDown className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-cyan-500/10">
-            <th className="text-left text-xs text-gray-500 pb-3 font-medium">Producto</th>
-            <th className="text-left text-xs text-gray-500 pb-3 font-medium">Cliente</th>
-            <th className="text-right text-xs text-gray-500 pb-3 font-medium">Unidades</th>
-            <th className="text-right text-xs text-gray-500 pb-3 font-medium">Facturado</th>
-            <th className="text-right text-xs text-gray-500 pb-3 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {sales.map((sale, index) => (
-            <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-white/5">
-              <td className="py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">{sale.product}</p>
-                    <p className="text-xs text-gray-500">Producto #{sale.id}</p>
-                  </div>
-                </div>
-              </td>
-              <td className="py-4">
-                <div>
-                  <p className="text-sm text-white">{sale.customer || "Cliente anónimo"}</p>
-                  <p className="text-xs text-gray-500">{sale.customer ? `${sale.customer.toLowerCase().replace(' ', '')}@email.com` : ""}</p>
-                </div>
-              </td>
-              <td className="py-4 text-right">
-                <span className="text-sm text-white">{sale.units}</span>
-              </td>
-              <td className="py-4 text-right">
-                <span className="text-sm font-medium text-white">${sale.amount.toLocaleString('es-AR')}</span>
-              </td>
-              <td className="py-4 text-right">
-                <button className="text-xs text-gray-400 flex items-center gap-1 ml-auto">
-                  {sale.date}
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-              </td>
+      {sales.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <Receipt className="w-12 h-12 mb-3 opacity-50" />
+          <p className="text-sm">No hay ventas en este período</p>
+        </div>
+      ) : (
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-cyan-500/10">
+              <th className="text-left text-xs text-gray-500 pb-3 font-medium">Venta</th>
+              <th className="text-left text-xs text-gray-500 pb-3 font-medium">Productos</th>
+              <th className="text-right text-xs text-gray-500 pb-3 font-medium">Método</th>
+              <th className="text-right text-xs text-gray-500 pb-3 font-medium">Total</th>
+              <th className="text-right text-xs text-gray-500 pb-3 font-medium">Fecha</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sales.map((sale) => {
+              const totalUnits = sale.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+              const mainProduct = sale.items?.[0]?.product_name || "Venta"
+              
+              return (
+                <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-white/5">
+                  <td className="py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">#{sale.sale_number}</p>
+                        <p className="text-xs text-gray-500">{sale.employee?.name || "Sistema"}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4">
+                    <div>
+                      <p className="text-sm text-white">{mainProduct}</p>
+                      <p className="text-xs text-gray-500">
+                        {totalUnits} unid. {sale.items && sale.items.length > 1 ? `(${sale.items.length} productos)` : ""}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="py-4 text-right">
+                    <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">
+                      {getPaymentMethodLabel(sale.payment_method)}
+                    </span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <span className="text-sm font-medium text-white">${sale.total_amount.toLocaleString('es-AR')}</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">{formatDate(sale.created_at)}</p>
+                      <p className="text-xs text-gray-500">{formatTime(sale.created_at)}</p>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }

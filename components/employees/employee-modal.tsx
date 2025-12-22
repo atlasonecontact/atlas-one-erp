@@ -625,7 +625,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {/* Tab: Info */}
           {activeTab === "info" && (
             <div className="space-y-4 py-4">
-              {/* Basic Info */}
+              {/* Basic Info - Name, Document, Position */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="name" className="text-gray-300">
@@ -643,6 +643,19 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="document_id" className="text-gray-300">
+                    DNI / Documento
+                  </Label>
+                  <Input
+                    id="document_id"
+                    value={formData.document_id}
+                    onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
+                    placeholder="12.345.678"
+                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="position" className="text-gray-300">
                     Puesto
                   </Label>
@@ -654,7 +667,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     className="bg-[#0d1424] border-cyan-500/20 text-white"
                   />
                 </div>
-
               </div>
 
               {/* Contact Info */}
@@ -664,6 +676,23 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   Contacto
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-gray-300">
+                      Teléfono
+                    </Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onBlur={() => {
+                        setFieldTouched("phone")
+                        validateField("phone", formData.phone)
+                      }}
+                      placeholder="+54 11 1234-5678"
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? "border-red-500" : ""}`}
+                    />
+                    <FieldError error={errors.phone} />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">
                       Email <span className="text-gray-500 text-xs">(opcional)</span>
@@ -685,36 +714,63 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-gray-300">
-                      Teléfono
-                    </Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      onBlur={() => {
-                        setFieldTouched("phone")
-                        validateField("phone", formData.phone)
-                      }}
-                      placeholder="+54 11 1234-5678"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? "border-red-500" : ""}`}
-                    />
-                    <FieldError error={errors.phone} />
-                  </div>
                 </div>
-                <div className="mt-3">
+              </div>
+
+              {/* Dates & Salary */}
+              <div className="pt-2">
+                <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Fechas y Salario
+                </h4>
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="document_id" className="text-gray-300">
-                      DNI / Documento
+                    <Label htmlFor="hire_date" className="text-gray-300">
+                      Ingreso
                     </Label>
                     <Input
-                      id="document_id"
-                      value={formData.document_id}
-                      onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
-                      placeholder="12.345.678"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white w-1/2"
+                      id="hire_date"
+                      type="date"
+                      value={formData.hire_date}
+                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+                      className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="birth_date" className="text-gray-300">
+                      Fecha Nac.
+                    </Label>
+                    <Input
+                      id="birth_date"
+                      type="date"
+                      value={formData.birth_date}
+                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="salary" className="text-gray-300">
+                      Salario $
+                    </Label>
+                    <Input
+                      id="salary"
+                      value={formData.salary}
+                      inputMode="decimal"
+                      onChange={(e) => {
+                        const next = normalizeMoneyInput(e.target.value)
+                        if (next === MAX_MONEY.toFixed(2) && e.target.value !== next) {
+                          toast.warning("Monto muy grande", `Máximo permitido: ${MAX_MONEY.toLocaleString("es-AR")}`)
+                        }
+                        setFormData({ ...formData, salary: next })
+                      }}
+                      onBlur={() => {
+                        setFieldTouched("salary")
+                        validateField("salary", formData.salary)
+                      }}
+                      placeholder="50000"
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? "border-red-500" : ""}`}
+                    />
+                    <FieldError error={errors.salary} />
                   </div>
                 </div>
               </div>
@@ -761,64 +817,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       placeholder="+54 11 9876-5432"
                       className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* Dates & Salary */}
-              <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Fechas y Salario
-                </h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="birth_date" className="text-gray-300">
-                      Fecha Nac.
-                    </Label>
-                    <Input
-                      id="birth_date"
-                      type="date"
-                      value={formData.birth_date}
-                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="hire_date" className="text-gray-300">
-                      Ingreso
-                    </Label>
-                    <Input
-                      id="hire_date"
-                      type="date"
-                      value={formData.hire_date}
-                      onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="salary" className="text-gray-300">
-                      Salario $
-                    </Label>
-                    <Input
-                      id="salary"
-                      value={formData.salary}
-                      inputMode="decimal"
-                      onChange={(e) => {
-                        const next = normalizeMoneyInput(e.target.value)
-                        if (next === MAX_MONEY.toFixed(2) && e.target.value !== next) {
-                          toast.warning("Monto muy grande", `Máximo permitido: ${MAX_MONEY.toLocaleString("es-AR")}`)
-                        }
-                        setFormData({ ...formData, salary: next })
-                      }}
-                      onBlur={() => {
-                        setFieldTouched("salary")
-                        validateField("salary", formData.salary)
-                      }}
-                      placeholder="50000"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? "border-red-500" : ""}`}
-                    />
-                    <FieldError error={errors.salary} />
                   </div>
                 </div>
               </div>
