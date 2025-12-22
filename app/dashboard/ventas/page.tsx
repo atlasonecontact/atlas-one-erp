@@ -58,7 +58,6 @@ export default function VentasPage() {
       .maybeSingle()
 
     if (employeeData) {
-      // User is an employee
       console.log("[v0] User is employee:", employeeData.name)
       setUserRole("employee")
       setEmployeeId(employeeData.id)
@@ -86,12 +85,10 @@ export default function VentasPage() {
       .from("products")
       .select("*")
       .eq("kiosko_id", kiosko_id)
-      .eq("is_active", true)
       .gt("stock_quantity", 0)
       .order("name")
 
     if (productsData) {
-      // Map database fields to component fields
       const mappedProducts = productsData.map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -157,7 +154,7 @@ export default function VentasPage() {
           sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
-          status: "completed",
+          payment_status: "completed",
         })
         .select()
         .single()
@@ -169,7 +166,6 @@ export default function VentasPage() {
 
       console.log("[v0] Sale created:", saleData.id)
 
-      // Insert sale items with correct field names
       const saleItems = cart.map((item) => ({
         sale_id: saleData.id,
         product_id: item.id,
@@ -187,7 +183,6 @@ export default function VentasPage() {
 
       console.log("[v0] Sale items created")
 
-      // Update product stock using correct field name
       for (const item of cart) {
         const newStock = item.stock - item.quantity
         await supabase
@@ -203,7 +198,6 @@ export default function VentasPage() {
       setShowReceipt(true)
       setCart([])
 
-      // Reload products to update stock
       loadProducts(kioskoId)
     } catch (error) {
       console.error("[v0] Error saving sale:", error)

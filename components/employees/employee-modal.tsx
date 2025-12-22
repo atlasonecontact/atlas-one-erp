@@ -116,31 +116,34 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         onSuccess()
         onClose()
       } else {
-        // Creating new employee
-        const username = formData.email
-          ? formData.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "")
-          : formData.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15)
-
-        let userId: string | undefined = undefined
-
-        // Only create auth user if email is provided
-        if (formData.email) {
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: formData.email,
-            password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
-            options: {
-              data: {
-                full_name: formData.name,
-                role: "employee",
-              },
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          })
-
-          if (authError) throw authError
-          userId = authData.user?.id
+        if (!formData.email) {
+          throw new Error("El email es obligatorio para crear un empleado")
         }
 
+        // Create auth user FIRST
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
+          options: {
+            data: {
+              full_name: formData.name,
+              role: "employee",
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        })
+
+        if (authError) throw authError
+        if (!authData.user) throw new Error("No se pudo crear el usuario")
+
+        const userId = authData.user.id
+
+        const username = formData.email
+          .split("@")[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "")
+
+        // Now create employee with valid user_id
         const { error: insertError } = await supabase.from("employees").insert({
           kiosko_id: kioskoId,
           user_id: userId,
@@ -296,7 +299,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {!employee && (
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
-                Email (opcional - para acceso al sistema)
+                Email <span className="text-red-400">*</span>
               </Label>
               <Input
                 id="email"
@@ -305,7 +308,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="empleado@ejemplo.com"
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
+                required
               />
+              <p className="text-xs text-gray-400">El email es obligatorio para crear la cuenta del empleado</p>
             </div>
           )}
 

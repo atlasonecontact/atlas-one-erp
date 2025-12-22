@@ -51,15 +51,29 @@ export function useDashboardData(period: string) {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id)
+      let kioskoIds: string[] = []
 
-      if (!kioscos || kioscos.length === 0) {
+      const { data: ownedKioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id)
+      if (ownedKioscos && ownedKioscos.length > 0) {
+        kioskoIds = ownedKioscos.map((k) => k.id)
+      } else {
+        const { data: employeeData } = await supabase
+          .from("employees")
+          .select("kiosko_id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle()
+
+        if (employeeData) {
+          kioskoIds = [employeeData.kiosko_id]
+        }
+      }
+
+      if (kioskoIds.length === 0) {
         console.log("[v0] No kioscos found for user")
         setData(defaultStats)
         return
       }
-
-      const kioskoIds = kioscos.map((k) => k.id)
 
       const today = new Date()
       const todayStart = new Date(today.setHours(0, 0, 0, 0)).toISOString()
@@ -73,8 +87,9 @@ export function useDashboardData(period: string) {
 
       const { data: todaySalesData } = await supabase
         .from("sales")
-        .select("total_amount")
+        .select("total_amount, payment_status")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", todayStart)
 
       const todaySales = todaySalesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
@@ -83,6 +98,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", yesterdayStart)
         .lt("created_at", todayStart)
 
@@ -93,6 +109,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", monthStart)
 
       const monthSales = monthSalesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
@@ -101,6 +118,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", lastMonthStart)
         .lt("created_at", lastMonthEnd)
 
@@ -111,6 +129,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", periodStart)
 
       const avgTicket =
@@ -118,21 +137,41 @@ export function useDashboardData(period: string) {
           ? allSalesData.reduce((sum, s) => sum + Number(s.total_amount), 0) / allSalesData.length
           : 0
 
+      const { data: saleItemsData } = await supabase
+        .from("sale_items")
+        .select(`
+          product_id,
+          quantity,
+          products!inner(name)
+        `)
+        .gte("created_at", periodStart)
+
+      const productSales: Record<string, { name: string; quantity: number }> = {}
+      saleItemsData?.forEach((item: any) => {
+        const productName = item.products?.name || "Desconocido"
+        if (!productSales[item.product_id]) {
+          productSales[item.product_id] = { name: productName, quantity: 0 }
+        }
+        productSales[item.product_id].quantity += item.quantity
+      })
+
+      const topProductData = Object.values(productSales).sort((a, b) => b.quantity - a.quantity)[0]
+
       const { data: lowStock } = await supabase
         .from("products")
         .select("id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
-        .eq("is_active", true)
         .lt("stock_quantity", 15)
         .order("stock_quantity", { ascending: true })
         .limit(5)
 
-      const mappedLowStock = lowStock?.map((p) => ({
-        id: p.id,
-        name: p.name,
-        stock: p.stock_quantity,
-        min_stock: p.min_stock_level || 10,
-      })) || []
+      const mappedLowStock =
+        lowStock?.map((p) => ({
+          id: p.id,
+          name: p.name,
+          stock: p.stock_quantity,
+          min_stock: p.min_stock_level || 10,
+        })) || []
 
       const { data: recentSales } = await supabase
         .from("sales")
@@ -150,28 +189,33 @@ export function useDashboardData(period: string) {
 
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, price, cost")
+        .select("id, name, price, cost, stock_quantity")
         .in("kiosko_id", kioskoIds)
 
+      let totalRevenue = 0
       let totalCost = 0
-      let totalPrice = 0
+
       products?.forEach((p) => {
-        totalCost += Number(p.cost)
-        totalPrice += Number(p.price)
+        const revenue = Number(p.price) * p.stock_quantity
+        const cost = Number(p.cost) * p.stock_quantity
+        totalRevenue += revenue
+        totalCost += cost
       })
-      const margin = totalPrice > 0 ? Math.round(((totalPrice - totalCost) / totalPrice) * 100) : 0
+
+      const margin = totalRevenue > 0 ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100) : 0
 
       const salesTrend: Array<{ date: string; value: number }> = []
       const { data: trendData } = await supabase
         .from("sales")
         .select("total_amount, created_at")
         .in("kiosko_id", kioskoIds)
+        .eq("payment_status", "completed")
         .gte("created_at", periodStart)
         .order("created_at", { ascending: true })
 
       const salesByDay: Record<string, number> = {}
       trendData?.forEach((sale) => {
-        const day = new Date(sale.created_at).toISOString().split("T")[0]
+        const day = new Date(sale.created_at).toLocaleDateString("es-AR")
         salesByDay[day] = (salesByDay[day] || 0) + Number(sale.total_amount)
       })
 
@@ -179,12 +223,14 @@ export function useDashboardData(period: string) {
         salesTrend.push({ date, value })
       })
 
-      const topProducts =
-        products?.slice(0, 5).map((p, i) => ({
-          name: p.name,
-          sales: Math.floor(Math.random() * 100) + 20,
+      const topProducts = Object.entries(productSales)
+        .sort(([, a], [, b]) => b.quantity - a.quantity)
+        .slice(0, 5)
+        .map(([, product], i) => ({
+          name: product.name,
+          sales: product.quantity,
           percentage: 100 - i * 15,
-        })) || []
+        }))
 
       setData({
         todaySales,
@@ -192,9 +238,9 @@ export function useDashboardData(period: string) {
         monthSales,
         monthSalesChange: Math.round(monthSalesChange),
         avgTicket: Math.round(avgTicket),
-        avgTicketChange: 9.4,
-        topProduct: products?.[0]?.name || "-",
-        topProductCount: products?.length || 0,
+        avgTicketChange: 9.4, // This would need historical comparison
+        topProduct: topProductData?.name || "-",
+        topProductCount: Object.keys(productSales).length,
         salesTrend,
         topProducts,
         lowStockProducts: mappedLowStock,
