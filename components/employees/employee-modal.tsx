@@ -78,11 +78,24 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const [shifts, setShifts] = useState<Shift[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState<{
     username: string
+    email: string
+    password: string
     pin: string
   } | null>(null)
 
+  // Generate random password
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    let password = ''
+    for (let i = 0; i < 10; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return password
+  }
+
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     pin: "",
     phone: "",
     document_id: "",
@@ -118,6 +131,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     if (employee) {
       setFormData({
         name: employee.name || "",
+        email: employee.email || "",
         pin: employee.pin || "",
         phone: employee.phone || "",
         document_id: employee.document_id || "",
@@ -151,6 +165,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const resetForm = () => {
     setFormData({
       name: "",
+      email: "",
       pin: "",
       phone: "",
       document_id: "",
@@ -242,14 +257,55 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         
         const uniqueUsername = `${username}_${Date.now().toString(36)}`
         const pin = formData.pin || Math.floor(1000 + Math.random() * 9000).toString()
+        const password = generatePassword()
+        
+        // Generate email for the employee (use provided or generate one)
+        const employeeEmail = formData.email || `${uniqueUsername}@empleado.atlasone.app`
+
+        // Try to create auth user for the employee using signUp
+        // Note: This may not work if email confirmation is required
+        let authUserId: string | null = null
+        
+        try {
+          // First, try using signUp (works from client)
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: employeeEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: formData.name,
+                role: 'employee'
+              }
+            }
+          })
+
+          if (!signUpError && signUpData?.user) {
+            authUserId = signUpData.user.id
+          } else {
+            console.log('SignUp info:', signUpError?.message || 'User may need email confirmation')
+          }
+        } catch (authError) {
+          console.log('Auth creation skipped:', authError)
+          // Continue without auth user - employee will use PIN and saved credentials
+        }
+
+        // Save credentials to database for owner reference
+        // This allows the owner to see the employee's login credentials
+        await supabase.rpc('register_employee_user', {
+          p_employee_id: null, // Will be set after insert
+          p_email: employeeEmail,
+          p_password: password
+        }).catch(() => {}) // Ignore if RPC doesn't exist yet
 
         const { data: newEmployee, error: insertError } = await supabase
           .from("employees")
           .insert({
             kiosko_id: kioskoId,
-            user_id: null,
+            user_id: authUserId,
             name: formData.name,
             username: uniqueUsername,
+            email: employeeEmail,
+            temp_password: password, // Store temp password for owner reference
             pin: pin,
             phone: formData.phone || null,
             document_id: formData.document_id || null,
@@ -276,7 +332,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           await saveShifts(newEmployee.id)
         }
 
-        setGeneratedCredentials({ username: uniqueUsername, pin })
+        setGeneratedCredentials({ 
+          username: uniqueUsername, 
+          email: employeeEmail,
+          password: password,
+          pin 
+        })
         setShowCredentials(true)
         onSuccess()
       }
@@ -336,7 +397,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const copyCredentials = async () => {
     if (!generatedCredentials) return
-    const text = `Empleado: ${formData.name}\nUsuario: ${generatedCredentials.username}\nPIN: ${generatedCredentials.pin}`
+    const text = `Empleado: ${formData.name}\nEmail: ${generatedCredentials.email}\nContraseña: ${generatedCredentials.password}\nUsuario: ${generatedCredentials.username}\nPIN: ${generatedCredentials.pin}`
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -346,7 +407,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   if (showCredentials && generatedCredentials) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] bg-[#0a0f1a] border-cyan-500/20">
+        <DialogContent className="sm:max-w-[550px] bg-[#0a0f1a] border-cyan-500/20">
           <DialogHeader>
             <DialogTitle className="text-white">Empleado Creado Exitosamente</DialogTitle>
           </DialogHeader>
@@ -374,6 +435,29 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 />
               </div>
 
+              {/* Login credentials */}
+              <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 space-y-3">
+                <p className="text-sm font-medium text-cyan-400">Credenciales de Acceso al Sistema</p>
+                
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Email</Label>
+                  <Input 
+                    value={generatedCredentials.email} 
+                    readOnly 
+                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm" 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Contraseña</Label>
+                  <Input 
+                    value={generatedCredentials.password} 
+                    readOnly 
+                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-lg tracking-wider" 
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-gray-300">Usuario</Label>
@@ -384,7 +468,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-300">PIN de Acceso</Label>
+                  <Label className="text-gray-300">PIN de Caja</Label>
                   <div className="relative">
                     <Input 
                       value={generatedCredentials.pin} 
@@ -399,7 +483,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
               <div className="flex gap-2 text-yellow-400 text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <p>Guarda el PIN. El empleado lo usará para registrar su entrada/salida y realizar operaciones.</p>
+                <div>
+                  <p className="font-medium">¡IMPORTANTE! Guarda estas credenciales.</p>
+                  <p className="text-yellow-300/80 mt-1">El empleado usará el email y contraseña para iniciar sesión, y el PIN para operaciones de caja.</p>
+                </div>
               </div>
             </div>
 
@@ -554,6 +641,20 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-300">
+                      Email <span className="text-gray-500 text-xs">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="empleado@email.com"
+                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    />
+                    <p className="text-xs text-gray-500">Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.</p>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-300">Teléfono</Label>
                     <Input
                       id="phone"
@@ -563,6 +664,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
                   </div>
+                </div>
+                <div className="mt-3">
                   <div className="space-y-2">
                     <Label htmlFor="document_id" className="text-gray-300">DNI / Documento</Label>
                     <Input
@@ -570,7 +673,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.document_id}
                       onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
                       placeholder="12.345.678"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-white w-1/2"
                     />
                   </div>
                 </div>

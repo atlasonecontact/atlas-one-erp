@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { StockHeatmap } from "@/components/stock/stock-heatmap"
-import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { StockMovementModal } from "@/components/stock/stock-movement-modal"
+import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
@@ -38,6 +39,7 @@ export default function StockPage() {
   const [categoryStats, setCategoryStats] = useState<CategoryStock[]>([])
   const [loading, setLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [showMovementModal, setShowMovementModal] = useState(false)
 
   const supabase = createClient()
 
@@ -169,10 +171,19 @@ export default function StockPage() {
           <h1 className="text-2xl font-bold text-white">Control de Stock</h1>
           <p className="text-gray-400 text-sm">Monitorea y gestiona tu inventario</p>
         </div>
-        <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
-          <Download className="w-4 h-4" />
-          Exportar
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+            <Download className="w-4 h-4" />
+            Exportar
+          </Button>
+          <Button 
+            onClick={() => setShowMovementModal(true)}
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Movimiento de Stock
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -368,6 +379,19 @@ export default function StockPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Stock Movement Modal */}
+      {kioskoId && (
+        <StockMovementModal
+          open={showMovementModal}
+          onClose={() => setShowMovementModal(false)}
+          kioskoId={kioskoId}
+          onSuccess={() => {
+            loadProducts(kioskoId)
+            loadMovements(kioskoId)
+          }}
+        />
+      )}
     </div>
   )
 }

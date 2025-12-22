@@ -349,34 +349,48 @@ export default function ConfiguracionPage() {
 
             {whatsappConfig.enabled && (
               <div className="space-y-4 pt-4 border-t border-cyan-500/10">
+                {/* Step by step guide */}
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <p className="text-sm font-medium text-green-400 mb-3">📱 Cómo configurar WhatsApp (2 pasos):</p>
+                  <ol className="text-sm text-green-200/90 space-y-2 list-decimal list-inside">
+                    <li>
+                      <span className="font-medium">Ingresá tu número de WhatsApp</span> con el código de país (+54 para Argentina)
+                    </li>
+                    <li>
+                      <span className="font-medium">Tocá "Verificar"</span> y te llegará un código para confirmar
+                    </li>
+                  </ol>
+                </div>
+
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Número de WhatsApp (con código de país)</Label>
+                  <Label className="text-gray-300">Tu número de WhatsApp</Label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="+54 9 11 1234-5678"
+                      placeholder="Ej: +5491112345678"
                       value={whatsappConfig.phoneNumber}
                       onChange={(e) => setWhatsappConfig({ ...whatsappConfig, phoneNumber: e.target.value })}
-                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
                     />
                     <Button
                       onClick={handleVerifyPhone}
                       disabled={isVerifying || whatsappConfig.verified}
-                      className="bg-cyan-500 hover:bg-cyan-400 text-black"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-6"
                     >
-                      {isVerifying ? "Verificando..." : whatsappConfig.verified ? "Verificado" : "Verificar"}
+                      {isVerifying ? "Verificando..." : whatsappConfig.verified ? "✓ Verificado" : "Verificar"}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">Ejemplo: +5491112345678 (sin espacios ni guiones)</p>
+                  <p className="text-xs text-gray-500">
+                    💡 Formato correcto: <span className="font-mono">+5491112345678</span> (sin espacios ni guiones)
+                  </p>
                 </div>
 
                 {!whatsappConfig.verified && (
                   <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-200">
-                      <p className="font-semibold mb-1">Verificación requerida</p>
+                      <p className="font-semibold mb-1">⚠️ Verificación requerida</p>
                       <p className="text-amber-300/80">
-                        Debes verificar tu número de teléfono antes de recibir notificaciones. Esto previene el uso no
-                        autorizado.
+                        Necesitás verificar tu número para empezar a recibir notificaciones. Es un paso de seguridad.
                       </p>
                     </div>
                   </div>
@@ -384,8 +398,8 @@ export default function ConfiguracionPage() {
 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
                   <div>
-                    <p className="text-white font-medium">Notificar cada venta</p>
-                    <p className="text-sm text-gray-500">Recibe un mensaje por cada transacción</p>
+                    <p className="text-white font-medium">🔔 Notificar cada venta</p>
+                    <p className="text-sm text-gray-500">Recibís un mensaje cada vez que se hace una venta</p>
                   </div>
                   <Switch
                     checked={whatsappConfig.notifyOnSale}
@@ -423,16 +437,32 @@ export default function ConfiguracionPage() {
 
             {telegramConfig.enabled && (
               <div className="space-y-4 pt-4 border-t border-cyan-500/10">
+                {/* Step by step guide */}
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-sm font-medium text-blue-400 mb-3">📱 Cómo configurar Telegram (3 pasos simples):</p>
+                  <ol className="text-sm text-blue-200/90 space-y-3 list-decimal list-inside">
+                    <li>
+                      <span className="font-medium">Abrí Telegram</span> y buscá nuestro bot: <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">@AtlasOneBot</span>
+                    </li>
+                    <li>
+                      <span className="font-medium">Mandá el mensaje</span> <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">/start</span> al bot
+                    </li>
+                    <li>
+                      <span className="font-medium">El bot te va a responder con tu Chat ID</span> - Copialo y pegalo abajo
+                    </li>
+                  </ol>
+                </div>
+
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Chat ID</Label>
+                  <Label className="text-gray-300">Tu Chat ID de Telegram</Label>
                   <Input
-                    placeholder="123456789"
+                    placeholder="Ej: 123456789"
                     value={telegramConfig.chatId}
                     onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
                   />
                   <p className="text-xs text-gray-500">
-                    Inicia una conversación con tu bot y usa @userinfobot para obtener tu Chat ID
+                    Es un número que identifica tu chat. Lo obtenés del bot como se indica arriba.
                   </p>
                 </div>
 
@@ -440,10 +470,9 @@ export default function ConfiguracionPage() {
                   <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-200">
-                      <p className="font-semibold mb-1">Verificación pendiente</p>
+                      <p className="font-semibold mb-1">⚠️ Verificación pendiente</p>
                       <p className="text-amber-300/80">
-                        Debes verificar tu teléfono en la configuración de WhatsApp primero. Ambos servicios comparten
-                        la verificación.
+                        Verificá tu teléfono en WhatsApp (arriba) para activar las notificaciones de Telegram también.
                       </p>
                     </div>
                   </div>
@@ -451,8 +480,8 @@ export default function ConfiguracionPage() {
 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
                   <div>
-                    <p className="text-white font-medium">Notificar cada venta</p>
-                    <p className="text-sm text-gray-500">Recibe un mensaje por cada transacción</p>
+                    <p className="text-white font-medium">🔔 Notificar cada venta</p>
+                    <p className="text-sm text-gray-500">Recibís un mensaje cada vez que se hace una venta</p>
                   </div>
                   <Switch
                     checked={telegramConfig.notifyOnSale}
@@ -461,16 +490,28 @@ export default function ConfiguracionPage() {
                   />
                 </div>
 
-                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <p className="text-sm text-amber-200 mb-3">
-                    <strong>Comandos disponibles:</strong>
+                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <p className="text-sm font-medium text-cyan-400 mb-3">
+                    🤖 ¿Qué podés hacer desde Telegram?
                   </p>
-                  <ul className="text-sm text-amber-200/80 space-y-1 list-disc list-inside">
-                    <li>/ventas - Ver ventas de hoy de este kiosco</li>
-                    <li>/mes - Estadísticas del mes de este kiosco</li>
-                    <li>/stock - Productos con bajo stock de este kiosco</li>
-                    <li>/ayuda - Ver todos los comandos</li>
-                  </ul>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/ventas</span>
+                      <p className="text-gray-400 text-xs mt-1">Ver ventas de hoy</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/mes</span>
+                      <p className="text-gray-400 text-xs mt-1">Resumen del mes</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/stock</span>
+                      <p className="text-gray-400 text-xs mt-1">Productos con poco stock</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/ayuda</span>
+                      <p className="text-gray-400 text-xs mt-1">Ver todos los comandos</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

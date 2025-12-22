@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { ProductModal } from "@/components/products/product-modal"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
-import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw, Percent, CheckSquare, Square } from "lucide-react"
+import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw, Percent, CheckSquare, Square, ChevronLeft, ChevronRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
@@ -42,6 +42,8 @@ export default function ProductosPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PRODUCTS_PER_PAGE = 20
 
   const supabase = createClient()
 
@@ -119,6 +121,18 @@ export default function ProductosPage() {
     const matchesCategory = selectedCategory === "all" || p.category === selectedCategory
     return matchesSearch && matchesCategory
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE
+  )
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedCategory])
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
@@ -270,29 +284,41 @@ export default function ProductosPage() {
   const handlePriceAdjustment = async (productIds: string[], newPrices: Record<string, number>) => {
     setSyncing(true)
     
-    // Update prices in batches
-    const updates = productIds.map(id => ({
-      id,
-      price: newPrices[id],
-      updated_at: new Date().toISOString()
-    }))
-    
-    for (const update of updates) {
-      await supabase
-        .from("products")
-        .update({ price: update.price, updated_at: update.updated_at })
-        .eq("id", update.id)
+    try {
+      // Update prices in batches of 50 for better performance
+      const BATCH_SIZE = 50
+      
+      for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
+        const batchIds = productIds.slice(i, i + BATCH_SIZE)
+        
+        // Use Promise.all for parallel updates within each batch
+        await Promise.all(
+          batchIds.map(id => 
+            supabase
+              .from("products")
+              .update({ 
+                price: newPrices[id], 
+                updated_at: new Date().toISOString() 
+              })
+              .eq("id", id)
+          )
+        )
+      }
+      
+      // Update local state
+      setProducts(prev => prev.map(p => 
+        productIds.includes(p.id) 
+          ? { ...p, price: newPrices[p.id] } 
+          : p
+      ))
+      
+      setSelectedProducts([])
+    } catch (error) {
+      console.error('Error updating prices:', error)
+      alert('Error al actualizar precios')
+    } finally {
+      setSyncing(false)
     }
-    
-    // Update local state
-    setProducts(prev => prev.map(p => 
-      productIds.includes(p.id) 
-        ? { ...p, price: newPrices[p.id] } 
-        : p
-    ))
-    
-    setSelectedProducts([])
-    setSyncing(false)
   }
 
   // Toggle product selection
@@ -444,7 +470,7 @@ export default function ProductosPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => (
+                paginatedProducts.map((product) => (
                   <tr key={product.id} className="border-b border-primary/5 hover:bg-muted/50 transition-colors">
                     <td className="p-4">
                       <button 
@@ -520,6 +546,60 @@ export default function ProductosPage() {
               )}
             </tbody>
           </table>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t border-primary/10">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {((currentPage - 1) * PRODUCTS_PER_PAGE) + 1} - {Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length} productos
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="border-primary/20"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : 'border-primary/20'}`}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="border-primary/20"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

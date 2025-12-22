@@ -138,16 +138,32 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
     return semicolons > commas ? ';' : ','
   }, [])
 
-  // Parse number handling both . and , as decimal separator
+  // Parse number handling Argentine format ($1.234,56) and other formats
   const parseNumber = useCallback((value: string): number => {
     if (!value || value.trim() === '') return 0
-    const cleaned = value.trim()
-      .replace(/\s/g, '')
-      .replace(/,(?=\d{3})/g, '')
-      .replace(/\.(?=\d{3})/g, '')
-      .replace(',', '.')
+    
+    let cleaned = value.trim()
+      .replace(/[$€\s]/g, '')  // Remove currency symbols and spaces
+    
+    // Detect Argentine format: dots as thousands, comma as decimal
+    // Examples: 1.234,56 or 1.234.567,89
+    const argentinaFormat = /^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(cleaned)
+    
+    if (argentinaFormat) {
+      // Argentine format: 1.234,56 → 1234.56
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    } else {
+      // Try US format or just comma as thousands
+      // 1,234.56 → 1234.56
+      cleaned = cleaned.replace(/,(?=\d{3})/g, '')
+      // If only comma remains and looks like decimal
+      if (cleaned.includes(',') && !cleaned.includes('.')) {
+        cleaned = cleaned.replace(',', '.')
+      }
+    }
+    
     const num = parseFloat(cleaned)
-    return isNaN(num) ? 0 : num
+    return isNaN(num) ? 0 : Math.round(num * 100) / 100
   }, [])
 
   // Main CSV parser - handles large files efficiently

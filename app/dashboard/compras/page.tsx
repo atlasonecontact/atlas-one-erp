@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PurchaseModal } from "@/components/purchases/purchase-modal"
+import { PurchaseModalNew } from "@/components/purchases/purchase-modal-new"
 import { Search, Plus, Eye, Check, Clock, Truck, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -270,7 +270,14 @@ export default function ComprasPage() {
         </table>
       </div>
 
-      <PurchaseModal open={showModal} onClose={() => setShowModal(false)} onSave={handleNewPurchase} />
+      {kioskoId && (
+        <PurchaseModalNew 
+          open={showModal} 
+          onClose={() => setShowModal(false)} 
+          kioskoId={kioskoId}
+          onSuccess={() => loadPurchases(kioskoId)}
+        />
+      )}
     </div>
   )
 }
