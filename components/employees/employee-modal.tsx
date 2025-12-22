@@ -116,39 +116,22 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         onSuccess()
         onClose()
       } else {
-        if (!formData.email) {
-          throw new Error("El email es obligatorio para crear un empleado")
-        }
-
-        // Create auth user FIRST
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
-          options: {
-            data: {
-              full_name: formData.name,
-              role: "employee",
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-
-        if (authError) throw authError
-        if (!authData.user) throw new Error("No se pudo crear el usuario")
-
-        const userId = authData.user.id
-
-        const username = formData.email
-          .split("@")[0]
+        // Create employee WITHOUT auth user
+        // Employees don't need auth accounts - they work under the owner's kiosko
+        const username = formData.name
           .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
           .replace(/[^a-z0-9]/g, "")
+          .substring(0, 20)
+        
+        const uniqueUsername = `${username}_${Date.now().toString(36)}`
 
-        // Now create employee with valid user_id
         const { error: insertError } = await supabase.from("employees").insert({
           kiosko_id: kioskoId,
-          user_id: userId,
+          user_id: null, // No auth user - employees are managed by owner
           name: formData.name,
-          username: username,
+          username: uniqueUsername,
           position: formData.position || null,
           custom_role: formData.custom_role || null,
           permissions: formData.permissions,
@@ -157,7 +140,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
         if (insertError) throw insertError
 
-        setGeneratedCredentials({ username })
+        setGeneratedCredentials({ username: uniqueUsername })
         setShowCredentials(true)
         onSuccess()
       }
@@ -170,7 +153,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const copyCredentials = async () => {
     if (!generatedCredentials) return
-    const text = `Usuario: ${generatedCredentials.username}\nEmail: ${formData.email}`
+    const text = `Empleado: ${formData.name}\nUsuario: ${generatedCredentials.username}`
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -185,14 +168,13 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
               <div className="flex gap-3">
-                <AlertCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-cyan-200">
-                  <p className="font-semibold mb-1">Email de verificación enviado</p>
-                  <p className="text-cyan-300/80">
-                    Se envió un correo a <span className="font-medium">{formData.email}</span> para que el empleado
-                    verifique su cuenta y establezca su contraseña.
+                <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-green-200">
+                  <p className="font-semibold mb-1">Empleado registrado</p>
+                  <p className="text-green-300/80">
+                    El empleado <span className="font-medium">{formData.name}</span> fue agregado correctamente al sistema.
                   </p>
                 </div>
               </div>
@@ -200,10 +182,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label className="text-gray-300">Usuario</Label>
+                <Label className="text-gray-300">Nombre</Label>
                 <div className="relative">
                   <Input
-                    value={generatedCredentials.username}
+                    value={formData.name}
                     readOnly
                     className="bg-[#0d1424] border-cyan-500/20 text-white pr-10"
                   />
@@ -211,9 +193,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-300">Email</Label>
+                <Label className="text-gray-300">Usuario interno</Label>
                 <div className="relative">
-                  <Input value={formData.email} readOnly className="bg-[#0d1424] border-cyan-500/20 text-white pr-10" />
+                  <Input value={generatedCredentials.username} readOnly className="bg-[#0d1424] border-cyan-500/20 text-white pr-10" />
                 </div>
               </div>
             </div>
