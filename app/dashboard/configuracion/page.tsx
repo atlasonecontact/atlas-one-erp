@@ -18,18 +18,32 @@ import {
   CheckCircle,
   AlertCircle,
   Trash2,
+  Phone,
+  Store,
+  Loader2,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
+interface KioskoData {
+  id: string
+  name: string
+  location: string
+  city: string
+  phone: string
+  cuit: string
+}
+
 export default function ConfiguracionPage() {
-  const [businessInfo, setBusinessInfo] = useState({
-    name: "Minimarket Express",
-    address: "Av. Corrientes 1234, CABA",
-    phone: "+54 11 1234-5678",
-    email: "contacto@minimarket.com",
+  const [kioskoData, setKioskoData] = useState<KioskoData>({
+    id: "",
+    name: "",
+    location: "",
+    city: "",
+    phone: "",
+    cuit: "",
   })
 
   const [paymentMethods, setPaymentMethods] = useState({
@@ -65,6 +79,7 @@ export default function ConfiguracionPage() {
   const [kioscos, setKioscos] = useState<any[]>([])
   const [notificationConfig, setNotificationConfig] = useState<any | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isTestingTelegram, setIsTestingTelegram] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
 
@@ -73,13 +88,51 @@ export default function ConfiguracionPage() {
 
   useEffect(() => {
     loadKioscos()
+    loadUserProfile()
   }, [])
 
   useEffect(() => {
     if (selectedKiosko) {
       loadKioskoConfig()
+      loadKioskoData()
     }
   }, [selectedKiosko])
+
+  const loadUserProfile = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, role")
+      .eq("id", authUser.id)
+      .single()
+
+    setUser({
+      name: profile?.full_name || authUser.email?.split("@")[0] || "",
+      email: authUser.email || "",
+      role: profile?.role || "owner",
+    })
+  }
+
+  const loadKioskoData = async () => {
+    const { data, error } = await supabase
+      .from("kioscos")
+      .select("id, name, location, city, phone, cuit")
+      .eq("id", selectedKiosko)
+      .single()
+
+    if (!error && data) {
+      setKioskoData({
+        id: data.id,
+        name: data.name || "",
+        location: data.location || "",
+        city: data.city || "",
+        phone: data.phone || "",
+        cuit: data.cuit || "",
+      })
+    }
+  }
 
   const loadKioscos = async () => {
     const {
@@ -159,6 +212,22 @@ export default function ConfiguracionPage() {
     setIsSaving(true)
 
     try {
+      // 1. Save kiosko data
+      const { error: kioskoError } = await supabase
+        .from("kioscos")
+        .update({
+          name: kioskoData.name,
+          location: kioskoData.location,
+          city: kioskoData.city,
+          phone: kioskoData.phone,
+          cuit: kioskoData.cuit,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedKiosko)
+
+      if (kioskoError) throw kioskoError
+
+      // 2. Save notification config
       const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
       if (!config) throw new Error("No se pudo cargar la configuración de notificaciones")
 
@@ -174,6 +243,7 @@ export default function ConfiguracionPage() {
           telegram_enabled: telegramConfig.enabled,
           telegram_chat_id: telegramConfig.chatId || null,
           telegram_verified: telegramChatChanged ? false : !!config.telegram_verified,
+          notify_sales: whatsappConfig.notifyOnSale || telegramConfig.notifyOnSale,
           updated_at: new Date().toISOString(),
         })
         .eq("kiosko_id", selectedKiosko)
@@ -181,8 +251,14 @@ export default function ConfiguracionPage() {
       if (error) throw error
 
       await loadKioskoConfig()
+      await loadKioskoData()
 
-      alert("Configuración guardada correctamente")
+      // Update kioscos list with new name
+      setKioscos(prev => prev.map(k => 
+        k.id === selectedKiosko ? { ...k, name: kioskoData.name } : k
+      ))
+
+      alert("✅ Configuración guardada correctamente")
     } catch (error) {
       console.error("[v0] Error saving config:", error)
       alert("Error al guardar la configuración")
@@ -232,6 +308,50 @@ export default function ConfiguracionPage() {
       alert("Error al verificar el teléfono")
     } finally {
       setIsVerifying(false)
+    }
+  }
+
+  const handleTestTelegram = async () => {
+    if (!telegramConfig.chatId) {
+      alert("Por favor ingresa tu Chat ID de Telegram")
+      return
+    }
+
+    setIsTestingTelegram(true)
+
+    try {
+      const response = await fetch("/api/notifications/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: telegramConfig.chatId,
+          message: `✅ <b>¡Test exitoso!</b>\n\n🎉 Tu configuración de Telegram está funcionando correctamente.\n\n📱 Chat ID: <code>${telegramConfig.chatId}</code>\n🏪 Kiosco: ${kioskoData.name || "Mi Kiosco"}\n\nAhora vas a recibir notificaciones de ventas automáticamente.`,
+        }),
+      })
+
+      if (response.ok) {
+        // Mark as verified on success
+        await supabase
+          .from("notification_configs")
+          .update({
+            telegram_verified: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("kiosko_id", selectedKiosko)
+
+        setTelegramConfig({ ...telegramConfig, verified: true })
+        await loadKioskoConfig()
+        alert("✅ ¡Mensaje enviado! Revisá tu Telegram.")
+      } else {
+        const error = await response.json()
+        console.error("[v0] Telegram test error:", error)
+        alert("❌ Error al enviar el mensaje. Verificá que el Chat ID sea correcto.")
+      }
+    } catch (error) {
+      console.error("[v0] Error testing telegram:", error)
+      alert("Error al enviar el mensaje de prueba")
+    } finally {
+      setIsTestingTelegram(false)
     }
   }
 
@@ -306,8 +426,11 @@ export default function ConfiguracionPage() {
         </div>
       )}
 
-      <Tabs defaultValue="integrations" className="w-full">
+      <Tabs defaultValue="kiosko" className="w-full">
         <TabsList className="bg-[#0a0f1a] border border-cyan-500/10">
+          <TabsTrigger value="kiosko" className="data-[state=active]:bg-cyan-500/20">
+            Mi Kiosco
+          </TabsTrigger>
           <TabsTrigger value="integrations" className="data-[state=active]:bg-cyan-500/20">
             Integraciones
           </TabsTrigger>
@@ -321,6 +444,81 @@ export default function ConfiguracionPage() {
             Zona Peligrosa
           </TabsTrigger>
         </TabsList>
+
+        {/* Mi Kiosco Tab */}
+        <TabsContent value="kiosko" className="space-y-6 mt-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <Store className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Datos del Kiosco</h3>
+                <p className="text-sm text-gray-500">Información de tu local que aparece en tickets y reportes</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Nombre del Kiosco</Label>
+                <Input
+                  value={kioskoData.name}
+                  onChange={(e) => setKioskoData({ ...kioskoData, name: e.target.value })}
+                  placeholder="Mi Kiosco Express"
+                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">CUIT</Label>
+                <Input
+                  value={kioskoData.cuit}
+                  onChange={(e) => setKioskoData({ ...kioskoData, cuit: e.target.value })}
+                  placeholder="20-12345678-9"
+                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-gray-300">Dirección</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <Input
+                    value={kioskoData.location}
+                    onChange={(e) => setKioskoData({ ...kioskoData, location: e.target.value })}
+                    placeholder="Av. Corrientes 1234"
+                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Ciudad</Label>
+                <Input
+                  value={kioskoData.city}
+                  onChange={(e) => setKioskoData({ ...kioskoData, city: e.target.value })}
+                  placeholder="Buenos Aires"
+                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-300">Teléfono del local</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <Input
+                    value={kioskoData.phone}
+                    onChange={(e) => setKioskoData({ ...kioskoData, phone: e.target.value })}
+                    placeholder="+54 11 1234-5678"
+                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <p className="text-sm text-cyan-200">
+                💡 <strong>Tip:</strong> Estos datos aparecen en los tickets de venta y reportes. Mantenerlos actualizados ayuda a identificar tu negocio.
+              </p>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6 mt-6">
           <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
@@ -455,24 +653,52 @@ export default function ConfiguracionPage() {
 
                 <div className="space-y-2">
                   <Label className="text-gray-300">Tu Chat ID de Telegram</Label>
-                  <Input
-                    placeholder="Ej: 123456789"
-                    value={telegramConfig.chatId}
-                    onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
-                    className="bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ej: 123456789"
+                      value={telegramConfig.chatId}
+                      onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
+                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
+                    />
+                    <Button
+                      onClick={handleTestTelegram}
+                      disabled={isTestingTelegram || !telegramConfig.chatId}
+                      className="bg-blue-500 hover:bg-blue-400 text-white font-semibold px-6"
+                    >
+                      {isTestingTelegram ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : telegramConfig.verified ? (
+                        "✓ Probar de nuevo"
+                      ) : (
+                        "🧪 Probar"
+                      )}
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-500">
-                    Es un número que identifica tu chat. Lo obtenés del bot como se indica arriba.
+                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que funcione.
                   </p>
                 </div>
 
-                {!telegramConfig.verified && (
+                {telegramConfig.verified ? (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 flex gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-green-200">
+                      <p className="font-semibold mb-1">✅ Telegram configurado correctamente</p>
+                      <p className="text-green-300/80">
+                        Vas a recibir notificaciones de ventas automáticamente en este chat.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                   <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-200">
                       <p className="font-semibold mb-1">⚠️ Verificación pendiente</p>
                       <p className="text-amber-300/80">
-                        Verificá tu teléfono en WhatsApp (arriba) para activar las notificaciones de Telegram también.
+                        Ingresá tu Chat ID y tocá "Probar" para verificar que todo funcione.
                       </p>
                     </div>
                   </div>
@@ -519,57 +745,6 @@ export default function ConfiguracionPage() {
         </TabsContent>
 
         <TabsContent value="general" className="space-y-6 mt-6">
-          {/* Business Info */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Información del Negocio</h3>
-                <p className="text-sm text-gray-500">Datos generales de tu empresa</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-300">Nombre del negocio</Label>
-                <Input
-                  value={businessInfo.name}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, name: e.target.value })}
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-300">Teléfono</Label>
-                <Input
-                  value={businessInfo.phone}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, phone: e.target.value })}
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-gray-300">Dirección</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <Input
-                    value={businessInfo.address}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
-                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-gray-300">Email</Label>
-                <Input
-                  value={businessInfo.email}
-                  onChange={(e) => setBusinessInfo({ ...businessInfo, email: e.target.value })}
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* User Profile */}
           <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -589,7 +764,7 @@ export default function ConfiguracionPage() {
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-gray-500 text-xs">Nombre</Label>
-                  <p className="text-white font-medium">{user.name}</p>
+                  <p className="text-white font-medium">{user.name || "Sin nombre"}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500 text-xs">Email</Label>
@@ -597,7 +772,7 @@ export default function ConfiguracionPage() {
                 </div>
                 <div>
                   <Label className="text-gray-500 text-xs">Rol</Label>
-                  <p className="text-cyan-400 font-medium">{user.role}</p>
+                  <p className="text-cyan-400 font-medium capitalize">{user.role === "owner" ? "Dueño" : user.role}</p>
                 </div>
               </div>
             </div>
