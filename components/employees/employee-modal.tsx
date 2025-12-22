@@ -83,14 +83,28 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     pin: string
   } | null>(null)
 
-  // Generate random password
+  // Generate secure random password (12+ chars with mixed case, numbers, symbols)
   const generatePassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+    const lower = 'abcdefghjkmnpqrstuvwxyz'
+    const numbers = '23456789'
+    const symbols = '!@#$%&*'
+    const allChars = upper + lower + numbers + symbols
+    
+    // Ensure at least one of each type
     let password = ''
-    for (let i = 0; i < 10; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    password += upper.charAt(Math.floor(Math.random() * upper.length))
+    password += lower.charAt(Math.floor(Math.random() * lower.length))
+    password += numbers.charAt(Math.floor(Math.random() * numbers.length))
+    password += symbols.charAt(Math.floor(Math.random() * symbols.length))
+    
+    // Fill rest randomly (12 chars total)
+    for (let i = 0; i < 8; i++) {
+      password += allChars.charAt(Math.floor(Math.random() * allChars.length))
     }
-    return password
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('')
   }
 
   const [formData, setFormData] = useState({
@@ -343,7 +357,20 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       }
     } catch (error: any) {
       console.error("Error:", error)
-      alert(`Error: ${error.message}`)
+      // Better error messages
+      let errorMessage = error.message || "Error desconocido"
+      
+      if (errorMessage.includes("duplicate") || errorMessage.includes("unique")) {
+        errorMessage = "Ya existe un empleado con ese email o usuario"
+      } else if (errorMessage.includes("permission") || errorMessage.includes("policy")) {
+        errorMessage = "No tenés permisos para crear empleados en este kiosco"
+      } else if (errorMessage.includes("foreign key")) {
+        errorMessage = "Error de configuración. Verificá que el kiosco exista"
+      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        errorMessage = "Error de conexión. Verificá tu internet e intentá de nuevo"
+      }
+      
+      alert(`❌ Error al guardar empleado:\n\n${errorMessage}`)
     } finally {
       setIsLoading(false)
     }

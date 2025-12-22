@@ -41,6 +41,7 @@ import { ThemeSelector } from "@/components/theme-selector"
 import { OnlineStatus } from "@/components/online-status"
 import { KioskoSelector } from "@/components/kiosko-selector"
 import { getSingleOrNull } from "@/lib/supabase/utils"
+import { ToastProvider } from "@/components/ui/toast-provider"
 
 interface UserProfile {
   id: string
@@ -336,7 +337,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <ToastProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </ToastProvider>
     </ThemeProvider>
   )
 }

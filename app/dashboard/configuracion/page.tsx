@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface KioskoData {
   id: string
@@ -85,6 +86,7 @@ export default function ConfiguracionPage() {
 
   const supabase = createClient()
   const router = useRouter()
+  const toast = useToast()
 
   useEffect(() => {
     loadKioscos()
@@ -258,10 +260,10 @@ export default function ConfiguracionPage() {
         k.id === selectedKiosko ? { ...k, name: kioskoData.name } : k
       ))
 
-      alert("✅ Configuración guardada correctamente")
+      toast.success("Configuración guardada", "Los cambios se aplicaron correctamente")
     } catch (error) {
       console.error("[v0] Error saving config:", error)
-      alert("Error al guardar la configuración")
+      toast.error("Error al guardar", "No se pudo guardar la configuración")
     } finally {
       setIsSaving(false)
     }
@@ -269,7 +271,7 @@ export default function ConfiguracionPage() {
 
   const handleVerifyPhone = async () => {
     if (!whatsappConfig.phoneNumber) {
-      alert("Por favor ingresa un número de teléfono")
+      toast.warning("Falta información", "Ingresá un número de teléfono")
       return
     }
 
@@ -287,9 +289,7 @@ export default function ConfiguracionPage() {
         expires_at: expiresAt,
       })
 
-      alert(
-        `Código de verificación generado. En un entorno de producción, este código se enviaría por WhatsApp: ${verificationCode}`,
-      )
+      toast.success("Verificación iniciada", `Código: ${verificationCode} (en producción se enviaría por WhatsApp)`)
 
       await supabase
         .from("notification_configs")
@@ -305,7 +305,7 @@ export default function ConfiguracionPage() {
       await loadKioskoConfig()
     } catch (error) {
       console.error("[v0] Error verifying phone:", error)
-      alert("Error al verificar el teléfono")
+      toast.error("Error de verificación", "No se pudo verificar el teléfono")
     } finally {
       setIsVerifying(false)
     }
@@ -313,7 +313,7 @@ export default function ConfiguracionPage() {
 
   const handleTestTelegram = async () => {
     if (!telegramConfig.chatId) {
-      alert("Por favor ingresa tu Chat ID de Telegram")
+      toast.warning("Falta información", "Ingresá tu Chat ID de Telegram")
       return
     }
 
@@ -341,15 +341,15 @@ export default function ConfiguracionPage() {
 
         setTelegramConfig({ ...telegramConfig, verified: true })
         await loadKioskoConfig()
-        alert("✅ ¡Mensaje enviado! Revisá tu Telegram.")
+        toast.success("¡Mensaje enviado!", "Revisá tu Telegram para confirmarlo")
       } else {
         const error = await response.json()
         console.error("[v0] Telegram test error:", error)
-        alert("❌ Error al enviar el mensaje. Verificá que el Chat ID sea correcto.")
+        toast.error("Error al enviar", "Verificá que el Chat ID sea correcto")
       }
     } catch (error) {
       console.error("[v0] Error testing telegram:", error)
-      alert("Error al enviar el mensaje de prueba")
+      toast.error("Error de conexión", "No se pudo enviar el mensaje de prueba")
     } finally {
       setIsTestingTelegram(false)
     }
@@ -357,7 +357,7 @@ export default function ConfiguracionPage() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== "ELIMINAR") {
-      alert("Por favor escribe ELIMINAR para confirmar")
+      toast.warning("Confirmación requerida", "Escribí ELIMINAR para confirmar")
       return
     }
 
@@ -383,7 +383,7 @@ export default function ConfiguracionPage() {
       router.push("/")
     } catch (error: any) {
       console.error("[v0] Error deleting account:", error)
-      alert("Error al eliminar la cuenta: " + error.message)
+      toast.error("Error al eliminar", error.message || "No se pudo eliminar la cuenta")
     } finally {
       setIsDeleting(false)
     }
