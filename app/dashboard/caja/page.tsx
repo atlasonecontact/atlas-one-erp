@@ -440,6 +440,46 @@ export default function CajaPage() {
 
       {/* Expense Modal */}
       <ExpenseModal open={showExpenseModal} onClose={() => setShowExpenseModal(false)} onSave={handleAddExpense} />
+
+      {/* Open Cash Modal */}
+      <Dialog open={showOpenModal} onOpenChange={setShowOpenModal}>
+        <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Abrir Caja</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-gray-300">Saldo inicial</Label>
+              <Input
+                type="number"
+                value={newOpeningBalance}
+                onChange={(e) => setNewOpeningBalance(e.target.value)}
+                placeholder="$0"
+                className="bg-[#0d1424] border-cyan-500/20 text-white"
+              />
+              <p className="text-xs text-gray-500">
+                Ingresá el dinero con el que iniciás la caja
+              </p>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowOpenModal(false)}
+                className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleOpenCash}
+                className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
+              >
+                Abrir Caja
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

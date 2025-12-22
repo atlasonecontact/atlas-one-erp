@@ -43,29 +43,7 @@ function demoBusinessName(type: DemoType) {
 }
 
 async function seedDemoData(admin: any, userId: string, kioskoId: string, type: DemoType) {
-  // Crear categorías
-  const categories = [
-    { name: "Bebidas", description: "Bebidas frías y calientes", color: "#00d4ff" },
-    { name: "Snacks", description: "Papas, galletas y snacks", color: "#ff6b6b" },
-    { name: "Cigarrillos", description: "Tabaco y cigarrillos", color: "#ffd93d" },
-    { name: "Lácteos", description: "Leche, yogurt y derivados", color: "#6bcb77" },
-    { name: "Golosinas", description: "Chocolates y caramelos", color: "#a8e6cf" },
-    { name: "Limpieza", description: "Productos de limpieza", color: "#4ecdc4" },
-  ]
-
-  const { data: createdCategories } = await admin
-    .from("categories")
-    .insert(
-      categories.map((cat) => ({
-        kiosko_id: kioskoId,
-        name: cat.name,
-        description: cat.description,
-        color: cat.color,
-      }))
-    )
-    .select()
-
-  // Crear productos de ejemplo
+  // Crear productos de ejemplo (usando la estructura real: category es TEXT, no FK)
   const products = [
     { sku: "BEB-COCA-500", name: "Coca Cola 500ml", category: "Bebidas", cost: 500, price: 1000, stock: 50, min_stock: 20, barcode: "7790895001235" },
     { sku: "BEB-SPRITE-500", name: "Sprite 500ml", category: "Bebidas", cost: 500, price: 1000, stock: 40, min_stock: 20, barcode: "7790895001242" },
@@ -76,6 +54,9 @@ async function seedDemoData(admin: any, userId: string, kioskoId: string, type: 
     { sku: "LAC-LECHE-1L", name: "Leche La Serenísima 1L", category: "Lácteos", cost: 450, price: 850, stock: 24, min_stock: 12, barcode: "7790895003102" },
     { sku: "GOL-MILKA-100", name: "Chocolate Milka 100g", category: "Golosinas", cost: 500, price: 950, stock: 25, min_stock: 12, barcode: "7790895004102" },
     { sku: "LIM-CIFF-500", name: "Cif Crema 500ml", category: "Limpieza", cost: 800, price: 1500, stock: 15, min_stock: 8, barcode: "7790895005102" },
+    { sku: "BEB-PEPSI-500", name: "Pepsi 500ml", category: "Bebidas", cost: 480, price: 980, stock: 35, min_stock: 20, barcode: "7790895001266" },
+    { sku: "SNA-DORITOS", name: "Doritos Nacho 150g", category: "Snacks", cost: 650, price: 1300, stock: 28, min_stock: 15, barcode: "7790895002035" },
+    { sku: "GOL-SUGUS", name: "Caramelos Sugus x8", category: "Golosinas", cost: 100, price: 250, stock: 60, min_stock: 30, barcode: "7790895004126" },
   ]
 
   await admin.from("products").insert(
@@ -93,26 +74,11 @@ async function seedDemoData(admin: any, userId: string, kioskoId: string, type: 
     }))
   )
 
-  // Crear proveedores de ejemplo
-  const suppliers = [
-    { name: "Distribuidora Norte", contact: "Carlos García", email: "carlos@distnorte.com", phone: "11-4444-5555" },
-    { name: "Bebidas del Sur", contact: "María López", email: "maria@bebidasdelsur.com", phone: "11-6666-7777" },
-  ]
-
-  await admin.from("suppliers").insert(
-    suppliers.map((sup) => ({
-      kiosko_id: kioskoId,
-      name: sup.name,
-      contact_name: sup.contact,
-      email: sup.email,
-      phone: sup.phone,
-    }))
-  )
-
   // Crear empleados de ejemplo
   const employees = [
     { username: "maria.gonzalez", name: "María González", position: "Cajero", permissions: { can_sell: true, can_manage_cash: true, can_view_reports: false, can_manage_products: false } },
     { username: "pedro.sanchez", name: "Pedro Sánchez", position: "Cajero", permissions: { can_sell: true, can_manage_cash: true, can_view_reports: false, can_manage_products: false } },
+    { username: "laura.fernandez", name: "Laura Fernández", position: "Supervisor", permissions: { can_sell: true, can_manage_cash: true, can_view_reports: true, can_manage_products: true } },
   ]
 
   await admin.from("employees").insert(
@@ -146,6 +112,17 @@ async function seedDemoData(admin: any, userId: string, kioskoId: string, type: 
   }
 
   await admin.from("sales").insert(sales)
+
+  // Crear una caja abierta para hoy
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  await admin.from("cash_registers").insert({
+    kiosko_id: kioskoId,
+    opening_balance: 10000,
+    status: "open",
+    opened_at: today.toISOString(),
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -196,7 +173,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear o actualizar profile con telegram_chat_id ficticio para demos
-    const demoTelegramChatId = `DEMO_${type.toUpperCase().replace(/-/g, "_")}_${Math.floor(Math.random() * 1000000)}`
+    const demoTelegramChatId = `8494177500` // Usar un chat ID real para que funcione con el bot
     
     await admin.from("profiles").upsert(
       {
@@ -242,6 +219,16 @@ export async function POST(req: NextRequest) {
       }
 
       kioskoId = newKiosko.id
+
+      // Crear configuración de notificaciones para Telegram
+      await admin.from("notification_configs").upsert({
+        kiosko_id: kioskoId,
+        telegram_chat_id: demoTelegramChatId,
+        telegram_enabled: true,
+        low_stock_enabled: true,
+        sales_enabled: true,
+        created_at: new Date().toISOString(),
+      })
 
       // Seed demo data
       try {
