@@ -4,24 +4,36 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmployeeModal } from "@/components/employees/employee-modal"
-import { Search, Plus, Edit2, UserCog, Circle, Copy, Check } from "lucide-react"
+import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+
+type Shift = {
+  day_of_week: number
+  start_time: string
+  end_time: string
+}
 
 type Employee = {
   id: string
   name: string
   username: string
-  email?: string
+  pin?: string
+  phone?: string
+  document_id?: string
+  address?: string
   position?: string
   custom_role: string | null
+  salary?: number
+  hire_date?: string
   permissions: {
     can_sell: boolean
     can_view_reports: boolean
     can_manage_inventory: boolean
     can_manage_employees: boolean
   }
-  status: string // 'active' | 'inactive'
+  status: string
   created_at: string
+  shifts?: Shift[]
   kiosko?: {
     name: string
   }
@@ -36,8 +48,11 @@ export default function EmpleadosPage() {
   const [selectedKiosko, setSelectedKiosko] = useState<string>("")
   const [kioscos, setKioscos] = useState<any[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [showPinFor, setShowPinFor] = useState<string | null>(null)
 
   const supabase = createClient()
+
+  const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
 
   useEffect(() => {
     loadKioscos()
@@ -71,24 +86,46 @@ export default function EmpleadosPage() {
     if (!selectedKiosko) return
 
     setIsLoading(true)
+    
+    // Load employees
     const { data: employeesData } = await supabase
       .from("employees")
-      .select(
-        `
+      .select(`
         *,
         kioscos (
           name
         )
-      `,
-      )
+      `)
       .eq("kiosko_id", selectedKiosko)
       .order("created_at", { ascending: false })
 
     if (employeesData) {
+      // Load shifts for all employees
+      const employeeIds = employeesData.map((e: any) => e.id)
+      const { data: shiftsData } = await supabase
+        .from("employee_shifts")
+        .select("*")
+        .in("employee_id", employeeIds)
+
+      const shiftsMap: Record<string, Shift[]> = {}
+      if (shiftsData) {
+        shiftsData.forEach((shift: any) => {
+          if (!shiftsMap[shift.employee_id]) {
+            shiftsMap[shift.employee_id] = []
+          }
+          shiftsMap[shift.employee_id].push({
+            day_of_week: shift.day_of_week,
+            start_time: shift.start_time,
+            end_time: shift.end_time,
+          })
+        })
+      }
+
       setEmployees(
         employeesData.map((e: any) => ({
           ...e,
           kiosko: e.kioscos,
+          shifts: shiftsMap[e.id] || [],
         })),
       )
     }
@@ -107,10 +144,18 @@ export default function EmpleadosPage() {
   }
 
   const copyCredentials = async (employee: Employee) => {
-    const text = `Usuario: ${employee.username}`
+    const text = `Empleado: ${employee.name}\nUsuario: ${employee.username}${employee.pin ? `\nPIN: ${employee.pin}` : ''}`
     await navigator.clipboard.writeText(text)
     setCopiedId(employee.id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const formatShifts = (shifts: Shift[] = []) => {
+    if (shifts.length === 0) return null
+    const days = shifts
+      .sort((a, b) => a.day_of_week - b.day_of_week)
+      .map(s => DAY_NAMES[s.day_of_week])
+    return days.join(", ")
   }
 
   const getPermissionCount = (permissions: Employee["permissions"]) => {
@@ -247,7 +292,7 @@ export default function EmpleadosPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg">
-                    {employee.name?.charAt(0) || "?"}
+                    {employee.name?.charAt(0) || "?"}}
                   </div>
                   <div>
                     <p className="text-white font-medium">
@@ -281,7 +326,49 @@ export default function EmpleadosPage() {
               </div>
 
               <div className="space-y-2 mb-4 text-sm">
-                <div className="flex items-center justify-between">
+                {/* PIN */}
+                {employee.pin && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">PIN:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-cyan-400 tracking-widest">
+                        {showPinFor === employee.id ? employee.pin : "••••"}
+                      </span>
+                      <button
+                        onClick={() => setShowPinFor(showPinFor === employee.id ? null : employee.id)}
+                        className="text-gray-400 hover:text-white p-1"
+                      >
+                        {showPinFor === employee.id ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Phone */}
+                {employee.phone && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Phone className="w-3 h-3" />
+                    <span className="text-gray-300">{employee.phone}</span>
+                  </div>
+                )}
+                
+                {/* Shifts */}
+                {employee.shifts && employee.shifts.length > 0 && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-gray-300">{formatShifts(employee.shifts)}</span>
+                  </div>
+                )}
+                
+                {/* Hire date */}
+                {employee.hire_date && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Calendar className="w-3 h-3" />
+                    <span className="text-gray-300">Desde {new Date(employee.hire_date).toLocaleDateString('es-AR')}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
                   <span className="text-gray-400">Permisos:</span>
                   <span className="text-cyan-400">{getPermissionCount(employee.permissions)}/4</span>
                 </div>
@@ -316,7 +403,7 @@ export default function EmpleadosPage() {
                   ) : (
                     <>
                       <Copy className="w-4 h-4 mr-2" />
-                      Copiar Usuario
+                      {employee.pin ? "Copiar Datos" : "Copiar Usuario"}
                     </>
                   )}
                 </Button>
@@ -325,6 +412,7 @@ export default function EmpleadosPage() {
                   size="sm"
                   onClick={() => handleEdit(employee)}
                   className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  title="Editar empleado"
                 >
                   <UserCog className="w-4 h-4" />
                 </Button>
