@@ -58,7 +58,7 @@ export default function StockPage() {
       .from("employees")
       .select("id, kiosko_id")
       .eq("user_id", user.id)
-      .eq("is_active", true)
+      .eq("status", "active")
       .maybeSingle()
 
     let targetKioskoId: string | null = null

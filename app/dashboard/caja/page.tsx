@@ -68,7 +68,7 @@ export default function CajaPage() {
       .from("employees")
       .select("kiosko_id")
       .eq("user_id", user.id)
-      .eq("is_active", true)
+      .eq("status", "active")
       .maybeSingle()
 
     let targetKioskoId: string | null = null

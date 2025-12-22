@@ -9,10 +9,10 @@ import { createClient } from "@/lib/supabase/client"
 
 type Employee = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   username: string
-  auto_generated_email: string
+  email?: string
+  position?: string
   custom_role: string | null
   permissions: {
     can_sell: boolean
@@ -20,7 +20,7 @@ type Employee = {
     can_manage_inventory: boolean
     can_manage_employees: boolean
   }
-  is_active: boolean
+  status: string // 'active' | 'inactive'
   created_at: string
   kiosko?: {
     name: string
@@ -97,9 +97,8 @@ export default function EmpleadosPage() {
 
   const filteredEmployees = employees.filter(
     (e) =>
-      `${e.first_name} ${e.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.auto_generated_email.toLowerCase().includes(searchQuery.toLowerCase()),
+      e.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.username?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const handleEdit = (employee: Employee) => {
@@ -189,11 +188,11 @@ export default function EmpleadosPage() {
         </div>
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Activos</p>
-          <p className="text-2xl font-bold text-green-400">{employees.filter((e) => e.is_active).length}</p>
+          <p className="text-2xl font-bold text-green-400">{employees.filter((e) => e.status === "active").length}</p>
         </div>
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Inactivos</p>
-          <p className="text-2xl font-bold text-gray-400">{employees.filter((e) => !e.is_active).length}</p>
+          <p className="text-2xl font-bold text-gray-400">{employees.filter((e) => e.status !== "active").length}</p>
         </div>
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Con permisos full</p>
@@ -248,11 +247,11 @@ export default function EmpleadosPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg">
-                    {employee.first_name.charAt(0)}
+                    {employee.name?.charAt(0) || "?"}
                   </div>
                   <div>
                     <p className="text-white font-medium">
-                      {employee.first_name} {employee.last_name}
+                      {employee.name}
                     </p>
                     <p className="text-xs text-gray-500 truncate max-w-[150px]">@{employee.username}</p>
                   </div>
@@ -273,11 +272,11 @@ export default function EmpleadosPage() {
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                    employee.is_active ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
+                    employee.status === "active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
                   }`}
                 >
-                  <Circle className={`w-2 h-2 ${employee.is_active ? "fill-green-400" : "fill-gray-400"}`} />
-                  {employee.is_active ? "Activo" : "Inactivo"}
+                  <Circle className={`w-2 h-2 ${employee.status === "active" ? "fill-green-400" : "fill-gray-400"}`} />
+                  {employee.status === "active" ? "Activo" : "Inactivo"}
                 </span>
               </div>
 

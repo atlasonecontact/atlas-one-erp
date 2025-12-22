@@ -14,6 +14,7 @@ interface PaymentModalProps {
   onPayment: (method: string) => void
   kioskoId: string
   cartItems: Array<{ id: string; name: string; price: number; quantity: number }>
+  employeeName?: string
 }
 
 const paymentMethods = [
@@ -22,7 +23,7 @@ const paymentMethods = [
   { id: "qr", label: "QR", icon: QrCode },
 ]
 
-export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartItems }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartItems, employeeName }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState("cash")
   const [cashReceived, setCashReceived] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
@@ -46,6 +47,7 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
         itemsSummary: cartItems.map((i) => `${i.quantity}x ${i.name}`).join(", "),
         paymentMethod: methodLabel,
         timestamp: new Date().toISOString(),
+        employeeName: employeeName || undefined,
       }
 
       // Send notification via unified API route

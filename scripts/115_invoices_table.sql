@@ -60,26 +60,3 @@ CREATE POLICY "Owners can manage invoices"
     )
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.kioscos k
-      WHERE k.id = invoices.kiosko_id
-      AND k.owner_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Employees can view invoices"
-  ON public.invoices
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.employees e
-      WHERE e.kiosko_id = invoices.kiosko_id
-      AND e.user_id = auth.uid()
-      AND e.is_active = true
-    )
-  );
-
-GRANT ALL ON public.invoices TO authenticated;
-
-COMMIT;

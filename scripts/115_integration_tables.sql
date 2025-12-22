@@ -200,7 +200,7 @@ CREATE POLICY "Employees can view external orders"
       SELECT 1 FROM public.employees e
       WHERE e.kiosko_id = external_orders.kiosko_id
       AND e.user_id = auth.uid()
-      AND e.is_active = true
+      AND e.status = 'active'
     )
   );
 
@@ -213,7 +213,7 @@ CREATE POLICY "Employees can update external orders"
       SELECT 1 FROM public.employees e
       WHERE e.kiosko_id = external_orders.kiosko_id
       AND e.user_id = auth.uid()
-      AND e.is_active = true
+      AND e.status = 'active'
     )
   );
 

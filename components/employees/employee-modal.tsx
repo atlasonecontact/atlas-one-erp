@@ -12,10 +12,10 @@ import { Copy, Check, AlertCircle } from "lucide-react"
 
 type Employee = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   username: string
-  auto_generated_email: string
+  email?: string
+  position?: string
   custom_role: string | null
   permissions: {
     can_sell: boolean
@@ -23,7 +23,7 @@ type Employee = {
     can_manage_inventory: boolean
     can_manage_employees: boolean
   }
-  is_active: boolean
+  status: string // 'active' | 'inactive'
 }
 
 type EmployeeModalProps = {
@@ -42,9 +42,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   } | null>(null)
   const [copied, setCopied] = useState(false)
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
+    name: "",
     email: "",
+    position: "",
     custom_role: "",
     permissions: {
       can_sell: true,
@@ -52,7 +52,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       can_manage_inventory: false,
       can_manage_employees: false,
     },
-    is_active: true,
+    status: "active",
   })
 
   const supabase = createClient()
@@ -60,20 +60,25 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   useEffect(() => {
     if (employee) {
       setFormData({
-        first_name: employee.first_name,
-        last_name: employee.last_name,
-        email: employee.auto_generated_email,
+        name: employee.name,
+        email: employee.email || "",
+        position: employee.position || "",
         custom_role: employee.custom_role || "",
-        permissions: employee.permissions,
-        is_active: employee.is_active,
+        permissions: employee.permissions || {
+          can_sell: true,
+          can_view_reports: false,
+          can_manage_inventory: false,
+          can_manage_employees: false,
+        },
+        status: employee.status || "active",
       })
       setGeneratedCredentials(null)
       setShowCredentials(false)
     } else {
       setFormData({
-        first_name: "",
-        last_name: "",
+        name: "",
         email: "",
+        position: "",
         custom_role: "",
         permissions: {
           can_sell: true,
@@ -81,7 +86,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           can_manage_inventory: false,
           can_manage_employees: false,
         },
-        is_active: true,
+        status: "active",
       })
       setGeneratedCredentials(null)
       setShowCredentials(false)
@@ -94,14 +99,15 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
     try {
       if (employee) {
+        // Updating existing employee
         const { error } = await supabase
           .from("employees")
           .update({
-            first_name: formData.first_name,
-            last_name: formData.last_name,
+            name: formData.name,
+            position: formData.position || null,
             custom_role: formData.custom_role || null,
             permissions: formData.permissions,
-            is_active: formData.is_active,
+            status: formData.status,
           })
           .eq("id", employee.id)
 
@@ -110,35 +116,40 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         onSuccess()
         onClose()
       } else {
+        // Creating new employee
         const username = formData.email
-          .split("@")[0]
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "")
+          ? formData.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "")
+          : formData.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15)
 
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
-          options: {
-            data: {
-              full_name: `${formData.first_name} ${formData.last_name}`,
-              role: "employee",
+        let userId: string | undefined = undefined
+
+        // Only create auth user if email is provided
+        if (formData.email) {
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: Math.random().toString(36).slice(-16) + Math.random().toString(36).slice(-16),
+            options: {
+              data: {
+                full_name: formData.name,
+                role: "employee",
+              },
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
+          })
 
-        if (authError) throw authError
+          if (authError) throw authError
+          userId = authData.user?.id
+        }
 
         const { error: insertError } = await supabase.from("employees").insert({
           kiosko_id: kioskoId,
-          user_id: authData.user?.id,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
+          user_id: userId,
+          name: formData.name,
           username: username,
-          auto_generated_email: formData.email,
+          position: formData.position || null,
           custom_role: formData.custom_role || null,
           permissions: formData.permissions,
-          is_active: formData.is_active,
+          status: formData.status,
         })
 
         if (insertError) throw insertError
@@ -240,32 +251,44 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-gray-300">
+              Nombre Completo
+            </Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Juan Pérez"
+              className="bg-[#0d1424] border-cyan-500/20 text-white"
+              required
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name" className="text-gray-300">
-                Nombre
+              <Label htmlFor="position" className="text-gray-300">
+                Puesto
               </Label>
               <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="Juan"
+                id="position"
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                placeholder="Cajero"
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
-                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name" className="text-gray-300">
-                Apellido
+              <Label htmlFor="custom_role" className="text-gray-300">
+                Rol
               </Label>
               <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Pérez"
+                id="custom_role"
+                value={formData.custom_role}
+                onChange={(e) => setFormData({ ...formData, custom_role: e.target.value })}
+                placeholder="Supervisor"
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
-                required
               />
             </div>
           </div>
@@ -273,7 +296,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {!employee && (
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
-                Email
+                Email (opcional - para acceso al sistema)
               </Label>
               <Input
                 id="email"
@@ -282,23 +305,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="empleado@ejemplo.com"
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
-                required
               />
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="custom_role" className="text-gray-300">
-              Rol Personalizado
-            </Label>
-            <Input
-              id="custom_role"
-              value={formData.custom_role}
-              onChange={(e) => setFormData({ ...formData, custom_role: e.target.value })}
-              placeholder="Ej: Cajero, Supervisor, Vendedor..."
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
-            />
-          </div>
 
           <div className="space-y-3">
             <Label className="text-gray-300">Permisos</Label>
@@ -375,17 +384,17 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="is_active"
-              checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
+              id="status"
+              checked={formData.status === "active"}
+              onCheckedChange={(checked) => setFormData({ ...formData, status: checked ? "active" : "inactive" })}
               className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
             />
-            <label htmlFor="is_active" className="text-sm text-gray-300 cursor-pointer">
+            <label htmlFor="status" className="text-sm text-gray-300 cursor-pointer">
               Empleado activo
             </label>
           </div>
 
-          {!employee && (
+          {!employee && formData.email && (
             <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3 text-sm text-cyan-200">
               <p className="font-semibold mb-1">Verificación por email</p>
               <p className="text-cyan-300/80">

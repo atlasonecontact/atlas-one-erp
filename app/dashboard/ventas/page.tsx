@@ -30,6 +30,7 @@ export default function VentasPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string>("")
   const [employeeId, setEmployeeId] = useState<string | null>(null)
+  const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
 
   const supabase = createClient()
@@ -51,16 +52,17 @@ export default function VentasPage() {
 
     const { data: employeeData } = await supabase
       .from("employees")
-      .select("id, kiosko_id, permissions")
+      .select("id, kiosko_id, permissions, name")
       .eq("user_id", user.id)
-      .eq("is_active", true)
+      .eq("status", "active")
       .maybeSingle()
 
     if (employeeData) {
       // User is an employee
-      console.log("[v0] User is employee")
+      console.log("[v0] User is employee:", employeeData.name)
       setUserRole("employee")
       setEmployeeId(employeeData.id)
+      setEmployeeName(employeeData.name || "")
       setKioskoId(employeeData.kiosko_id)
       loadProducts(employeeData.kiosko_id)
     } else {
@@ -289,6 +291,7 @@ export default function VentasPage() {
         onPayment={handlePayment}
         kioskoId={kioskoId}
         cartItems={cart}
+        employeeName={employeeName}
       />
 
       {/* Receipt Modal */}

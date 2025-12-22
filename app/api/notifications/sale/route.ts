@@ -3,16 +3,26 @@ import { createServerClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const { kioskoId, saleId, total, items, itemsSummary, paymentMethod } = await request.json()
+    const { kioskoId, saleId, total, items, itemsSummary, paymentMethod, employeeName } = await request.json()
 
     const supabase = await createServerClient()
 
-    const { data: kiosko, error: kioskoError } = await supabase.from("kioscos").select("id, name").eq("id", kioskoId).single()
+    // Get kiosko with owner info
+    const { data: kiosko, error: kioskoError } = await supabase
+      .from("kioscos")
+      .select("id, name, owner_id")
+      .eq("id", kioskoId)
+      .single()
 
     if (kioskoError) {
       throw kioskoError
     }
 
+    if (!kiosko) {
+      return NextResponse.json({ error: "Kiosko not found" }, { status: 404 })
+    }
+
+    // Get notification config for kiosko
     const { data: notif, error: notifError } = await supabase
       .from("notification_configs")
       .select("whatsapp_enabled, whatsapp_phone, whatsapp_verified, telegram_enabled, telegram_chat_id, telegram_verified")
@@ -20,30 +30,38 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (notifError) {
-      throw notifError
+      console.error("[v0] Notification config error:", notifError)
     }
 
-    if (!kiosko) {
-      return NextResponse.json({ error: "Kiosko not found" }, { status: 404 })
-    }
+    // Also get owner's profile for fallback notification settings
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("telegram_chat_id, whatsapp_phone")
+      .eq("id", kiosko.owner_id)
+      .maybeSingle()
 
     const message = `
-Nueva Venta - ${kiosko.name}
+🛒 <b>Nueva Venta - ${kiosko.name}</b>
 
-ID: ${saleId}
-Total: $${total.toLocaleString()}
-Items: ${items} (${itemsSummary})
-Método: ${paymentMethod}
-Hora: ${new Date().toLocaleString("es-AR")}
+💰 Total: <b>$${total.toLocaleString()}</b>
+📦 Items: ${items} (${itemsSummary})
+💳 Método: ${paymentMethod}
+${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
+🕐 ${new Date().toLocaleString("es-AR")}
+
+#${saleId}
     `.trim()
 
     const notifications = []
 
+    // Determine which WhatsApp number to use (kiosko config or owner profile)
+    const whatsappPhone = notif?.whatsapp_phone || ownerProfile?.whatsapp_phone
+    const whatsappEnabled = notif?.whatsapp_enabled && notif?.whatsapp_verified
+
     // Send WhatsApp notification if configured and verified
     if (
-      notif?.whatsapp_enabled &&
-      notif?.whatsapp_phone &&
-      notif?.whatsapp_verified &&
+      whatsappEnabled &&
+      whatsappPhone &&
       process.env.WHATSAPP_ACCESS_TOKEN &&
       process.env.WHATSAPP_PHONE_NUMBER_ID
     ) {
@@ -58,9 +76,9 @@ Hora: ${new Date().toLocaleString("es-AR")}
             },
             body: JSON.stringify({
               messaging_product: "whatsapp",
-              to: notif.whatsapp_phone.replace(/[^0-9]/g, ""),
+              to: whatsappPhone.replace(/[^0-9]/g, ""),
               type: "text",
-              text: { body: message },
+              text: { body: message.replace(/<[^>]*>/g, "") }, // Strip HTML for WhatsApp
             }),
           },
         )
@@ -74,11 +92,14 @@ Hora: ${new Date().toLocaleString("es-AR")}
       }
     }
 
-    // Send Telegram notification if configured AND verified
+    // Determine which Telegram chat to use (kiosko config or owner profile)
+    const telegramChatId = notif?.telegram_chat_id || ownerProfile?.telegram_chat_id
+    const telegramEnabled = (notif?.telegram_enabled && notif?.telegram_verified) || ownerProfile?.telegram_chat_id
+
+    // Send Telegram notification if configured
     if (
-      notif?.telegram_enabled &&
-      notif?.telegram_chat_id &&
-      notif?.telegram_verified &&
+      telegramEnabled &&
+      telegramChatId &&
       process.env.TELEGRAM_BOT_TOKEN
     ) {
       try {
@@ -88,7 +109,7 @@ Hora: ${new Date().toLocaleString("es-AR")}
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              chat_id: notif.telegram_chat_id,
+              chat_id: telegramChatId,
               text: message,
               parse_mode: "HTML",
             }),
@@ -97,6 +118,10 @@ Hora: ${new Date().toLocaleString("es-AR")}
 
         if (telegramResponse.ok) {
           notifications.push({ type: "telegram", status: "sent" })
+        } else {
+          const errorData = await telegramResponse.json()
+          console.error("[v0] Telegram API error:", errorData)
+          notifications.push({ type: "telegram", status: "failed" })
         }
       } catch (error) {
         console.error("[v0] Telegram notification error:", error)
@@ -104,6 +129,7 @@ Hora: ${new Date().toLocaleString("es-AR")}
       }
     }
 
+    console.log("[v0] Sale notification sent:", { saleId, kioskoId, notifications })
     return NextResponse.json({ success: true, notifications })
   } catch (error: any) {
     console.error("[v0] Sale notification error:", error)
