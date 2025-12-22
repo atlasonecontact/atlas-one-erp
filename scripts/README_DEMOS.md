@@ -28,11 +28,11 @@ Este script crea todo desde cero:
 - ✅ Caja abierta con $10,000
 
 **Cómo ejecutar:**
-```sql
+\`\`\`sql
 -- Ejecutar en SQL Editor de Supabase
 -- (Requiere permisos de admin)
 \i scripts/200_create_demo_users.sql
-```
+\`\`\`
 
 ## 🔧 Opción 2: Solo Seed Data (Usuarios ya existen)
 
@@ -49,9 +49,9 @@ Usa este si los usuarios ya existen en Supabase Auth pero necesitas cargar los d
    - Repetir para los 7 usuarios
 
 2. Luego ejecutar el script:
-```sql
+\`\`\`sql
 \i scripts/201_seed_demo_data.sql
-```
+\`\`\`
 
 ## 📦 Datos que se crean automáticamente
 
@@ -76,7 +76,7 @@ Usa este si los usuarios ya existen en Supabase Auth pero necesitas cargar los d
 
 ## 🔍 Verificar que todo funciona
 
-```sql
+\`\`\`sql
 -- Ver resumen de todos los demos
 SELECT 
   u.email,
@@ -91,11 +91,11 @@ INNER JOIN profiles p ON u.id = p.id
 LEFT JOIN kioscos k ON k.owner_id = u.id
 WHERE u.email LIKE 'demo.%@atlasone.com'
 ORDER BY u.email;
-```
+\`\`\`
 
 ## 🧹 Limpiar usuarios demo (opcional)
 
-```sql
+\`\`\`sql
 -- CUIDADO: Esto elimina TODOS los datos de los demos
 DO $$
 DECLARE
@@ -116,7 +116,7 @@ BEGIN
     RAISE NOTICE 'Usuario eliminado: %', v_user_id;
   END LOOP;
 END $$;
-```
+\`\`\`
 
 ## 📱 Configuración de Telegram
 
