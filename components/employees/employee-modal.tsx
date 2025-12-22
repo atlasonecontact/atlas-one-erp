@@ -8,12 +8,23 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
-import { 
-  Copy, Check, User, Clock, Shield, Eye, EyeOff, 
-  RefreshCw, Calendar, Phone, MapPin, FileText, AlertCircle
+import {
+  Copy,
+  Check,
+  User,
+  Clock,
+  Shield,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Calendar,
+  Phone,
+  MapPin,
+  FileText,
+  AlertCircle,
 } from "lucide-react"
 import { useFormValidation, FieldError } from "@/lib/hooks/use-form-validation"
-import { useToast } from "@/components/ui/toast-provider" from "lucide-react"
+import { useToast } from "@/components/ui/toast-provider"
 
 // Types
 type Shift = {
@@ -89,52 +100,56 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const toast = useToast()
 
   // Form validation
-  const { errors, validateForm, validateField, setFieldTouched, getFieldError, clearErrors } = 
-    useFormValidation<typeof formData>({
-      name: { 
-        required: "El nombre es obligatorio",
-        minLength: { value: 2, message: "Mínimo 2 caracteres" },
-        maxLength: { value: 100, message: "Máximo 100 caracteres" },
-      },
-      email: {
-        email: "Email inválido",
-      },
-      pin: {
-        pattern: { value: /^[0-9]{4}$/, message: "El PIN debe ser de 4 dígitos" },
-      },
-      phone: {
-        phone: "Teléfono inválido",
-      },
-      salary: {
-        min: { value: 0, message: "El salario no puede ser negativo" },
-      },
-      hourly_rate: {
-        min: { value: 0, message: "El valor por hora no puede ser negativo" },
-      },
-    })
+  const { errors, validateForm, validateField, setFieldTouched, getFieldError, clearErrors } = useFormValidation<
+    typeof formData
+  >({
+    name: {
+      required: "El nombre es obligatorio",
+      minLength: { value: 2, message: "Mínimo 2 caracteres" },
+      maxLength: { value: 100, message: "Máximo 100 caracteres" },
+    },
+    email: {
+      email: "Email inválido",
+    },
+    pin: {
+      pattern: { value: /^[0-9]{4}$/, message: "El PIN debe ser de 4 dígitos" },
+    },
+    phone: {
+      phone: "Teléfono inválido",
+    },
+    salary: {
+      min: { value: 0, message: "El salario no puede ser negativo" },
+    },
+    hourly_rate: {
+      min: { value: 0, message: "El valor por hora no puede ser negativo" },
+    },
+  })
 
   // Generate secure random password (12+ chars with mixed case, numbers, symbols)
   const generatePassword = () => {
-    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
-    const lower = 'abcdefghjkmnpqrstuvwxyz'
-    const numbers = '23456789'
-    const symbols = '!@#$%&*'
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+    const lower = "abcdefghjkmnpqrstuvwxyz"
+    const numbers = "23456789"
+    const symbols = "!@#$%&*"
     const allChars = upper + lower + numbers + symbols
-    
+
     // Ensure at least one of each type
-    let password = ''
+    let password = ""
     password += upper.charAt(Math.floor(Math.random() * upper.length))
     password += lower.charAt(Math.floor(Math.random() * lower.length))
     password += numbers.charAt(Math.floor(Math.random() * numbers.length))
     password += symbols.charAt(Math.floor(Math.random() * symbols.length))
-    
+
     // Fill rest randomly (12 chars total)
     for (let i = 0; i < 8; i++) {
       password += allChars.charAt(Math.floor(Math.random() * allChars.length))
     }
-    
+
     // Shuffle the password
-    return password.split('').sort(() => Math.random() - 0.5).join('')
+    return password
+      .split("")
+      .sort(() => Math.random() - 0.5)
+      .join("")
   }
 
   const [formData, setFormData] = useState({
@@ -161,8 +176,6 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     },
     status: "active",
   })
-
-  const supabase = createClient()
 
   // Generate random 4-digit PIN
   const generatePin = () => {
@@ -240,23 +253,25 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       .select("*")
       .eq("employee_id", employeeId)
       .order("day_of_week")
-    
+
     if (data) {
-      setShifts(data.map(s => ({
-        id: s.id,
-        day_of_week: s.day_of_week,
-        start_time: s.start_time,
-        end_time: s.end_time,
-        break_start: s.break_start,
-        break_end: s.break_end,
-        is_active: s.is_active
-      })))
+      setShifts(
+        data.map((s) => ({
+          id: s.id,
+          day_of_week: s.day_of_week,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          break_start: s.break_start,
+          break_end: s.break_end,
+          is_active: s.is_active,
+        })),
+      )
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate form
     if (!validateForm(formData)) {
       toast.warning("Revisa los campos", "Hay errores en el formulario")
@@ -281,8 +296,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             emergency_phone: formData.emergency_phone || null,
             position: formData.position || null,
             custom_role: formData.custom_role || null,
-            salary: formData.salary ? parseFloat(formData.salary) : null,
-            hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
+            salary: formData.salary ? Number.parseFloat(formData.salary) : null,
+            hourly_rate: formData.hourly_rate ? Number.parseFloat(formData.hourly_rate) : null,
             notes: formData.notes || null,
             permissions: formData.permissions,
             status: formData.status,
@@ -306,18 +321,18 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           .replace(/[\u0300-\u036f]/g, "")
           .replace(/[^a-z0-9]/g, "")
           .substring(0, 20)
-        
+
         const uniqueUsername = `${username}_${Date.now().toString(36)}`
         const pin = formData.pin || Math.floor(1000 + Math.random() * 9000).toString()
         const password = generatePassword()
-        
+
         // Generate email for the employee (use provided or generate one)
         const employeeEmail = formData.email || `${uniqueUsername}@empleado.atlasone.app`
 
         // Try to create auth user for the employee using signUp
         // Note: This may not work if email confirmation is required
         let authUserId: string | null = null
-        
+
         try {
           // First, try using signUp (works from client)
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -326,28 +341,28 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             options: {
               data: {
                 full_name: formData.name,
-                role: 'employee'
-              }
-            }
+                role: "employee",
+              },
+            },
           })
 
           if (!signUpError && signUpData?.user) {
             authUserId = signUpData.user.id
           } else {
-            console.log('SignUp info:', signUpError?.message || 'User may need email confirmation')
+            console.log("SignUp info:", signUpError?.message || "User may need email confirmation")
           }
         } catch (authError) {
-          console.log('Auth creation skipped:', authError)
+          console.log("Auth creation skipped:", authError)
           // Continue without auth user - employee will use PIN and saved credentials
         }
 
         // Save credentials to database for owner reference
         // This allows the owner to see the employee's login credentials
         try {
-          await supabase.rpc('register_employee_user', {
+          await supabase.rpc("register_employee_user", {
             p_employee_id: null, // Will be set after insert
             p_email: employeeEmail,
-            p_password: password
+            p_password: password,
           })
         } catch {
           // Ignore if RPC doesn't exist yet
@@ -371,9 +386,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             emergency_phone: formData.emergency_phone || null,
             position: formData.position || null,
             custom_role: formData.custom_role || null,
-            salary: formData.salary ? parseFloat(formData.salary) : null,
-            hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
-            hire_date: formData.hire_date || new Date().toISOString().split('T')[0],
+            salary: formData.salary ? Number.parseFloat(formData.salary) : null,
+            hourly_rate: formData.hourly_rate ? Number.parseFloat(formData.hourly_rate) : null,
+            hire_date: formData.hire_date || new Date().toISOString().split("T")[0],
             notes: formData.notes || null,
             permissions: formData.permissions,
             status: formData.status,
@@ -388,11 +403,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           await saveShifts(newEmployee.id)
         }
 
-        setGeneratedCredentials({ 
-          username: uniqueUsername, 
+        setGeneratedCredentials({
+          username: uniqueUsername,
           email: employeeEmail,
           password: password,
-          pin 
+          pin,
         })
         setShowCredentials(true)
         toast.success("Empleado creado", `${formData.name} fue agregado correctamente`)
@@ -402,7 +417,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       console.error("Error:", error)
       // Better error messages
       let errorMessage = error.message || "Error desconocido"
-      
+
       if (errorMessage.includes("duplicate") || errorMessage.includes("unique")) {
         errorMessage = "Ya existe un empleado con ese email o usuario"
       } else if (errorMessage.includes("permission") || errorMessage.includes("policy")) {
@@ -412,7 +427,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
         errorMessage = "Error de conexión. Verificá tu internet e intentá de nuevo"
       }
-      
+
       toast.error("Error al guardar empleado", errorMessage)
     } finally {
       setIsLoading(false)
@@ -421,15 +436,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
   const saveShifts = async (employeeId: string) => {
     // Delete existing shifts
-    await supabase
-      .from("employee_shifts")
-      .delete()
-      .eq("employee_id", employeeId)
+    await supabase.from("employee_shifts").delete().eq("employee_id", employeeId)
 
     // Insert new shifts
     const shiftsToInsert = shifts
-      .filter(s => s.start_time && s.end_time)
-      .map(s => ({
+      .filter((s) => s.start_time && s.end_time)
+      .map((s) => ({
         employee_id: employeeId,
         kiosko_id: kioskoId,
         day_of_week: s.day_of_week,
@@ -446,23 +458,24 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   }
 
   const toggleShiftDay = (dayValue: number) => {
-    const existingShift = shifts.find(s => s.day_of_week === dayValue)
+    const existingShift = shifts.find((s) => s.day_of_week === dayValue)
     if (existingShift) {
-      setShifts(shifts.filter(s => s.day_of_week !== dayValue))
+      setShifts(shifts.filter((s) => s.day_of_week !== dayValue))
     } else {
-      setShifts([...shifts, {
-        day_of_week: dayValue,
-        start_time: "08:00",
-        end_time: "16:00",
-        is_active: true
-      }])
+      setShifts([
+        ...shifts,
+        {
+          day_of_week: dayValue,
+          start_time: "08:00",
+          end_time: "16:00",
+          is_active: true,
+        },
+      ])
     }
   }
 
   const updateShift = (dayValue: number, field: keyof Shift, value: string | boolean) => {
-    setShifts(shifts.map(s => 
-      s.day_of_week === dayValue ? { ...s, [field]: value } : s
-    ))
+    setShifts(shifts.map((s) => (s.day_of_week === dayValue ? { ...s, [field]: value } : s)))
   }
 
   const copyCredentials = async () => {
@@ -498,32 +511,28 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label className="text-gray-300">Nombre</Label>
-                <Input
-                  value={formData.name}
-                  readOnly
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
-                />
+                <Input value={formData.name} readOnly className="bg-[#0d1424] border-cyan-500/20 text-white" />
               </div>
 
               {/* Login credentials */}
               <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 space-y-3">
                 <p className="text-sm font-medium text-cyan-400">Credenciales de Acceso al Sistema</p>
-                
+
                 <div className="space-y-2">
                   <Label className="text-gray-300">Email</Label>
-                  <Input 
-                    value={generatedCredentials.email} 
-                    readOnly 
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm" 
+                  <Input
+                    value={generatedCredentials.email}
+                    readOnly
+                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-gray-300">Contraseña</Label>
-                  <Input 
-                    value={generatedCredentials.password} 
-                    readOnly 
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-lg tracking-wider" 
+                  <Input
+                    value={generatedCredentials.password}
+                    readOnly
+                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-lg tracking-wider"
                   />
                 </div>
               </div>
@@ -531,19 +540,19 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-gray-300">Usuario</Label>
-                  <Input 
-                    value={generatedCredentials.username} 
-                    readOnly 
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm" 
+                  <Input
+                    value={generatedCredentials.username}
+                    readOnly
+                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-gray-300">PIN de Caja</Label>
                   <div className="relative">
-                    <Input 
-                      value={generatedCredentials.pin} 
-                      readOnly 
-                      className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-2xl text-center tracking-widest" 
+                    <Input
+                      value={generatedCredentials.pin}
+                      readOnly
+                      className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-2xl text-center tracking-widest"
                     />
                   </div>
                 </div>
@@ -555,7 +564,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">¡IMPORTANTE! Guarda estas credenciales.</p>
-                  <p className="text-yellow-300/80 mt-1">El empleado usará el email y contraseña para iniciar sesión, y el PIN para operaciones de caja.</p>
+                  <p className="text-yellow-300/80 mt-1">
+                    El empleado usará el email y contraseña para iniciar sesión, y el PIN para operaciones de caja.
+                  </p>
                 </div>
               </div>
             </div>
@@ -593,9 +604,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-[#0a0f1a] border-cyan-500/20 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-white">
-            {employee ? "Editar Empleado" : "Agregar Nuevo Empleado"}
-          </DialogTitle>
+          <DialogTitle className="text-white">{employee ? "Editar Empleado" : "Agregar Nuevo Empleado"}</DialogTitle>
         </DialogHeader>
 
         {/* Tabs */}
@@ -604,9 +613,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             type="button"
             onClick={() => setActiveTab("info")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-              activeTab === "info"
-                ? "bg-cyan-500/20 text-cyan-400"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+              activeTab === "info" ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white hover:bg-white/5"
             }`}
           >
             <User className="w-4 h-4" />
@@ -653,14 +660,16 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Juan Pérez"
-                    className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.name ? 'border-red-500' : ''}`}
+                    className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.name ? "border-red-500" : ""}`}
                     required
                   />
                   <FieldError error={errors.name} />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="position" className="text-gray-300">Puesto</Label>
+                  <Label htmlFor="position" className="text-gray-300">
+                    Puesto
+                  </Label>
                   <Input
                     id="position"
                     value={formData.position}
@@ -671,16 +680,20 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="pin" className="text-gray-300">PIN de Acceso</Label>
+                  <Label htmlFor="pin" className="text-gray-300">
+                    PIN de Acceso
+                  </Label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
                         id="pin"
                         type={showPin ? "text" : "password"}
                         value={formData.pin}
-                        onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                        }
                         placeholder="1234"
-                        className={`bg-[#0d1424] border-cyan-500/20 text-white font-mono text-center text-xl tracking-widest pr-10 ${errors.pin ? 'border-red-500' : ''}`}
+                        className={`bg-[#0d1424] border-cyan-500/20 text-white font-mono text-center text-xl tracking-widest pr-10 ${errors.pin ? "border-red-500" : ""}`}
                         maxLength={6}
                       />
                       <button
@@ -722,26 +735,32 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="empleado@email.com"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.email ? 'border-red-500' : ''}`}
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.email ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.email} />
-                    <p className="text-xs text-gray-500">Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.</p>
+                    <p className="text-xs text-gray-500">
+                      Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-gray-300">Teléfono</Label>
+                    <Label htmlFor="phone" className="text-gray-300">
+                      Teléfono
+                    </Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+54 11 1234-5678"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? 'border-red-500' : ''}`}
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.phone} />
                   </div>
                 </div>
                 <div className="mt-3">
                   <div className="space-y-2">
-                    <Label htmlFor="document_id" className="text-gray-300">DNI / Documento</Label>
+                    <Label htmlFor="document_id" className="text-gray-300">
+                      DNI / Documento
+                    </Label>
                     <Input
                       id="document_id"
                       value={formData.document_id}
@@ -773,7 +792,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 <h4 className="text-sm font-medium text-gray-400 mb-3">Contacto de Emergencia</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emergency_contact" className="text-gray-300">Nombre</Label>
+                    <Label htmlFor="emergency_contact" className="text-gray-300">
+                      Nombre
+                    </Label>
                     <Input
                       id="emergency_contact"
                       value={formData.emergency_contact}
@@ -783,7 +804,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="emergency_phone" className="text-gray-300">Teléfono</Label>
+                    <Label htmlFor="emergency_phone" className="text-gray-300">
+                      Teléfono
+                    </Label>
                     <Input
                       id="emergency_phone"
                       value={formData.emergency_phone}
@@ -803,7 +826,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 </h4>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="birth_date" className="text-gray-300">Fecha Nac.</Label>
+                    <Label htmlFor="birth_date" className="text-gray-300">
+                      Fecha Nac.
+                    </Label>
                     <Input
                       id="birth_date"
                       type="date"
@@ -813,7 +838,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="hire_date" className="text-gray-300">Ingreso</Label>
+                    <Label htmlFor="hire_date" className="text-gray-300">
+                      Ingreso
+                    </Label>
                     <Input
                       id="hire_date"
                       type="date"
@@ -823,14 +850,16 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salary" className="text-gray-300">Salario $</Label>
+                    <Label htmlFor="salary" className="text-gray-300">
+                      Salario $
+                    </Label>
                     <Input
                       id="salary"
                       type="number"
                       value={formData.salary}
                       onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                       placeholder="50000"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? 'border-red-500' : ''}`}
+                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.salary} />
                   </div>
@@ -864,8 +893,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
               {/* Day selector */}
               <div className="flex gap-2 flex-wrap">
-                {DAYS.map(day => {
-                  const hasShift = shifts.some(s => s.day_of_week === day.value)
+                {DAYS.map((day) => {
+                  const hasShift = shifts.some((s) => s.day_of_week === day.value)
                   return (
                     <button
                       key={day.value}
@@ -885,8 +914,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
               {/* Shift details */}
               <div className="space-y-3 mt-4">
-                {DAYS.filter(day => shifts.some(s => s.day_of_week === day.value)).map(day => {
-                  const shift = shifts.find(s => s.day_of_week === day.value)!
+                {DAYS.filter((day) => shifts.some((s) => s.day_of_week === day.value)).map((day) => {
+                  const shift = shifts.find((s) => s.day_of_week === day.value)!
                   return (
                     <div key={day.value} className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
                       <div className="flex items-center justify-between mb-3">
@@ -957,7 +986,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             <div className="space-y-4 py-4">
               <div className="space-y-3">
                 <Label className="text-gray-300">Permisos del empleado</Label>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                     <Checkbox
@@ -1029,7 +1058,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                           permissions: { ...formData.permissions, can_manage_employees: checked as boolean },
                         })
                       }
-                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                      className="border-cyan-500/30 data-[state=checked]:bg-green-500"
                     />
                     <div>
                       <label htmlFor="can_manage_employees" className="text-sm text-white cursor-pointer block">
@@ -1046,9 +1075,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   <Checkbox
                     id="status"
                     checked={formData.status === "active"}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, status: checked ? "active" : "inactive" })
-                    }
+                    onCheckedChange={(checked) => setFormData({ ...formData, status: checked ? "active" : "inactive" })}
                     className="border-cyan-500/30 data-[state=checked]:bg-green-500"
                   />
                   <div>
@@ -1072,9 +1099,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isLoading || !formData.name} 
+            <Button
+              type="submit"
+              disabled={isLoading || !formData.name}
               className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black"
             >
               {isLoading ? "Guardando..." : employee ? "Guardar Cambios" : "Crear Empleado"}
