@@ -4,15 +4,25 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductModal } from "@/components/products/product-modal"
-import { CSVImportModal } from "@/components/products/csv-import-modal"
-import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw } from "lucide-react"
+import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
+import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
+import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw, Percent, CheckSquare, Square } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
   id: string
   name: string
+  sku?: string
+  brand?: string
+  variant?: string
+  presentation?: string
   category: string
+  subcategory?: string
+  net_content?: number
+  unit?: string
   cost: number
+  cost_ex_vat?: number
+  cost_inc_vat?: number
   price: number
   stock: number
   barcode?: string
@@ -25,8 +35,10 @@ export default function ProductosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [showModal, setShowModal] = useState(false)
   const [showCSVModal, setShowCSVModal] = useState(false)
+  const [showPriceModal, setShowPriceModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [products, setProducts] = useState<Product[]>([])
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
@@ -187,43 +199,125 @@ export default function ProductosPage() {
     setEditingProduct(null)
   }
 
-  const handleCSVImport = async (
-    csvProducts: { name: string; category: string; cost: number; price: number; stock: number; barcode?: string }[],
-  ) => {
+  const handleCSVImport = async (csvProducts: CSVProduct[]) => {
     if (!kioskoId) {
       alert("No hay kiosko seleccionado")
       return
     }
 
     setSyncing(true)
-    const productsToInsert = csvProducts.map((p) => ({
-      kiosko_id: kioskoId,
-      name: p.name,
-      category: p.category,
-      cost: p.cost,
-      price: p.price,
-      stock_quantity: p.stock,
-      barcode: p.barcode || null,
-      is_active: true,
-    }))
-
-    const { data, error } = await supabase.from("products").insert(productsToInsert).select()
-
-    if (!error && data) {
-      const mappedProducts = data.map((p: any) => ({
-        id: p.id,
+    
+    // Process in batches for large imports
+    const BATCH_SIZE = 100
+    const allImported: Product[] = []
+    
+    for (let i = 0; i < csvProducts.length; i += BATCH_SIZE) {
+      const batch = csvProducts.slice(i, i + BATCH_SIZE)
+      
+      const productsToUpsert = batch.map((p) => ({
+        kiosko_id: kioskoId,
+        sku: p.sku,
         name: p.name,
+        brand: p.brand || null,
+        variant: p.variant || null,
+        presentation: p.presentation || null,
         category: p.category || "Sin categoría",
-        cost: p.cost || 0,
-        price: p.price || 0,
-        stock: p.stock_quantity || 0,
-        barcode: p.barcode,
-        status: p.stock_quantity <= 10 ? "low_stock" : "active",
-        kiosko_id: p.kiosko_id,
+        subcategory: p.subcategory || null,
+        net_content: p.net_content || null,
+        unit: p.unit || null,
+        barcode: p.barcode || null,
+        cost: p.cost_inc_vat || p.cost_ex_vat || 0,
+        cost_ex_vat: p.cost_ex_vat || null,
+        cost_inc_vat: p.cost_inc_vat || null,
+        price: p.sale_price,
+        stock_quantity: p.stock || 0,
+        is_active: true,
       }))
-      setProducts((prev) => [...prev, ...mappedProducts])
+
+      // Use upsert with SKU as the conflict key
+      const { data, error } = await supabase
+        .from("products")
+        .upsert(productsToUpsert, { 
+          onConflict: 'kiosko_id,sku',
+          ignoreDuplicates: false 
+        })
+        .select()
+
+      if (!error && data) {
+        const mappedProducts = data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          brand: p.brand,
+          variant: p.variant,
+          presentation: p.presentation,
+          category: p.category || "Sin categoría",
+          subcategory: p.subcategory,
+          net_content: p.net_content,
+          unit: p.unit,
+          cost: p.cost || 0,
+          cost_ex_vat: p.cost_ex_vat,
+          cost_inc_vat: p.cost_inc_vat,
+          price: p.price || 0,
+          stock: p.stock_quantity || 0,
+          barcode: p.barcode,
+          status: p.stock_quantity <= 10 ? "low_stock" : "active",
+          kiosko_id: p.kiosko_id,
+        }))
+        allImported.push(...mappedProducts)
+      }
     }
+    
+    // Refresh full product list
+    await fetchProducts()
     setSyncing(false)
+  }
+
+  // Handle price adjustments
+  const handlePriceAdjustment = async (productIds: string[], newPrices: Record<string, number>) => {
+    setSyncing(true)
+    
+    // Update prices in batches
+    const updates = productIds.map(id => ({
+      id,
+      price: newPrices[id],
+      updated_at: new Date().toISOString()
+    }))
+    
+    for (const update of updates) {
+      await supabase
+        .from("products")
+        .update({ price: update.price, updated_at: update.updated_at })
+        .eq("id", update.id)
+    }
+    
+    // Update local state
+    setProducts(prev => prev.map(p => 
+      productIds.includes(p.id) 
+        ? { ...p, price: newPrices[p.id] } 
+        : p
+    ))
+    
+    setSelectedProducts([])
+    setSyncing(false)
+  }
+
+  // Toggle product selection
+  const toggleProductSelection = (id: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(id) 
+        ? prev.filter(p => p !== id)
+        : [...prev, id]
+    )
+  }
+
+  // Select all filtered products
+  const toggleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([])
+    } else {
+      setSelectedProducts(filteredProducts.map(p => p.id))
+    }
   }
 
   return (
@@ -253,6 +347,15 @@ export default function ProductosPage() {
             Importar CSV
           </Button>
           <Button
+            variant="outline"
+            onClick={() => setShowPriceModal(true)}
+            disabled={products.length === 0}
+            className="border-primary/30 text-muted-foreground hover:text-foreground"
+          >
+            <Percent className="w-4 h-4 mr-2" />
+            Ajustar Precios
+          </Button>
+          <Button
             onClick={() => {
               setEditingProduct(null)
               setShowModal(true)
@@ -277,6 +380,20 @@ export default function ProductosPage() {
             className="pl-10 bg-card border-primary/10 text-foreground placeholder:text-muted-foreground"
           />
         </div>
+        {selectedProducts.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/30">
+            <CheckSquare className="w-4 h-4 text-primary" />
+            <span className="text-sm text-primary font-medium">
+              {selectedProducts.length} seleccionado{selectedProducts.length !== 1 ? 's' : ''}
+            </span>
+            <button 
+              onClick={() => setSelectedProducts([])}
+              className="ml-1 text-primary/70 hover:text-primary"
+            >
+              ×
+            </button>
+          </div>
+        )}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {categories.map((cat) => (
             <button
@@ -305,6 +422,18 @@ export default function ProductosPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-primary/10">
+                <th className="text-left text-sm font-medium text-muted-foreground p-4 w-10">
+                  <button 
+                    onClick={toggleSelectAll}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {selectedProducts.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                      <CheckSquare className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                </th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
@@ -317,13 +446,25 @@ export default function ProductosPage() {
             <tbody>
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
                     No hay productos. Agrega uno o importa desde CSV.
                   </td>
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
                   <tr key={product.id} className="border-b border-primary/5 hover:bg-muted/50 transition-colors">
+                    <td className="p-4">
+                      <button 
+                        onClick={() => toggleProductSelection(product.id)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {selectedProducts.includes(product.id) ? (
+                          <CheckSquare className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -402,6 +543,16 @@ export default function ProductosPage() {
 
       {/* CSV Import Modal */}
       <CSVImportModal open={showCSVModal} onClose={() => setShowCSVModal(false)} onImport={handleCSVImport} />
+
+      {/* Price Adjustment Modal */}
+      <PriceAdjustmentModal
+        open={showPriceModal}
+        onClose={() => setShowPriceModal(false)}
+        products={products}
+        selectedProducts={selectedProducts}
+        categories={categories.filter(c => c !== 'all')}
+        onApply={handlePriceAdjustment}
+      />
     </div>
   )
 }
