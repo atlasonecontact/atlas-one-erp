@@ -260,6 +260,19 @@ export default function ConfiguracionPage() {
 
       if (error) throw error
 
+      // 3. TAMBIÉN guardar telegram_chat_id en profiles para vinculación del bot
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && telegramConfig.chatId) {
+        await supabase
+          .from("profiles")
+          .update({
+            telegram_chat_id: telegramConfig.chatId,
+            whatsapp_phone: whatsappConfig.phoneNumber || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id)
+      }
+
       await loadKioskoConfig()
       await loadKioskoData()
 

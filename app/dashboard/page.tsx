@@ -123,31 +123,33 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Top KPIs Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICardV2
-          title="Total Facturado"
-          value={data.monthSales}
-          prefix="$"
-          change={data.monthSalesChange}
-          changeLabel="Comparado con el mes pasado"
-          icon={<DollarSign className="w-5 h-5" />}
-          variant="primary"
-          isLoading={isLoading}
-        />
-        <KPICardV2
-          title="Unidades Vendidas"
-          value={data.unitsSold || 7845}
-          change={9.8}
-          changeLabel="Comparado con el mes pasado"
-          icon={<Package className="w-5 h-5" />}
-          isLoading={isLoading}
-        />
-        <KPICardV2
-          title="Ticket Promedio"
-          value={data.avgTicket}
-          prefix="$"
-          change={data.avgTicketChange}
+      {/* Top KPIs Row - Solo en Overview */}
+      {view === "overview" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPICardV2
+              title="Total Facturado"
+              value={data.monthSales}
+              prefix="$"
+              change={data.monthSalesChange}
+              changeLabel="Comparado con el mes pasado"
+              icon={<DollarSign className="w-5 h-5" />}
+              variant="primary"
+              isLoading={isLoading}
+            />
+            <KPICardV2
+              title="Unidades Vendidas"
+              value={data.unitsSold || 7845}
+              change={9.8}
+              changeLabel="Comparado con el mes pasado"
+              icon={<Package className="w-5 h-5" />}
+              isLoading={isLoading}
+            />
+            <KPICardV2
+              title="Ticket Promedio"
+              value={data.avgTicket}
+              prefix="$"
+              change={data.avgTicketChange}
           changeLabel="Comparado con el mes pasado"
           icon={<Receipt className="w-5 h-5" />}
           isLoading={isLoading}
@@ -262,7 +264,99 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <RecentActivity sales={data.recentSales} isLoading={isLoading} />
+      <RecentActivity />
+        </>
+      )}
+
+      {/* Notifications View */}
+      {view === "notifications" && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Centro de Notificaciones</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Todas las alertas y notificaciones de tus kioscos en un solo lugar.
+            </p>
+            
+            {/* Smart Insights como notificaciones */}
+            <SmartInsights data={data} isLoading={isLoading} />
+          </div>
+
+          {/* Low Stock Alerts expanded */}
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Alertas de Stock</h3>
+                <p className="text-xs text-gray-500">Productos que requieren reposición</p>
+              </div>
+            </div>
+            
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : data.lowStockProducts.length > 0 ? (
+              <div className="space-y-2">
+                {data.lowStockProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      product.stock <= 5 ? "bg-red-500/10 border-red-500/20" : "bg-yellow-500/10 border-yellow-500/20"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        product.stock <= 5 ? "bg-red-500/20" : "bg-yellow-500/20"
+                      }`}>
+                        <Package className={`w-4 h-4 ${product.stock <= 5 ? "text-red-400" : "text-yellow-400"}`} />
+                      </div>
+                      <span className="text-sm text-white">{product.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-bold ${product.stock <= 5 ? "text-red-400" : "text-yellow-400"}`}>
+                        {product.stock} unid.
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {product.stock <= 5 ? "Crítico" : "Stock bajo"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-3">
+                  <Package className="w-6 h-6 text-green-400" />
+                </div>
+                <p className="text-sm text-gray-400">¡Todo en orden!</p>
+                <p className="text-xs text-gray-500">No hay productos con stock bajo</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* History View */}
+      {view === "history" && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Historial de Ventas</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Registro completo de todas las ventas realizadas.
+            </p>
+            <SalesHistory isLoading={isLoading} />
+          </div>
+          
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Actividad Reciente</h2>
+            <RecentActivity />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

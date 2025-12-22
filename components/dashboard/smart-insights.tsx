@@ -78,11 +78,11 @@ export function SmartInsights() {
       // 2. Low stock alerts
       const { data: lowStockProducts } = await supabase
         .from("products")
-        .select("id, name, stock, minimum_stock")
+        .select("id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
 
       const lowStock = lowStockProducts?.filter(p => 
-        p.stock <= (p.minimum_stock || 10)
+        p.stock_quantity <= (p.min_stock_level || 10)
       ) || []
 
       if (lowStock.length > 0) {

@@ -75,14 +75,14 @@ export function RecentActivity() {
       // Get recent stock movements
       const { data: stockMovements } = await supabase
         .from("stock_movements")
-        .select("id, product_id, quantity, type, created_at, products(name)")
+        .select("id, product_id, quantity, movement_type, created_at, products(name)")
         .in("kiosko_id", kioskoIds)
         .order("created_at", { ascending: false })
         .limit(5)
 
       stockMovements?.forEach(mov => {
         const productName = (mov.products as any)?.name || "Producto"
-        const isIncome = mov.type === "entrada" || mov.type === "purchase" || mov.type === "adjustment_in"
+        const isIncome = mov.movement_type === "entrada" || mov.movement_type === "purchase" || mov.movement_type === "adjustment_in"
         allActivities.push({
           icon: isIncome ? <ArrowDownToLine className="w-4 h-4" /> : <ArrowUpFromLine className="w-4 h-4" />,
           title: isIncome ? "Ingreso de stock" : "Egreso de stock",
@@ -96,17 +96,17 @@ export function RecentActivity() {
       // Get low stock products (as alerts)
       const { data: lowStockProducts } = await supabase
         .from("products")
-        .select("id, name, stock, minimum_stock, updated_at")
+        .select("id, name, stock_quantity, min_stock_level, updated_at")
         .in("kiosko_id", kioskoIds)
         .order("updated_at", { ascending: false })
         .limit(10)
 
       lowStockProducts?.forEach(product => {
-        if (product.stock <= (product.minimum_stock || 10)) {
+        if (product.stock_quantity <= (product.min_stock_level || 10)) {
           allActivities.push({
             icon: <AlertTriangle className="w-4 h-4" />,
             title: "Alerta de stock bajo",
-            description: `${product.name} (${product.stock} unidades)`,
+            description: `${product.name} (${product.stock_quantity} unidades)`,
             time: formatTimeAgo(new Date(product.updated_at)),
             color: "yellow",
             timestamp: new Date(product.updated_at)
@@ -114,18 +114,22 @@ export function RecentActivity() {
         }
       })
 
-      // Get recent employee shifts
-      const { data: shifts } = await supabase
-        .from("employee_shifts")
-        .select("id, employee_id, start_time, end_time, employees(first_name, last_name)")
-        .in("kiosko_id", kioskoIds)
-        .order("start_time", { ascending: false })
-        .limit(3)
+      // Get recent employee shifts - Nota: esta tabla puede no existir en todas las instalaciones
+      let shifts: any[] = []
+      try {
+        const { data: shiftsData } = await supabase
+          .from("employee_shifts")
+          .select("id, employee_id, start_time, end_time")
+          .in("kiosko_id", kioskoIds)
+          .order("start_time", { ascending: false })
+          .limit(3)
+        shifts = shiftsData || []
+      } catch (e) {
+        // Tabla puede no existir
+      }
 
       shifts?.forEach(shift => {
-        const empName = (shift.employees as any)?.first_name 
-          ? `${(shift.employees as any).first_name} ${(shift.employees as any).last_name || ""}`
-          : "Empleado"
+        const empName = "Empleado"
         
         if (!shift.end_time) {
           allActivities.push({
@@ -142,13 +146,13 @@ export function RecentActivity() {
       // Get recent purchases
       const { data: purchases } = await supabase
         .from("purchases")
-        .select("id, total_amount, status, created_at, providers(name)")
+        .select("id, total_amount, status, created_at, supplier_name")
         .in("kiosko_id", kioskoIds)
         .order("created_at", { ascending: false })
         .limit(3)
 
       purchases?.forEach(purchase => {
-        const providerName = (purchase.providers as any)?.name || "Proveedor"
+        const providerName = purchase.supplier_name || "Proveedor"
         allActivities.push({
           icon: <Package className="w-4 h-4" />,
           title: "Compra registrada",

@@ -89,9 +89,9 @@ export function useDashboardData(period: string) {
 
       const { data: todaySalesData } = await supabase
         .from("sales")
-        .select("total_amount, payment_status")
+        .select("total_amount, status")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", todayStart)
 
       const todaySales = todaySalesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
@@ -100,7 +100,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", yesterdayStart)
         .lt("created_at", todayStart)
 
@@ -111,7 +111,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", monthStart)
 
       const monthSales = monthSalesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
@@ -120,7 +120,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", lastMonthStart)
         .lt("created_at", lastMonthEnd)
 
@@ -131,7 +131,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", periodStart)
 
       const avgTicket =
@@ -213,7 +213,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("total_amount, created_at")
         .in("kiosko_id", kioskoIds)
-        .eq("payment_status", "completed")
+        .eq("status", "completed")
         .gte("created_at", periodStart)
         .order("created_at", { ascending: true })
 

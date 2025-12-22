@@ -29,28 +29,40 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    // Find owner by chat_id through any of their kioscos' notification_configs
-    const { data: configs } = await supabase
-      .from("notification_configs")
-      .select("kiosko_id, kioscos(id, name, owner_id)")
-      .eq("telegram_chat_id", chatId.toString())
-
-    // Get owner's kioscos
-    let ownerKioscos: { id: string; name: string }[] = []
+    // PRIMERO: Buscar owner por telegram_chat_id en profiles (método preferido)
     let ownerId: string | null = null
+    let ownerKioscos: { id: string; name: string }[] = []
 
-    if (configs && configs.length > 0) {
-      ownerId = (configs[0].kioscos as any)?.owner_id
-      if (ownerId) {
-        const { data: allKioscos } = await supabase
-          .from("kioscos")
-          .select("id, name")
-          .eq("owner_id", ownerId)
-        ownerKioscos = allKioscos || []
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("telegram_chat_id", chatId.toString())
+      .maybeSingle()
+
+    if (ownerProfile) {
+      ownerId = ownerProfile.id
+    } else {
+      // FALLBACK: Buscar por notification_configs (legacy)
+      const { data: configs } = await supabase
+        .from("notification_configs")
+        .select("kiosko_id, kioscos(id, name, owner_id)")
+        .eq("telegram_chat_id", chatId.toString())
+
+      if (configs && configs.length > 0) {
+        ownerId = (configs[0].kioscos as any)?.owner_id
       }
     }
 
-    // Handle /start command - Return the Chat ID
+    // Obtener todos los kioscos del owner
+    if (ownerId) {
+      const { data: allKioscos } = await supabase
+        .from("kioscos")
+        .select("id, name")
+        .eq("owner_id", ownerId)
+      ownerKioscos = allKioscos || []
+    }
+
+    // Handle /start command - Return the Chat ID (siempre funciona)
     if (text === "/start" || text.startsWith("/start")) {
       const welcomeMessage = `
 👋 ¡Hola ${firstName}!
@@ -58,19 +70,21 @@ export async function POST(request: NextRequest) {
 🆔 <b>Tu Chat ID es:</b>
 <code>${chatId}</code>
 
-📋 <b>¿Cómo usarlo?</b>
+📋 <b>¿Cómo configurarlo?</b>
 1. Copiá el número de arriba (tocá para copiar)
 2. Andá a Atlas ONE → Configuración → Integraciones
 3. Pegalo en el campo "Chat ID de Telegram"
-4. ¡Listo! Vas a recibir notificaciones de ventas
+4. Guardá los cambios
+5. ¡Listo! Vas a recibir notificaciones
 
 🤖 <b>Comandos disponibles:</b>
 /kioscos - Ver tus kioscos
-/ventas [nombre] - Ver ventas del día
-/stock [nombre] - Ver productos con stock bajo
+/ventas - Ver ventas del día
+/ventas [nombre] - Ver ventas de un kiosco
+/stock - Ver productos con stock bajo
 /ayuda - Más información
 
-💡 Una vez configurado, te llegará un mensaje cada vez que hagas una venta.
+${ownerKioscos.length > 0 ? `✅ Ya tenés ${ownerKioscos.length} kiosco(s) vinculados.` : "⏳ Aún no estás vinculado. Configurá tu Chat ID en la app."}
       `.trim()
 
       await sendTelegramMessage(botToken, chatId, welcomeMessage)
@@ -80,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Check if user is linked
     if (ownerKioscos.length === 0) {
       await sendTelegramMessage(botToken, chatId, 
-        `⚠️ No encontré ningún kiosco vinculado a este chat.\n\nAsegurate de configurar tu Chat ID (<code>${chatId}</code>) en Atlas ONE → Configuración → Integraciones.\n\nEsto vincula el bot a tu cuenta de dueño y todos tus kioscos.`
+        `⚠️ No encontré ningún kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abrí Atlas ONE\n2. Andá a Configuración → Integraciones\n3. Pegá el Chat ID\n4. Guardá los cambios\n\nDespués de eso, usá /start para verificar.`
       )
       return NextResponse.json({ ok: true })
     }
@@ -200,12 +214,12 @@ O sin nombre para ver un resumen general.
       // Get low stock products
       const { data: products } = await supabase
         .from("products")
-        .select("kiosko_id, name, stock, minimum_stock")
+        .select("kiosko_id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
-        .order("stock", { ascending: true })
+        .order("stock_quantity", { ascending: true })
         .limit(20)
 
-      const lowStock = products?.filter(p => p.stock <= (p.minimum_stock || 10)) || []
+      const lowStock = products?.filter(p => p.stock_quantity <= (p.min_stock_level || 10)) || []
 
       if (lowStock.length === 0) {
         const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : ""
@@ -217,7 +231,7 @@ O sin nombre para ver un resumen general.
       const stockByKiosco = new Map<string, { name: string; stock: number }[]>()
       lowStock.forEach(p => {
         const existing = stockByKiosco.get(p.kiosko_id) || []
-        existing.push({ name: p.name, stock: p.stock })
+        existing.push({ name: p.name, stock: p.stock_quantity })
         stockByKiosco.set(p.kiosko_id, existing)
       })
 

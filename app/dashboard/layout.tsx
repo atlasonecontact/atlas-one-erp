@@ -25,7 +25,6 @@ import {
   BarChart3,
   Settings,
   Search,
-  Bell,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -41,6 +40,7 @@ import { ThemeProvider, useTheme } from "@/lib/theme-context"
 import { ThemeSelector } from "@/components/theme-selector"
 import { OnlineStatus } from "@/components/online-status"
 import { KioskoSelector } from "@/components/kiosko-selector"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { getSingleOrNull } from "@/lib/supabase/utils"
 import { ToastProvider } from "@/components/ui/toast-provider"
 
@@ -359,13 +359,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               <ThemeSelector />
 
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative text-gray-400 hover:text-white hover:bg-white/5">
-                <Bell className="w-5 h-5" />
-                <span
-                  className="absolute top-1 right-1 w-2 h-2 rounded-full"
-                  style={{ backgroundColor: config.primary }}
-                />
-              </Button>
+              <NotificationsDropdown />
 
               {/* User menu */}
               <Suspense fallback={<div>Loading...</div>}>

@@ -74,13 +74,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 400 })
     }
 
-    let userId = created.user?.id
+    let userId = created?.user?.id
     if (!userId) {
-      const { data: existing, error: getError } = await admin.auth.admin.getUserByEmail(email)
-      if (getError) {
-        return NextResponse.json({ error: getError.message }, { status: 400 })
+      // El usuario ya existe, buscarlo por email
+      const { data: listData, error: listError } = await admin.auth.admin.listUsers()
+      if (listError) {
+        return NextResponse.json({ error: listError.message }, { status: 400 })
       }
-      userId = existing.user?.id
+      const existingUser = listData.users.find(u => u.email === email)
+      userId = existingUser?.id
     }
 
     if (!userId) {
