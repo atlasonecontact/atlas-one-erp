@@ -138,16 +138,48 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
     return semicolons > commas ? ';' : ','
   }, [])
 
-  // Parse number handling both . and , as decimal separator
+  // Parse number handling Argentine formats: $1.234,56 or 1.234,56 or 1234.56
   const parseNumber = useCallback((value: string): number => {
     if (!value || value.trim() === '') return 0
-    const cleaned = value.trim()
-      .replace(/\s/g, '')
-      .replace(/,(?=\d{3})/g, '')
-      .replace(/\.(?=\d{3})/g, '')
-      .replace(',', '.')
+    
+    let cleaned = value.trim()
+      // Remove currency symbols and spaces
+      .replace(/[$€\s]/g, '')
+      // Remove any quotes
+      .replace(/["']/g, '')
+    
+    // Detect format: if there's a comma followed by exactly 2 digits at the end, it's Argentine format
+    // Examples: 1.234,56 or 1234,56 (Argentine) vs 1,234.56 (US)
+    const hasArgentineFormat = /,\d{1,2}$/.test(cleaned)
+    const hasUSFormat = /\.\d{1,2}$/.test(cleaned) && /,\d{3}/.test(cleaned)
+    
+    if (hasArgentineFormat) {
+      // Argentine format: 1.234.567,89 → remove dots, replace comma with dot
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    } else if (hasUSFormat) {
+      // US format: 1,234,567.89 → remove commas
+      cleaned = cleaned.replace(/,/g, '')
+    } else {
+      // Ambiguous or simple format - try to detect
+      const commaCount = (cleaned.match(/,/g) || []).length
+      const dotCount = (cleaned.match(/\./g) || []).length
+      
+      if (commaCount === 1 && dotCount === 0) {
+        // Single comma, could be decimal: 1234,56 → replace with dot
+        cleaned = cleaned.replace(',', '.')
+      } else if (dotCount === 1 && commaCount === 0) {
+        // Single dot, could be decimal: 1234.56 → keep as is
+      } else if (commaCount > 0 && dotCount === 0) {
+        // Multiple commas as thousands: 1,234,567 → remove commas
+        cleaned = cleaned.replace(/,/g, '')
+      } else if (dotCount > 0 && commaCount === 0) {
+        // Multiple dots as thousands (Argentine): 1.234.567 → remove dots
+        cleaned = cleaned.replace(/\./g, '')
+      }
+    }
+    
     const num = parseFloat(cleaned)
-    return isNaN(num) ? 0 : num
+    return isNaN(num) ? 0 : Math.round(num * 100) / 100
   }, [])
 
   // Main CSV parser - handles large files efficiently
@@ -166,11 +198,11 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
     }
 
     // Parse headers
-    const headers = parseCSVLine(lines[0], detectedSep).map(h => h.toLowerCase().trim())
+    const headers: string[] = parseCSVLine(lines[0], detectedSep).map((h: string) => h.toLowerCase().trim())
     
     // Map headers to our fields
     const columnMap: Record<number, keyof CSVProduct> = {}
-    headers.forEach((header, idx) => {
+    headers.forEach((header: string, idx: number) => {
       const mapped = COLUMN_MAPPINGS[header]
       if (mapped) {
         columnMap[idx] = mapped
@@ -250,13 +282,20 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
         seenSkus.add(product.sku!)
       }
 
+      // Calculate sale_price if missing - try multiple sources
       if (!product.sale_price || product.sale_price <= 0) {
         if (product.cost_inc_vat && product.cost_inc_vat > 0) {
+          // Calculate with 30% margin over cost with VAT
           product.sale_price = Math.round(product.cost_inc_vat * 1.3 * 100) / 100
-          warnings.push(`Fila ${rowNum}: Sin precio, calculado desde costo`)
+          warnings.push(`Fila ${rowNum}: Precio calculado desde costo con IVA (30% margen)`)
+        } else if (product.cost_ex_vat && product.cost_ex_vat > 0) {
+          // Calculate with 21% VAT + 30% margin
+          product.sale_price = Math.round(product.cost_ex_vat * 1.21 * 1.3 * 100) / 100
+          warnings.push(`Fila ${rowNum}: Precio calculado desde costo sin IVA (21% IVA + 30% margen)`)
         } else {
-          errors.push(`Fila ${rowNum}: Precio de venta inválido`)
-          continue
+          // No price and no cost - set a default placeholder price
+          product.sale_price = 100
+          warnings.push(`Fila ${rowNum}: Sin precio ni costo - precio temporal $100`)
         }
       }
 
@@ -372,7 +411,7 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
           <div>
             <h2 className="text-xl font-bold text-white">Importar Productos desde CSV</h2>
             <p className="text-sm text-gray-400 mt-1">
-              Soporta hasta 30,000 productos • Formato Excel compatible
+              Sin límite de productos • Formato Excel compatible
             </p>
           </div>
           <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors">

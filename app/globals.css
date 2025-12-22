@@ -1,7 +1,7 @@
 @import "tailwindcss";
-/* Removed tw-animate-css import as it causes CSS parsing errors with Tailwind v4 */
+@import "tw-animate-css";
 
-/* Fixed dark variant syntax - removed problematic @custom-variant */
+@custom-variant dark (&:is(.dark *));
 
 /* Updated design tokens for Atlas One dark/cyan theme */
 :root {
