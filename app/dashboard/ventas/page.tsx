@@ -84,11 +84,21 @@ export default function VentasPage() {
       .from("products")
       .select("*")
       .eq("kiosko_id", kiosko_id)
-      .gt("stock", 0)
+      .eq("is_active", true)
+      .gt("stock_quantity", 0)
       .order("name")
 
     if (productsData) {
-      setProducts(productsData)
+      // Map database fields to component fields
+      const mappedProducts = productsData.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || "Sin categoría",
+        price: p.price || 0,
+        stock: p.stock_quantity || 0,
+        status: p.stock_quantity <= 10 ? "low_stock" : "active",
+      }))
+      setProducts(mappedProducts)
     }
     setIsLoading(false)
   }
@@ -136,14 +146,16 @@ export default function VentasPage() {
     try {
       console.log("[v0] Processing payment:", { kioskoId, employeeId, total, method })
 
+      const saleNumber = `V-${Date.now()}`
       const { data: saleData, error: saleError } = await supabase
         .from("sales")
         .insert({
           kiosko_id: kioskoId,
           employee_id: employeeId,
-          sale_type: employeeId ? "employee" : "owner",
+          sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
+          status: "completed",
         })
         .select()
         .single()
@@ -155,12 +167,13 @@ export default function VentasPage() {
 
       console.log("[v0] Sale created:", saleData.id)
 
-      // Insert sale items
+      // Insert sale items with correct field names
       const saleItems = cart.map((item) => ({
         sale_id: saleData.id,
         product_id: item.id,
         quantity: item.quantity,
-        price: item.price,
+        unit_price: item.price,
+        subtotal: item.price * item.quantity,
       }))
 
       const { error: itemsError } = await supabase.from("sale_items").insert(saleItems)
@@ -172,11 +185,12 @@ export default function VentasPage() {
 
       console.log("[v0] Sale items created")
 
-      // Update product stock
+      // Update product stock using correct field name
       for (const item of cart) {
+        const newStock = item.stock - item.quantity
         await supabase
           .from("products")
-          .update({ stock: item.stock - item.quantity })
+          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
           .eq("id", item.id)
       }
 

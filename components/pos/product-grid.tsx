@@ -4,7 +4,7 @@ import { Package, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Product {
-  id: number
+  id: string
   name: string
   category: string
   price: number

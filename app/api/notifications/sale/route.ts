@@ -74,12 +74,11 @@ Hora: ${new Date().toLocaleString("es-AR")}
       }
     }
 
-    // Send Telegram notification only if configured AND phone is verified
+    // Send Telegram notification if configured AND verified
     if (
       notif?.telegram_enabled &&
       notif?.telegram_chat_id &&
       notif?.telegram_verified &&
-      notif?.whatsapp_verified &&
       process.env.TELEGRAM_BOT_TOKEN
     ) {
       try {

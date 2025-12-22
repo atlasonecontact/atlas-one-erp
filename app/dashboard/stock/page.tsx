@@ -1,24 +1,171 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { demoProducts, demoInventoryMovements, stockCategories } from "@/lib/demo-data"
 import { StockHeatmap } from "@/components/stock/stock-heatmap"
-import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { Search, Download, Package, AlertTriangle, TrendingUp, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+
+interface Product {
+  id: string
+  name: string
+  category: string
+  stock_quantity: number
+  min_stock_level: number
+}
+
+interface StockMovement {
+  id: string
+  product_id: string
+  product_name?: string
+  movement_type: string
+  quantity: number
+  reason: string
+  created_at: string
+}
+
+interface CategoryStock {
+  category: string
+  stock: number
+  rotation: "Rápido" | "Normal" | "Lento"
+}
 
 export default function StockPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [products, setProducts] = useState<Product[]>([])
+  const [movements, setMovements] = useState<StockMovement[]>([])
+  const [categoryStats, setCategoryStats] = useState<CategoryStock[]>([])
+  const [loading, setLoading] = useState(true)
+  const [kioskoId, setKioskoId] = useState<string | null>(null)
 
-  const totalStock = demoProducts.reduce((acc, p) => acc + p.stock, 0)
-  const lowStockCount = demoProducts.filter((p) => p.stock <= 10).length
-  const criticalStockCount = demoProducts.filter((p) => p.stock <= 5).length
+  const supabase = createClient()
 
-  const filteredMovements = demoInventoryMovements.filter(
+  useEffect(() => {
+    loadUserAndData()
+  }, [])
+
+  const loadUserAndData = async () => {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Check if user is an employee
+    const { data: employeeData } = await supabase
+      .from("employees")
+      .select("id, kiosko_id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle()
+
+    let targetKioskoId: string | null = null
+
+    if (employeeData) {
+      targetKioskoId = employeeData.kiosko_id
+    } else {
+      // User is owner
+      const { data: kioscos } = await supabase
+        .from("kioscos")
+        .select("id")
+        .eq("owner_id", user.id)
+        .limit(1)
+
+      if (kioscos && kioscos.length > 0) {
+        targetKioskoId = kioscos[0].id
+      }
+    }
+
+    if (targetKioskoId) {
+      setKioskoId(targetKioskoId)
+      await Promise.all([
+        loadProducts(targetKioskoId),
+        loadMovements(targetKioskoId),
+      ])
+    }
+    setLoading(false)
+  }
+
+  const loadProducts = async (kiosko_id: string) => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, category, stock_quantity, min_stock_level")
+      .eq("kiosko_id", kiosko_id)
+      .eq("is_active", true)
+      .order("name")
+
+    if (!error && data) {
+      setProducts(data)
+      calculateCategoryStats(data)
+    }
+  }
+
+  const loadMovements = async (kiosko_id: string) => {
+    const { data, error } = await supabase
+      .from("stock_movements")
+      .select(`
+        id,
+        product_id,
+        movement_type,
+        quantity,
+        reason,
+        created_at,
+        products(name)
+      `)
+      .eq("kiosko_id", kiosko_id)
+      .order("created_at", { ascending: false })
+      .limit(50)
+
+    if (!error && data) {
+      const mappedMovements = data.map((m: any) => ({
+        id: m.id,
+        product_id: m.product_id,
+        product_name: m.products?.name || "Producto desconocido",
+        movement_type: m.movement_type,
+        quantity: m.quantity,
+        reason: m.reason || "",
+        created_at: m.created_at,
+      }))
+      setMovements(mappedMovements)
+    }
+  }
+
+  const calculateCategoryStats = (prods: Product[]) => {
+    const categoryMap = new Map<string, { stock: number; count: number }>()
+    
+    prods.forEach((p) => {
+      const cat = p.category || "Sin categoría"
+      const existing = categoryMap.get(cat) || { stock: 0, count: 0 }
+      categoryMap.set(cat, {
+        stock: existing.stock + p.stock_quantity,
+        count: existing.count + 1,
+      })
+    })
+
+    const stats: CategoryStock[] = Array.from(categoryMap.entries()).map(([category, data]) => ({
+      category,
+      stock: data.stock,
+      rotation: data.stock > 100 ? "Rápido" : data.stock > 30 ? "Normal" : "Lento",
+    }))
+
+    setCategoryStats(stats)
+  }
+
+  const totalStock = products.reduce((acc, p) => acc + p.stock_quantity, 0)
+  const lowStockCount = products.filter((p) => p.stock_quantity <= (p.min_stock_level || 10)).length
+  const criticalStockCount = products.filter((p) => p.stock_quantity <= 5).length
+
+  const filteredMovements = movements.filter(
     (m) =>
-      m.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.reason.toLowerCase().includes(searchQuery.toLowerCase()),
+      (m.product_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.reason || "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("es-AR")
+  }
 
   return (
     <div className="space-y-6">
@@ -104,36 +251,40 @@ export default function StockPage() {
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Rotación por Categoría</h3>
           <div className="space-y-4">
-            {stockCategories.map((cat, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">{cat.category}</span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      cat.rotation === "Rápido"
-                        ? "bg-green-500/20 text-green-400"
-                        : cat.rotation === "Normal"
-                          ? "bg-cyan-500/20 text-cyan-400"
-                          : "bg-yellow-500/20 text-yellow-400"
-                    }`}
-                  >
-                    {cat.rotation}
-                  </span>
+            {categoryStats.length === 0 ? (
+              <p className="text-gray-500 text-sm">No hay productos cargados</p>
+            ) : (
+              categoryStats.map((cat, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">{cat.category}</span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        cat.rotation === "Rápido"
+                          ? "bg-green-500/20 text-green-400"
+                          : cat.rotation === "Normal"
+                            ? "bg-cyan-500/20 text-cyan-400"
+                            : "bg-yellow-500/20 text-yellow-400"
+                      }`}
+                    >
+                      {cat.rotation}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        cat.rotation === "Rápido"
+                          ? "bg-green-500"
+                          : cat.rotation === "Normal"
+                            ? "bg-cyan-500"
+                            : "bg-yellow-500"
+                      }`}
+                      style={{ width: `${Math.min((cat.stock / 300) * 100, 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 rounded-full bg-white/5 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      cat.rotation === "Rápido"
-                        ? "bg-green-500"
-                        : cat.rotation === "Normal"
-                          ? "bg-cyan-500"
-                          : "bg-yellow-500"
-                    }`}
-                    style={{ width: `${Math.min((cat.stock / 300) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -167,31 +318,39 @@ export default function StockPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredMovements.map((movement) => (
-              <tr key={movement.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                <td className="p-4 text-gray-400">{movement.date}</td>
-                <td className="p-4 text-white">{movement.product}</td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    {movement.type === "IN" ? (
-                      <ArrowUpRight className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <ArrowDownRight className="w-4 h-4 text-red-400" />
-                    )}
-                    <span className={movement.type === "IN" ? "text-green-400" : "text-red-400"}>
-                      {movement.type === "IN" ? "Entrada" : "Salida"}
-                    </span>
-                  </div>
+            {filteredMovements.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-gray-500">
+                  {loading ? "Cargando movimientos..." : "No hay movimientos de inventario"}
                 </td>
-                <td className="p-4">
-                  <span className={movement.type === "IN" ? "text-green-400" : "text-red-400"}>
-                    {movement.type === "IN" ? "+" : "-"}
-                    {movement.quantity}
-                  </span>
-                </td>
-                <td className="p-4 text-gray-400">{movement.reason}</td>
               </tr>
-            ))}
+            ) : (
+              filteredMovements.map((movement) => (
+                <tr key={movement.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                  <td className="p-4 text-gray-400">{formatDate(movement.created_at)}</td>
+                  <td className="p-4 text-white">{movement.product_name}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      {movement.movement_type === "in" || movement.movement_type === "purchase" ? (
+                        <ArrowUpRight className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <ArrowDownRight className="w-4 h-4 text-red-400" />
+                      )}
+                      <span className={movement.movement_type === "in" || movement.movement_type === "purchase" ? "text-green-400" : "text-red-400"}>
+                        {movement.movement_type === "in" || movement.movement_type === "purchase" ? "Entrada" : "Salida"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className={movement.movement_type === "in" || movement.movement_type === "purchase" ? "text-green-400" : "text-red-400"}>
+                      {movement.movement_type === "in" || movement.movement_type === "purchase" ? "+" : "-"}
+                      {movement.quantity}
+                    </span>
+                  </td>
+                  <td className="p-4 text-gray-400">{movement.reason || "-"}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

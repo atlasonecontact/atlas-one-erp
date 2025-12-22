@@ -1,18 +1,114 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { demoPurchases } from "@/lib/demo-data"
 import { PurchaseModal } from "@/components/purchases/purchase-modal"
-import { Search, Plus, Eye, Check, Clock, Truck } from "lucide-react"
+import { Search, Plus, Eye, Check, Clock, Truck, RefreshCw } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+
+interface Purchase {
+  id: string
+  supplier_name: string
+  purchase_number: string
+  total_amount: number
+  status: string
+  created_at: string
+}
 
 export default function ComprasPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showModal, setShowModal] = useState(false)
-  const [purchases, setPurchases] = useState(demoPurchases)
+  const [purchases, setPurchases] = useState<Purchase[]>([])
+  const [loading, setLoading] = useState(true)
+  const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [stats, setStats] = useState({ monthTotal: 0, pendingCount: 0, pendingTotal: 0, supplierCount: 0 })
 
-  const filteredPurchases = purchases.filter((p) => p.supplier.toLowerCase().includes(searchQuery.toLowerCase()))
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadUserAndPurchases()
+  }, [])
+
+  const loadUserAndPurchases = async () => {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Check if user is an employee
+    const { data: employeeData } = await supabase
+      .from("employees")
+      .select("kiosko_id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle()
+
+    let targetKioskoId: string | null = null
+
+    if (employeeData) {
+      targetKioskoId = employeeData.kiosko_id
+    } else {
+      const { data: kioscos } = await supabase
+        .from("kioscos")
+        .select("id")
+        .eq("owner_id", user.id)
+        .limit(1)
+
+      if (kioscos && kioscos.length > 0) {
+        targetKioskoId = kioscos[0].id
+      }
+    }
+
+    if (targetKioskoId) {
+      setKioskoId(targetKioskoId)
+      await loadPurchases(targetKioskoId)
+    }
+    setLoading(false)
+  }
+
+  const loadPurchases = async (kiosko_id: string) => {
+    const { data, error } = await supabase
+      .from("purchases")
+      .select("*")
+      .eq("kiosko_id", kiosko_id)
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      setPurchases(data)
+      calculateStats(data)
+    }
+  }
+
+  const calculateStats = (purchaseData: Purchase[]) => {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    const monthPurchases = purchaseData.filter(p => new Date(p.created_at) >= monthStart)
+    const monthTotal = monthPurchases.reduce((sum, p) => sum + Number(p.total_amount), 0)
+    
+    const pending = purchaseData.filter(p => p.status === "pending")
+    const pendingTotal = pending.reduce((sum, p) => sum + Number(p.total_amount), 0)
+    
+    const uniqueSuppliers = new Set(monthPurchases.map(p => p.supplier_name))
+    
+    setStats({
+      monthTotal,
+      pendingCount: pending.length,
+      pendingTotal,
+      supplierCount: uniqueSuppliers.size,
+    })
+  }
+
+  const filteredPurchases = purchases.filter((p) => 
+    p.supplier_name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("es-AR")
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -40,8 +136,29 @@ export default function ComprasPage() {
     }
   }
 
-  const handleNewPurchase = (purchase: (typeof demoPurchases)[0]) => {
-    setPurchases((prev) => [{ ...purchase, id: Date.now() }, ...prev])
+  const handleNewPurchase = async (purchase: { supplier: string; total: number; status: string }) => {
+    if (!kioskoId) {
+      alert("No hay kiosko seleccionado")
+      return
+    }
+
+    const purchaseNumber = `C-${Date.now()}`
+    const { data, error } = await supabase
+      .from("purchases")
+      .insert({
+        kiosko_id: kioskoId,
+        supplier_name: purchase.supplier,
+        purchase_number: purchaseNumber,
+        total_amount: purchase.total,
+        status: purchase.status || "pending",
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setPurchases((prev) => [data, ...prev])
+      calculateStats([data, ...purchases])
+    }
     setShowModal(false)
   }
 
@@ -66,17 +183,17 @@ export default function ComprasPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Compras del mes</p>
-          <p className="text-2xl font-bold text-white">$60,500</p>
-          <p className="text-xs text-green-400 mt-1">4 órdenes completadas</p>
+          <p className="text-2xl font-bold text-white">${stats.monthTotal.toLocaleString()}</p>
+          <p className="text-xs text-green-400 mt-1">{purchases.filter(p => p.status === "completed").length} órdenes completadas</p>
         </div>
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Pendientes</p>
-          <p className="text-2xl font-bold text-yellow-400">1</p>
-          <p className="text-xs text-gray-500 mt-1">$12,000 en espera</p>
+          <p className="text-2xl font-bold text-yellow-400">{stats.pendingCount}</p>
+          <p className="text-xs text-gray-500 mt-1">${stats.pendingTotal.toLocaleString()} en espera</p>
         </div>
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <p className="text-sm text-gray-400 mb-1">Proveedores activos</p>
-          <p className="text-2xl font-bold text-cyan-400">4</p>
+          <p className="text-2xl font-bold text-cyan-400">{stats.supplierCount}</p>
           <p className="text-xs text-gray-500 mt-1">Este mes</p>
         </div>
       </div>
@@ -107,33 +224,48 @@ export default function ComprasPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredPurchases.map((purchase) => (
-              <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                <td className="p-4">
-                  <span className="text-cyan-400 font-mono">#{purchase.id.toString().padStart(4, "0")}</span>
-                </td>
-                <td className="p-4 text-white font-medium">{purchase.supplier}</td>
-                <td className="p-4 text-gray-400">{purchase.date}</td>
-                <td className="p-4 text-white">${purchase.total.toLocaleString()}</td>
-                <td className="p-4">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(purchase.status)}`}
-                  >
-                    {getStatusIcon(purchase.status)}
-                    {purchase.status === "completed"
-                      ? "Completada"
-                      : purchase.status === "pending"
-                        ? "Pendiente"
-                        : "En tránsito"}
-                  </span>
-                </td>
-                <td className="p-4 text-right">
-                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                    <Eye className="w-4 h-4" />
-                  </Button>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-gray-500">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                  Cargando compras...
                 </td>
               </tr>
-            ))}
+            ) : filteredPurchases.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-gray-500">
+                  No hay compras registradas
+                </td>
+              </tr>
+            ) : (
+              filteredPurchases.map((purchase) => (
+                <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                  <td className="p-4">
+                    <span className="text-cyan-400 font-mono">{purchase.purchase_number}</span>
+                  </td>
+                  <td className="p-4 text-white font-medium">{purchase.supplier_name}</td>
+                  <td className="p-4 text-gray-400">{formatDate(purchase.created_at)}</td>
+                  <td className="p-4 text-white">${Number(purchase.total_amount).toLocaleString()}</td>
+                  <td className="p-4">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(purchase.status)}`}
+                    >
+                      {getStatusIcon(purchase.status)}
+                      {purchase.status === "completed"
+                        ? "Completada"
+                        : purchase.status === "pending"
+                          ? "Pendiente"
+                          : "En tránsito"}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

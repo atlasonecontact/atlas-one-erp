@@ -2,43 +2,247 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Wallet, Banknote, CreditCard, QrCode, TrendingUp, TrendingDown, DollarSign, Plus } from "lucide-react"
+import { Wallet, Banknote, CreditCard, QrCode, TrendingUp, TrendingDown, DollarSign, Plus, RefreshCw } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+
+interface CashRegister {
+  id: string
+  opening_balance: number
+  closing_balance: number | null
+  status: string
+  opened_at: string
+  closed_at: string | null
+}
+
+interface Transaction {
+  id: string
+  type: string
+  amount: number
+  payment_method: string | null
+  notes: string | null
+  created_at: string
+}
+
+interface SalesByMethod {
+  cash: number
+  card: number
+  qr: number
+  cashCount: number
+  cardCount: number
+  qrCount: number
+}
 
 export default function CajaPage() {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
   const [showExpenseModal, setShowExpenseModal] = useState(false)
-  const [openingBalance] = useState(5000)
-  const [expenses, setExpenses] = useState([
-    { id: 1, description: "Compra de bolsas", amount: 500, time: "09:30" },
-    { id: 2, description: "Limpieza", amount: 1200, time: "12:00" },
-  ])
+  const [showOpenModal, setShowOpenModal] = useState(false)
+  const [openingBalance, setOpeningBalance] = useState(0)
+  const [newOpeningBalance, setNewOpeningBalance] = useState("")
+  const [expenses, setExpenses] = useState<Transaction[]>([])
+  const [salesByMethod, setSalesByMethod] = useState<SalesByMethod>({ cash: 0, card: 0, qr: 0, cashCount: 0, cardCount: 0, qrCount: 0 })
+  const [currentRegister, setCurrentRegister] = useState<CashRegister | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [kioskoId, setKioskoId] = useState<string | null>(null)
 
-  const salesByMethod = {
-    cash: 8500,
-    card: 4200,
-    qr: 2500,
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadUserAndCashRegister()
+  }, [])
+
+  const loadUserAndCashRegister = async () => {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Get kiosko
+    const { data: employeeData } = await supabase
+      .from("employees")
+      .select("kiosko_id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle()
+
+    let targetKioskoId: string | null = null
+
+    if (employeeData) {
+      targetKioskoId = employeeData.kiosko_id
+    } else {
+      const { data: kioscos } = await supabase
+        .from("kioscos")
+        .select("id")
+        .eq("owner_id", user.id)
+        .limit(1)
+
+      if (kioscos && kioscos.length > 0) {
+        targetKioskoId = kioscos[0].id
+      }
+    }
+
+    if (targetKioskoId) {
+      setKioskoId(targetKioskoId)
+      await loadCashRegister(targetKioskoId)
+      await loadTodaySales(targetKioskoId)
+    }
+    setLoading(false)
+  }
+
+  const loadCashRegister = async (kiosko_id: string) => {
+    // Get today's open register or create one
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const { data: register } = await supabase
+      .from("cash_registers")
+      .select("*")
+      .eq("kiosko_id", kiosko_id)
+      .eq("status", "open")
+      .order("opened_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (register) {
+      setCurrentRegister(register)
+      setIsOpen(true)
+      setOpeningBalance(Number(register.opening_balance))
+      await loadTransactions(register.id)
+    } else {
+      setIsOpen(false)
+    }
+  }
+
+  const loadTransactions = async (registerId: string) => {
+    const { data } = await supabase
+      .from("cash_register_transactions")
+      .select("*")
+      .eq("cash_register_id", registerId)
+      .eq("type", "expense")
+      .order("created_at", { ascending: false })
+
+    if (data) {
+      setExpenses(data)
+    }
+  }
+
+  const loadTodaySales = async (kiosko_id: string) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const { data: sales } = await supabase
+      .from("sales")
+      .select("total_amount, payment_method")
+      .eq("kiosko_id", kiosko_id)
+      .gte("created_at", today.toISOString())
+
+    if (sales) {
+      const byMethod: SalesByMethod = { cash: 0, card: 0, qr: 0, cashCount: 0, cardCount: 0, qrCount: 0 }
+      sales.forEach((s) => {
+        const amount = Number(s.total_amount)
+        switch (s.payment_method?.toLowerCase()) {
+          case "cash":
+          case "efectivo":
+            byMethod.cash += amount
+            byMethod.cashCount++
+            break
+          case "card":
+          case "tarjeta":
+            byMethod.card += amount
+            byMethod.cardCount++
+            break
+          case "qr":
+            byMethod.qr += amount
+            byMethod.qrCount++
+            break
+          default:
+            byMethod.cash += amount
+            byMethod.cashCount++
+        }
+      })
+      setSalesByMethod(byMethod)
+    }
+  }
+
+  const handleOpenCash = async () => {
+    if (!kioskoId) return
+    
+    const balance = Number(newOpeningBalance) || 0
+    const { data, error } = await supabase
+      .from("cash_registers")
+      .insert({
+        kiosko_id: kioskoId,
+        opening_balance: balance,
+        status: "open",
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setCurrentRegister(data)
+      setOpeningBalance(balance)
+      setIsOpen(true)
+      setShowOpenModal(false)
+      setNewOpeningBalance("")
+    }
+  }
+
+  const handleCloseCash = async () => {
+    if (!currentRegister) return
+    
+    const { error } = await supabase
+      .from("cash_registers")
+      .update({
+        closing_balance: currentBalance,
+        status: "closed",
+        closed_at: new Date().toISOString(),
+      })
+      .eq("id", currentRegister.id)
+
+    if (!error) {
+      setIsOpen(false)
+      setCurrentRegister(null)
+      setExpenses([])
+    }
   }
 
   const totalSales = salesByMethod.cash + salesByMethod.card + salesByMethod.qr
-  const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0)
+  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0)
   const currentBalance = openingBalance + salesByMethod.cash - totalExpenses
+  const totalTransactions = salesByMethod.cashCount + salesByMethod.cardCount + salesByMethod.qrCount
 
-  const handleAddExpense = (description: string, amount: number) => {
-    setExpenses((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        description,
-        amount,
-        time: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-      },
-    ])
+  const handleAddExpense = async (description: string, amount: number) => {
+    if (!currentRegister) return
+
+    const { data, error } = await supabase
+      .from("cash_register_transactions")
+      .insert({
+        cash_register_id: currentRegister.id,
+        type: "expense",
+        amount: amount,
+        notes: description,
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setExpenses((prev) => [data, ...prev])
+    }
     setShowExpenseModal(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -50,16 +254,18 @@ export default function CajaPage() {
           <p className="text-gray-400 text-sm">Control de caja y movimientos del día</p>
         </div>
         <div className="flex items-center gap-3">
+          {isOpen && (
+            <Button
+              onClick={() => setShowExpenseModal(true)}
+              variant="outline"
+              className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Registrar Gasto
+            </Button>
+          )}
           <Button
-            onClick={() => setShowExpenseModal(true)}
-            variant="outline"
-            className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Registrar Gasto
-          </Button>
-          <Button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => isOpen ? handleCloseCash() : setShowOpenModal(true)}
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}
@@ -123,7 +329,7 @@ export default function CajaPage() {
             <span className="text-sm text-gray-400">Transacciones</span>
             <Wallet className="w-5 h-5 text-cyan-400" />
           </div>
-          <p className="text-2xl font-bold text-white">24</p>
+          <p className="text-2xl font-bold text-white">{totalTransactions}</p>
         </div>
       </div>
 
@@ -139,7 +345,7 @@ export default function CajaPage() {
                 </div>
                 <div>
                   <p className="text-white font-medium">Efectivo</p>
-                  <p className="text-xs text-gray-500">12 transacciones</p>
+                  <p className="text-xs text-gray-500">{salesByMethod.cashCount} transacciones</p>
                 </div>
               </div>
               <p className="text-xl font-bold text-white">${salesByMethod.cash.toLocaleString()}</p>
@@ -152,7 +358,7 @@ export default function CajaPage() {
                 </div>
                 <div>
                   <p className="text-white font-medium">Tarjeta</p>
-                  <p className="text-xs text-gray-500">8 transacciones</p>
+                  <p className="text-xs text-gray-500">{salesByMethod.cardCount} transacciones</p>
                 </div>
               </div>
               <p className="text-xl font-bold text-white">${salesByMethod.card.toLocaleString()}</p>
@@ -165,7 +371,7 @@ export default function CajaPage() {
                 </div>
                 <div>
                   <p className="text-white font-medium">QR / Transferencia</p>
-                  <p className="text-xs text-gray-500">4 transacciones</p>
+                  <p className="text-xs text-gray-500">{salesByMethod.qrCount} transacciones</p>
                 </div>
               </div>
               <p className="text-xl font-bold text-white">${salesByMethod.qr.toLocaleString()}</p>
@@ -186,8 +392,8 @@ export default function CajaPage() {
               {expenses.map((expense) => (
                 <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <div>
-                    <p className="text-white font-medium">{expense.description}</p>
-                    <p className="text-xs text-gray-500">{expense.time}</p>
+                    <p className="text-white font-medium">{expense.notes || 'Gasto'}</p>
+                    <p className="text-xs text-gray-500">{new Date(expense.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                   <p className="text-red-400 font-bold">-${expense.amount.toLocaleString()}</p>
                 </div>

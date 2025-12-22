@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface PurchaseModalProps {
   open: boolean
   onClose: () => void
-  onSave: (purchase: { id: number; supplier: string; date: string; total: number; status: string }) => void
+  onSave: (purchase: { supplier: string; total: number; status: string }) => void
 }
 
-const suppliers = ["Coca-Cola", "Pepsico", "Mondelez", "Philip Morris", "Red Bull", "La Serenísima"]
+const suppliers = ["Coca-Cola", "Pepsico", "Mondelez", "Philip Morris", "Red Bull", "La Serenísima", "Arcor", "Danone", "Nestlé"]
 
 export function PurchaseModal({ open, onClose, onSave }: PurchaseModalProps) {
   const [formData, setFormData] = useState({
@@ -25,9 +25,7 @@ export function PurchaseModal({ open, onClose, onSave }: PurchaseModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
-      id: 0,
       supplier: formData.supplier,
-      date: new Date().toISOString().split("T")[0],
       total: formData.total,
       status: "pending",
     })

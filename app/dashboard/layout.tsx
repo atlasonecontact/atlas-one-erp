@@ -30,6 +30,8 @@ import {
   ChevronRight,
   Building2,
   LogOut,
+  Plug,
+  Bike,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
@@ -55,10 +57,12 @@ const navItems = [
   { href: "/dashboard/productos", label: "Productos", icon: Package },
   { href: "/dashboard/stock", label: "Stock", icon: Warehouse },
   { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag },
+  { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike },
   { href: "/dashboard/caja", label: "Caja", icon: Wallet },
   { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2 },
   { href: "/dashboard/empleados", label: "Empleados", icon: Users },
   { href: "/dashboard/reportes", label: "Reportes", icon: BarChart3 },
+  { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
 ]
 

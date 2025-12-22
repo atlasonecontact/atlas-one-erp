@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Product {
-  id: number
+  id: string
   name: string
   category: string
   cost: number
   price: number
   stock: number
+  barcode?: string
   status: string
 }
 
@@ -39,12 +40,13 @@ const categories = [
 
 export function ProductModal({ open, onClose, product, onSave }: ProductModalProps) {
   const [formData, setFormData] = useState<Product>({
-    id: 0,
+    id: "",
     name: "",
     category: "Bebidas",
     cost: 0,
     price: 0,
     stock: 0,
+    barcode: "",
     status: "active",
   })
 
@@ -53,12 +55,13 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
       setFormData(product)
     } else {
       setFormData({
-        id: 0,
+        id: "",
         name: "",
         category: "Bebidas",
         cost: 0,
         price: 0,
         stock: 0,
+        barcode: "",
         status: "active",
       })
     }
@@ -130,6 +133,16 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
               type="number"
               value={formData.stock}
               onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+              className="bg-[#0d1424] border-cyan-500/20 text-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Código de barras (opcional)</Label>
+            <Input
+              value={formData.barcode || ""}
+              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+              placeholder="Ej: 7790001234567"
               className="bg-[#0d1424] border-cyan-500/20 text-white"
             />
           </div>

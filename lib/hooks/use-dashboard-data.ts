@@ -120,11 +120,19 @@ export function useDashboardData(period: string) {
 
       const { data: lowStock } = await supabase
         .from("products")
-        .select("id, name, stock, min_stock")
+        .select("id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
-        .lt("stock", 15)
-        .order("stock", { ascending: true })
+        .eq("is_active", true)
+        .lt("stock_quantity", 15)
+        .order("stock_quantity", { ascending: true })
         .limit(5)
+
+      const mappedLowStock = lowStock?.map((p) => ({
+        id: p.id,
+        name: p.name,
+        stock: p.stock_quantity,
+        min_stock: p.min_stock_level || 10,
+      })) || []
 
       const { data: recentSales } = await supabase
         .from("sales")
@@ -189,7 +197,7 @@ export function useDashboardData(period: string) {
         topProductCount: products?.length || 0,
         salesTrend,
         topProducts,
-        lowStockProducts: lowStock || [],
+        lowStockProducts: mappedLowStock,
         recentSales: mappedRecentSales || [],
         margin,
       })

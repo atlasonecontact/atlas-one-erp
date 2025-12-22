@@ -9,8 +9,8 @@ interface CartProps {
   subtotal: number
   tax: number
   total: number
-  onUpdateQuantity: (id: number, quantity: number) => void
-  onRemove: (id: number) => void
+  onUpdateQuantity: (id: string, quantity: number) => void
+  onRemove: (id: string) => void
   onClear: () => void
   onCheckout: () => void
 }

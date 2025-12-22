@@ -9,7 +9,7 @@ import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw 
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
-  id: number
+  id: string
   name: string
   category: string
   cost: number
@@ -17,6 +17,7 @@ interface Product {
   stock: number
   barcode?: string
   status: string
+  kiosko_id?: string
 }
 
 export default function ProductosPage() {
@@ -28,23 +29,81 @@ export default function ProductosPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [kioskoId, setKioskoId] = useState<string | null>(null)
 
   const supabase = createClient()
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
-    const { data, error } = await supabase.from("products").select("*").order("name")
+    const targetKioskoId = kiosko_id || kioskoId
+    
+    if (!targetKioskoId) {
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("kiosko_id", targetKioskoId)
+      .order("name")
 
     if (error) {
       console.error("Error fetching products:", error)
     } else {
-      setProducts(data || [])
+      // Map database fields to component fields
+      const mappedProducts = (data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || "Sin categoría",
+        cost: p.cost || 0,
+        price: p.price || 0,
+        stock: p.stock_quantity || 0,
+        barcode: p.barcode,
+        status: p.is_active ? (p.stock_quantity <= 10 ? "low_stock" : "active") : "inactive",
+        kiosko_id: p.kiosko_id,
+      }))
+      setProducts(mappedProducts)
     }
     setLoading(false)
   }
 
   useEffect(() => {
-    fetchProducts()
+    const loadUserAndProducts = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      // Check if user is an employee
+      const { data: employeeData } = await supabase
+        .from("employees")
+        .select("id, kiosko_id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle()
+
+      if (employeeData) {
+        setKioskoId(employeeData.kiosko_id)
+        fetchProducts(employeeData.kiosko_id)
+      } else {
+        // User is owner
+        const { data: kioscos } = await supabase
+          .from("kioscos")
+          .select("id")
+          .eq("owner_id", user.id)
+          .limit(1)
+
+        if (kioscos && kioscos.length > 0) {
+          setKioskoId(kioscos[0].id)
+          fetchProducts(kioscos[0].id)
+        } else {
+          setLoading(false)
+        }
+      }
+    }
+    loadUserAndProducts()
   }, [])
 
   const categories = ["all", ...new Set(products.map((p) => p.category))]
@@ -60,14 +119,19 @@ export default function ProductosPage() {
     setShowModal(true)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     const { error } = await supabase.from("products").delete().eq("id", id)
     if (!error) {
       setProducts((prev) => prev.filter((p) => p.id !== id))
     }
   }
 
-  const handleSave = async (product: Omit<Product, "id"> & { id?: number }) => {
+  const handleSave = async (product: Omit<Product, "id"> & { id?: string }) => {
+    if (!kioskoId) {
+      alert("No hay kiosko seleccionado")
+      return
+    }
+
     if (editingProduct) {
       const { error } = await supabase
         .from("products")
@@ -76,9 +140,10 @@ export default function ProductosPage() {
           category: product.category,
           cost: product.cost,
           price: product.price,
-          stock: product.stock,
+          stock_quantity: product.stock,
           barcode: product.barcode,
-          status: product.status,
+          is_active: product.status === "active" || product.status === "low_stock",
+          updated_at: new Date().toISOString(),
         })
         .eq("id", editingProduct.id)
 
@@ -91,19 +156,31 @@ export default function ProductosPage() {
       const { data, error } = await supabase
         .from("products")
         .insert({
+          kiosko_id: kioskoId,
           name: product.name,
           category: product.category,
           cost: product.cost,
           price: product.price,
-          stock: product.stock,
+          stock_quantity: product.stock,
           barcode: product.barcode,
-          status: product.status || "active",
+          is_active: true,
         })
         .select()
         .single()
 
       if (!error && data) {
-        setProducts((prev) => [...prev, data])
+        const mappedProduct: Product = {
+          id: data.id,
+          name: data.name,
+          category: data.category || "Sin categoría",
+          cost: data.cost || 0,
+          price: data.price || 0,
+          stock: data.stock_quantity || 0,
+          barcode: data.barcode,
+          status: data.stock_quantity <= 10 ? "low_stock" : "active",
+          kiosko_id: data.kiosko_id,
+        }
+        setProducts((prev) => [...prev, mappedProduct])
       }
     }
     setShowModal(false)
@@ -113,21 +190,38 @@ export default function ProductosPage() {
   const handleCSVImport = async (
     csvProducts: { name: string; category: string; cost: number; price: number; stock: number; barcode?: string }[],
   ) => {
+    if (!kioskoId) {
+      alert("No hay kiosko seleccionado")
+      return
+    }
+
     setSyncing(true)
     const productsToInsert = csvProducts.map((p) => ({
+      kiosko_id: kioskoId,
       name: p.name,
       category: p.category,
       cost: p.cost,
       price: p.price,
-      stock: p.stock,
+      stock_quantity: p.stock,
       barcode: p.barcode || null,
-      status: p.stock > 10 ? "active" : "low_stock",
+      is_active: true,
     }))
 
     const { data, error } = await supabase.from("products").insert(productsToInsert).select()
 
     if (!error && data) {
-      setProducts((prev) => [...prev, ...data])
+      const mappedProducts = data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || "Sin categoría",
+        cost: p.cost || 0,
+        price: p.price || 0,
+        stock: p.stock_quantity || 0,
+        barcode: p.barcode,
+        status: p.stock_quantity <= 10 ? "low_stock" : "active",
+        kiosko_id: p.kiosko_id,
+      }))
+      setProducts((prev) => [...prev, ...mappedProducts])
     }
     setSyncing(false)
   }
