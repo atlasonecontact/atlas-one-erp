@@ -13,9 +13,9 @@
 
 En tu proyecto, agregá esta variable de entorno:
 
-```env
+\`\`\`env
 TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
-```
+\`\`\`
 
 ### En Vercel:
 1. Ir a tu proyecto → Settings → Environment Variables
@@ -31,29 +31,29 @@ Una vez desplegado tu proyecto, necesitás decirle a Telegram dónde enviar los 
 
 ### Opción A: Con cURL (Terminal)
 
-```bash
+\`\`\`bash
 curl -X POST "https://api.telegram.org/bot<TU_TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://tu-dominio.vercel.app/api/telegram/webhook"}'
-```
+\`\`\`
 
 ### Opción B: Desde el navegador
 
 Visitá esta URL (reemplazando los valores):
 
-```
+\`\`\`
 https://api.telegram.org/bot<TU_TOKEN>/setWebhook?url=https://tu-dominio.vercel.app/api/telegram/webhook
-```
+\`\`\`
 
 ### Verificar que funciona
 
 Visitá:
-```
+\`\`\`
 https://api.telegram.org/bot<TU_TOKEN>/getWebhookInfo
-```
+\`\`\`
 
 Deberías ver algo como:
-```json
+\`\`\`json
 {
   "ok": true,
   "result": {
@@ -62,7 +62,7 @@ Deberías ver algo como:
     "pending_update_count": 0
   }
 }
-```
+\`\`\`
 
 ## Paso 4: Probar el Bot
 
@@ -112,9 +112,9 @@ Deberías ver algo como:
 
 ## Estructura del Endpoint
 
-```
+\`\`\`
 app/api/telegram/webhook/route.ts
-```
+\`\`\`
 
 Este endpoint:
 1. Recibe los mensajes de Telegram via webhook
