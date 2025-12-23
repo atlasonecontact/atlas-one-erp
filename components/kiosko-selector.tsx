@@ -38,7 +38,6 @@ export function KioskoSelector() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        console.log("[v0] No user found")
         setIsLoading(false)
         return
       }
@@ -50,7 +49,6 @@ export function KioskoSelector() {
         .order("name")
 
       if (kioskoError) {
-        console.log("[v0] Error loading kioscos:", kioskoError)
         setIsLoading(false)
         return
       }
@@ -64,7 +62,6 @@ export function KioskoSelector() {
 
       setIsLoading(false)
     } catch (error) {
-      console.log("[v0] Error in loadKioscos:", error)
       setIsLoading(false)
     }
   }

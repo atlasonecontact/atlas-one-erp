@@ -148,12 +148,7 @@ export default function ConfiguracionPage() {
     } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: kioscosData, error } = await supabase.from("kioscos").select("id, name").eq("owner_id", user.id)
-
-    if (error) {
-      console.error("[v0] Error loading kioscos:", error)
-      return
-    }
+    const { data: kioscosData } = await supabase.from("kioscos").select("id, name").eq("owner_id", user.id)
 
     if (kioscosData && kioscosData.length > 0) {
       setKioscos(kioscosData)
@@ -169,7 +164,6 @@ export default function ConfiguracionPage() {
       .maybeSingle()
 
     if (selectError) {
-      console.error("[v0] Error loading notification config:", selectError)
       return null
     }
 
@@ -188,7 +182,6 @@ export default function ConfiguracionPage() {
       .single()
 
     if (insertError) {
-      console.error("[v0] Error creating notification config:", insertError)
       return null
     }
 
@@ -280,7 +273,6 @@ export default function ConfiguracionPage() {
 
       toast.success("Configuración guardada", "Los cambios se aplicaron correctamente")
     } catch (error) {
-      console.error("[v0] Error saving config:", error)
       toast.error("Error al guardar", "No se pudo guardar la configuración")
     } finally {
       setIsSaving(false)
@@ -322,7 +314,6 @@ export default function ConfiguracionPage() {
       setTelegramConfig({ ...telegramConfig, verified: true })
       await loadKioskoConfig()
     } catch (error) {
-      console.error("[v0] Error verifying phone:", error)
       toast.error("Error de verificación", "No se pudo verificar el teléfono")
     } finally {
       setIsVerifying(false)
@@ -338,13 +329,47 @@ export default function ConfiguracionPage() {
     setIsTestingTelegram(true)
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error("No se pudo obtener el usuario autenticado")
+      }
+
+      const { data: kioskoDataResult, error: kioskoCheckError } = await supabase
+        .from("kioscos")
+        .select("id, name, owner_id")
+        .eq("id", selectedKiosko)
+        .single()
+
+      if (kioskoCheckError || !kioskoDataResult) {
+        throw new Error("No se pudo verificar el kiosco")
+      }
+
+      if (kioskoDataResult.owner_id !== user.id) {
+        throw new Error("No tenés permisos para modificar este kiosco")
+      }
+
+      // Update profiles with telegram_chat_id
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          telegram_chat_id: telegramConfig.chatId,
+        })
+        .eq("id", user.id)
+
+      if (profileError) {
+        throw profileError
+      }
+
+      // Now update notification_configs for the selected kiosko
       const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
       if (!config) {
         throw new Error("No se pudo cargar la configuración de notificaciones")
       }
 
-      // Update notification_configs
-      await supabase
+      const { error: configError } = await supabase
         .from("notification_configs")
         .update({
           telegram_chat_id: telegramConfig.chatId,
@@ -353,17 +378,8 @@ export default function ConfiguracionPage() {
         })
         .eq("kiosko_id", selectedKiosko)
 
-      // IMPORTANTE: También actualizar profiles para que el bot pueda encontrar el owner
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({
-            telegram_chat_id: telegramConfig.chatId,
-          })
-          .eq("id", user.id)
+      if (configError) {
+        throw configError
       }
 
       // Now send the test message
@@ -372,7 +388,7 @@ export default function ConfiguracionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId: telegramConfig.chatId,
-          message: `✅ <b>¡Test exitoso!</b>\n\n🎉 Tu configuración de Telegram está funcionando correctamente.\n\n📱 Chat ID: <code>${telegramConfig.chatId}</code>\n🏪 Kiosco: ${kioskoData.name || "Mi Kiosco"}\n\nAhora vas a recibir notificaciones de ventas automáticamente.`,
+          message: `✅ <b>¡Test exitoso!</b>\n\n🎉 Tu configuración de Telegram está funcionando correctamente.\n\n📱 Chat ID: <code>${telegramConfig.chatId}</code>\n🏪 Kiosco: ${kioskoDataResult.name || "Mi Kiosco"}\n\nAhora vas a recibir notificaciones de ventas automáticamente.\n\n💡 <b>Próximos pasos:</b>\n1. Presioná "Guardar cambios" abajo\n2. Usá /kioscos en el bot para ver tus kioscos`,
         }),
       })
 
@@ -388,14 +404,11 @@ export default function ConfiguracionPage() {
 
         setTelegramConfig({ ...telegramConfig, verified: true, enabled: true })
         await loadKioskoConfig()
-        toast.success("¡Mensaje enviado!", "Revisá tu Telegram para confirmarlo")
+        toast.success("¡Mensaje enviado!", "Revisá tu Telegram y usá /kioscos para verificar")
       } else {
-        const error = await response.json()
-        console.error("[v0] Telegram test error:", error)
         toast.error("Error al enviar", "Verificá que el Chat ID sea correcto")
       }
     } catch (error) {
-      console.error("[v0] Error testing telegram:", error)
       toast.error("Error de conexión", "No se pudo enviar el mensaje de prueba")
     } finally {
       setIsTestingTelegram(false)
@@ -418,7 +431,6 @@ export default function ConfiguracionPage() {
         toast.success("Telegram OK", `Bot: @${data.bot?.username || "desconocido"}`)
       }
     } catch (error) {
-      console.error("[v0] Error checking telegram:", error)
       toast.error("Error", "No se pudo verificar el estado de Telegram")
     } finally {
       setIsCheckingTelegram(false)
@@ -443,7 +455,6 @@ export default function ConfiguracionPage() {
         toast.error("Error", data.error || "No se pudo configurar el webhook")
       }
     } catch (error) {
-      console.error("[v0] Error setting up telegram:", error)
       toast.error("Error", "No se pudo configurar el webhook")
     } finally {
       setIsCheckingTelegram(false)
@@ -499,7 +510,6 @@ export default function ConfiguracionPage() {
       toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado")
       await loadKioskoConfig()
     } catch (error) {
-      console.error("[v0] Error saving verified phone:", error)
       toast.error("Error", "No se pudo guardar el teléfono")
     }
   }
@@ -530,9 +540,9 @@ export default function ConfiguracionPage() {
       // Sign out
       await supabase.auth.signOut()
       router.push("/")
-    } catch (error: any) {
-      console.error("[v0] Error deleting account:", error)
-      toast.error("Error al eliminar", error.message || "No se pudo eliminar la cuenta")
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo eliminar la cuenta"
+      toast.error("Error al eliminar", message)
     } finally {
       setIsDeleting(false)
     }
@@ -876,7 +886,7 @@ export default function ConfiguracionPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que funcione.
+                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que todo funcione.
                   </p>
                 </div>
 

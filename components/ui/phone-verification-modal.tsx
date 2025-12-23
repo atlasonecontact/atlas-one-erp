@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Phone, MessageCircle, Send, CheckCircle, AlertTriangle, Loader2, RefreshCw } from "lucide-react"
+import { Phone, MessageCircle, CheckCircle, AlertTriangle, Loader2, RefreshCw } from "lucide-react"
 
 interface PhoneVerificationModalProps {
   open: boolean
@@ -41,11 +41,10 @@ export function PhoneVerificationModal({
 
       // En producción, aquí se enviaría el código por SMS o WhatsApp
       // Por ahora, lo mostramos en pantalla para testing
-      console.log(`[PhoneVerification] Código generado: ${code}`)
-
       setStep("verify")
-    } catch (err: any) {
-      setError(err.message || "Error al enviar código de verificación")
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error al enviar código de verificación"
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -64,7 +63,7 @@ export function PhoneVerificationModal({
 
       // Código correcto
       setStep("success")
-      
+
       // Notificar al padre después de un breve delay para mostrar el éxito
       setTimeout(() => {
         onVerified(newPhone)
@@ -81,7 +80,6 @@ export function PhoneVerificationModal({
     setGeneratedCode(code)
     setVerificationCode("")
     setError("")
-    console.log(`[PhoneVerification] Nuevo código generado: ${code}`)
   }
 
   const handleClose = () => {
@@ -116,7 +114,8 @@ export function PhoneVerificationModal({
                 <div className="text-sm text-amber-200">
                   <p className="font-semibold mb-1">⚠️ Cambio de teléfono detectado</p>
                   <p className="text-amber-300/80">
-                    Al cambiar el teléfono, las integraciones con WhatsApp y Telegram se desactivarán hasta que verifiques el nuevo número.
+                    Al cambiar el teléfono, las integraciones con WhatsApp y Telegram se desactivarán hasta que
+                    verifiques el nuevo número.
                   </p>
                 </div>
               </div>
@@ -127,7 +126,7 @@ export function PhoneVerificationModal({
                 <Label className="text-gray-500 text-xs">Teléfono actual</Label>
                 <p className="text-gray-400 font-mono">{currentPhone || "No configurado"}</p>
               </div>
-              
+
               <div className="flex justify-center">
                 <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
                   <span className="text-cyan-400">↓</span>
@@ -144,16 +143,20 @@ export function PhoneVerificationModal({
               <p className="text-sm text-blue-200">
                 <span className="font-semibold">📱 ¿Cómo funciona?</span>
                 <br />
-                Te enviaremos un código de 6 dígitos al nuevo número para confirmar que es tuyo.
+                Te enviaremos un código de verificación al nuevo número para confirmar que es tuyo.
               </p>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={handleClose} className="flex-1 border-cyan-500/30 text-gray-300">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1 border-cyan-500/30 text-gray-300 bg-transparent"
+              >
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleConfirmChange} 
+              <Button
+                onClick={handleConfirmChange}
                 disabled={isLoading}
                 className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black"
               >
@@ -175,9 +178,7 @@ export function PhoneVerificationModal({
           <div className="space-y-4 py-4">
             <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
               <MessageCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
-              <p className="text-sm text-green-200">
-                Enviamos un código de verificación a
-              </p>
+              <p className="text-sm text-green-200">Enviamos un código de verificación a</p>
               <p className="text-white font-mono text-lg mt-1">{newPhone}</p>
             </div>
 
@@ -191,15 +192,13 @@ export function PhoneVerificationModal({
               <Label className="text-gray-300">Código de verificación</Label>
               <Input
                 value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="000000"
                 className="bg-[#0d1424] border-cyan-500/20 text-white text-center text-2xl font-mono tracking-widest"
                 maxLength={6}
                 autoFocus
               />
-              {error && (
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-sm text-center">{error}</p>}
             </div>
 
             <button
@@ -212,11 +211,15 @@ export function PhoneVerificationModal({
             </button>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={handleClose} className="flex-1 border-cyan-500/30 text-gray-300">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1 border-cyan-500/30 text-gray-300 bg-transparent"
+              >
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleVerifyCode} 
+              <Button
+                onClick={handleVerifyCode}
                 disabled={isLoading || verificationCode.length !== 6}
                 className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black"
               >

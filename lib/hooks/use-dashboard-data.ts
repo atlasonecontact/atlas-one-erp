@@ -72,7 +72,6 @@ export function useDashboardData(period: string) {
       }
 
       if (kioskoIds.length === 0) {
-        console.log("[v0] No kioscos found for user")
         setData(defaultStats)
         return
       }

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sin conexion - Atlas One</title>
+  <link rel="icon" href="/images/logo-atlas.png" type="image/png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0f1e 0%, #0f1729 50%, #0a0f1e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(10, 15, 26, 0.9);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      background: rgba(6, 182, 212, 0.1);
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    h1 {
+      color: #fff;
+      margin-bottom: 16px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    p {
+      color: #9ca3af;
+      margin-bottom: 24px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .features {
+      background: rgba(6, 182, 212, 0.05);
+      border: 1px solid rgba(6, 182, 212, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+      text-align: left;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .feature:last-child {
+      margin-bottom: 0;
+    }
+
+    .feature-icon {
+      width: 24px;
+      height: 24px;
+      background: rgba(6, 182, 212, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #06b6d4;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    .button {
+      background: #06b6d4;
+      color: #000;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .button:hover {
+      background: #22d3ee;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .status.offline {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .status.online {
+      background: rgba(34, 197, 94, 0.1);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .brand {
+      margin-top: 24px;
+      color: #6b7280;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="/images/logo-atlas.png" alt="Atlas One" onerror="this.style.display='none'">
+    </div>
+    
+    <div class="icon">
+      📡
+    </div>
+    
+    <h1>Sin conexion a Internet</h1>
+    
+    <p>
+      No te preocupes, Atlas One funciona parcialmente sin conexion. 
+      Los cambios se sincronizaran automaticamente cuando vuelvas a estar online.
+    </p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Las ventas se guardan localmente</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Acceso a productos cacheados</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Sincronizacion automatica al reconectar</div>
+      </div>
+    </div>
+
+    <button class="button" onclick="tryReconnect()">
+      Reintentar conexion
+    </button>
+
+    <div id="status" class="status offline">
+      Sin conexion
+    </div>
+
+    <div class="brand">Atlas One ERP</div>
+  </div>
+
+  <script>
+    function updateStatus() {
+      const statusEl = document.getElementById('status');
+      if (navigator.onLine) {
+        statusEl.className = 'status online';
+        statusEl.innerHTML = 'Conectado - Redirigiendo...';
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+      } else {
+        statusEl.className = 'status offline';
+        statusEl.innerHTML = 'Sin conexion';
+      }
+    }
+
+    function tryReconnect() {
+      updateStatus();
+      if (navigator.onLine) {
+        window.location.href = '/dashboard';
+      }
+    }
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    setInterval(updateStatus, 3000);
+    updateStatus();
+  </script>
+</body>
+</html>

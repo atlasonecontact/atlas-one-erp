@@ -27,51 +27,44 @@ export async function POST(req: NextRequest) {
     const type = body.type as DemoType
 
     if (!type || !DEMO_TYPES.includes(type)) {
-      return NextResponse.json({ error: "Tipo de demo inválido" }, { status: 400 })
+      return NextResponse.json({ error: "Tipo de demo invalido" }, { status: 400 })
     }
 
-    const admin = createAdminClient()
     const email = demoEmail(type)
     const password = "Demo123456!"
 
-    // Verificar que el usuario demo existe (fue creado por el script SQL 200_create_demo_users.sql)
-    const { data: listData, error: listError } = await admin.auth.admin.listUsers()
-    if (listError) {
-      return NextResponse.json({ error: listError.message }, { status: 400 })
-    }
+    const supabase = createAdminClient()
 
-    const user = listData.users.find((u) => u.email === email)
-    if (!user) {
+    // Verify the demo user exists in auth.users
+    const {
+      data: { users },
+      error: usersError,
+    } = await supabase.auth.admin.listUsers()
+
+    if (usersError) {
       return NextResponse.json(
-        {
-          error: `Usuario demo no encontrado. Ejecutá el script SQL: scripts/200_create_demo_users.sql`,
-        },
-        { status: 404 }
+        { error: "Error al verificar usuario demo. Contacta al administrador." },
+        { status: 500 },
       )
     }
 
-    const userId = user.id
+    const demoUser = users?.find((u) => u.email === email)
 
-    // Verificar que tiene kiosko
-    const { data: kiosko } = await admin.from("kioscos").select("id").eq("owner_id", userId).limit(1).maybeSingle()
-
-    if (!kiosko) {
+    if (!demoUser) {
       return NextResponse.json(
-        {
-          error: `El usuario demo existe pero no tiene kiosko. Ejecutá el script SQL: scripts/200_create_demo_users.sql`,
-        },
-        { status: 500 }
+        { error: `No se encontro el usuario demo ${type}. Contacta al administrador.` },
+        { status: 404 },
       )
     }
 
+    // Return credentials - the login flow will handle kiosco selection
     return NextResponse.json({
       ok: true,
       email,
       password,
-      kioskoId: kiosko.id,
     })
-  } catch (error: any) {
-    console.error("[api/demo/ensure]", error)
-    return NextResponse.json({ error: error?.message || "Error interno" }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error interno"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

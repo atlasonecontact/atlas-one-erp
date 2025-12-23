@@ -76,8 +76,6 @@ export default function EmpleadosPage() {
     if (kioscosData && kioscosData.length > 0) {
       setKioscos(kioscosData)
       setSelectedKiosko(kioscosData[0].id)
-    } else {
-      console.log("[v0] No kioscos found for user")
     }
     setIsLoading(false)
   }
