@@ -40,61 +40,187 @@ interface CSVImportModalProps {
 }
 
 // Column mapping configuration - supports both Spanish and English
+// Headers are normalized before lookup (lowercase, trim, remove accents, extra spaces)
 const COLUMN_MAPPINGS: Record<string, keyof CSVProduct> = {
+  // SKU / Código
   sku: "sku",
   codigo: "sku",
   código: "sku",
+  cod: "sku",
+  "cod.": "sku",
+  "codigo producto": "sku",
+  "codigo de producto": "sku",
+  "código de producto": "sku",
+  "codigo interno": "sku",
   id: "sku",
+  "id producto": "sku",
+  ref: "sku",
+  referencia: "sku",
+  
+  // Nombre
   nombre: "name",
   "producto nombre": "name",
   producto: "name",
   name: "name",
+  descripcion: "name",
+  descripción: "name",
+  "nombre producto": "name",
+  "nombre del producto": "name",
+  detalle: "name",
+  articulo: "name",
+  artículo: "name",
+  
+  // Marca
   marca: "brand",
   brand: "brand",
+  fabricante: "brand",
+  proveedor: "brand",
+  
+  // Variante / Línea
   linea: "variant",
   línea: "variant",
   variante: "variant",
   "linea / variante": "variant",
   "línea / variante": "variant",
   variant: "variant",
+  tipo: "variant",
+  
+  // Presentación
   presentacion: "presentation",
   presentación: "presentation",
   "presentacion / formato": "presentation",
   "presentación / formato": "presentation",
   formato: "presentation",
   presentation: "presentation",
+  envase: "presentation",
+  tamaño: "presentation",
+  tamano: "presentation",
+  size: "presentation",
+  
+  // Categoría (expanded)
   categoria: "category",
   categoría: "category",
   category: "category",
+  cat: "category",
+  "cat.": "category",
+  rubro: "category",
+  familia: "category",
+  seccion: "category",
+  sección: "category",
+  grupo: "category",
+  "tipo producto": "category",
+  "tipo de producto": "category",
+  departamento: "category",
+  clasificacion: "category",
+  clasificación: "category",
+  clase: "category",
+  division: "category",
+  división: "category",
+  
+  // Subcategoría
   subcategoria: "subcategory",
   subcategoría: "subcategory",
   subcategory: "subcategory",
+  "sub categoria": "subcategory",
+  "sub categoría": "subcategory",
+  subrubro: "subcategory",
+  subfamilia: "subcategory",
+  subgrupo: "subcategory",
+  
+  // Contenido neto
   "contenido neto": "net_content",
   contenido: "net_content",
   net_content: "net_content",
+  ml: "net_content",
+  gr: "net_content",
+  gramos: "net_content",
+  peso: "net_content",
+  volumen: "net_content",
+  capacidad: "net_content",
+  
+  // Unidad
   unidad: "unit",
   unit: "unit",
+  um: "unit",
+  "u.m.": "unit",
+  "unidad medida": "unit",
+  "unidad de medida": "unit",
+  medida: "unit",
+  
+  // Código de barras
   ean: "barcode",
+  ean13: "barcode",
+  "ean-13": "barcode",
   "ean / código de barras": "barcode",
   "codigo de barras": "barcode",
   "código de barras": "barcode",
   barcode: "barcode",
+  "cod barras": "barcode",
+  "cod. barras": "barcode",
+  gtin: "barcode",
+  upc: "barcode",
+  
+  // Costo sin IVA
   "costo sin iva": "cost_ex_vat",
+  "costo s/iva": "cost_ex_vat",
   costo_sin_iva: "cost_ex_vat",
   cost_ex_vat: "cost_ex_vat",
   costo: "cost_ex_vat",
   cost: "cost_ex_vat",
+  "precio costo": "cost_ex_vat",
+  "precio de costo": "cost_ex_vat",
+  
+  // Costo con IVA
   "costo con iva": "cost_inc_vat",
+  "costo c/iva": "cost_inc_vat",
   costo_con_iva: "cost_inc_vat",
   cost_inc_vat: "cost_inc_vat",
+  
+  // Precio de venta (expanded)
   "precio de venta": "sale_price",
+  "precio venta": "sale_price",
+  "precio sugerido": "sale_price",
+  "pvp": "sale_price",
+  "p.v.p.": "sale_price",
+  "precio publico": "sale_price",
+  "precio público": "sale_price",
+  "precio al publico": "sale_price",
+  "precio al público": "sale_price",
   precio: "sale_price",
   precio_venta: "sale_price",
   sale_price: "sale_price",
   price: "sale_price",
+  "precio unitario": "sale_price",
+  "precio unit": "sale_price",
+  "precio unit.": "sale_price",
+  importe: "sale_price",
+  valor: "sale_price",
+  
+  // Stock
   stock: "stock",
   stock_quantity: "stock",
   cantidad: "stock",
+  existencia: "stock",
+  existencias: "stock",
+  inventario: "stock",
+  disponible: "stock",
+  qty: "stock",
+  quantity: "stock",
+}
+
+// Normalize header: lowercase, trim, remove extra spaces, normalize accents
+const normalizeHeader = (header: string): string => {
+  return header
+    .toLowerCase()
+    .trim()
+    // Normalize multiple spaces to single space
+    .replace(/\s+/g, " ")
+    // Remove common prefixes/suffixes that might interfere
+    .replace(/^[\s\-_\.]+|[\s\-_\.]+$/g, "")
+    // Normalize some common accent variations
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/ñ/gi, "n") // Handle ñ separately as it's often kept
 }
 
 export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps) {
@@ -108,6 +234,7 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
   const [parsing, setParsing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [separator, setSeparator] = useState<"," | ";">(",")
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Parse a single CSV line respecting quoted fields
@@ -192,7 +319,7 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
 
   // Main CSV parser - handles large files efficiently
   const parseCSV = useCallback(
-    async (text: string): Promise<{ products: CSVProduct[]; errors: string[]; warnings: string[] }> => {
+    async (text: string): Promise<{ products: CSVProduct[]; errors: string[]; warnings: string[]; detectedColumns: string[] }> => {
       const detectedSep = detectSeparator(text)
       setSeparator(detectedSep)
 
@@ -200,23 +327,72 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
       const errors: string[] = []
       const warnings: string[] = []
       const products: CSVProduct[] = []
-      const seenSkus = new Set<string>()
+      const seenSkus = new Map<string, number>() // Map to track SKU -> index in products array
 
       if (lines.length < 2) {
         return {
           products: [],
           errors: ["El archivo debe tener al menos una fila de encabezado y una de datos"],
           warnings: [],
+          detectedColumns: [],
         }
       }
 
-      // Parse headers
-      const headers: string[] = parseCSVLine(lines[0], detectedSep).map((h: string) => h.toLowerCase().trim())
+      // Parse headers - normalize them for better matching
+      const rawHeaders: string[] = parseCSVLine(lines[0], detectedSep)
+      const headers: string[] = rawHeaders.map((h: string) => h.toLowerCase().trim())
+      const normalizedHeaders: string[] = rawHeaders.map((h: string) => normalizeHeader(h))
 
-      // Map headers to our fields
+      // Map headers to our fields - try exact match first, then normalized
       const columnMap: Record<number, keyof CSVProduct> = {}
       headers.forEach((header: string, idx: number) => {
-        const mapped = COLUMN_MAPPINGS[header]
+        // Try exact match first
+        let mapped = COLUMN_MAPPINGS[header]
+        
+        // If no match, try normalized version
+        if (!mapped) {
+          mapped = COLUMN_MAPPINGS[normalizedHeaders[idx]]
+        }
+        
+        // If still no match, try partial matching for common patterns
+        if (!mapped) {
+          const normalized = normalizedHeaders[idx]
+          // Check if contains key category indicators
+          if (normalized.includes("categ") || normalized.includes("rubro") || 
+              normalized.includes("familia") || normalized.includes("seccion") ||
+              normalized.includes("grupo") || normalized.includes("clasif")) {
+            if (normalized.includes("sub")) {
+              mapped = "subcategory"
+            } else {
+              mapped = "category"
+            }
+          } else if (normalized.includes("precio") || normalized.includes("price") || 
+                     normalized.includes("pvp") || normalized.includes("valor")) {
+            if (normalized.includes("costo") || normalized.includes("cost")) {
+              mapped = "cost_ex_vat"
+            } else {
+              mapped = "sale_price"
+            }
+          } else if (normalized.includes("codigo") || normalized.includes("code") || 
+                     normalized.includes("sku") || normalized.includes("ref")) {
+            if (normalized.includes("barra") || normalized.includes("ean") || normalized.includes("gtin")) {
+              mapped = "barcode"
+            } else {
+              mapped = "sku"
+            }
+          } else if (normalized.includes("nombre") || normalized.includes("name") || 
+                     normalized.includes("descrip") || normalized.includes("producto") ||
+                     normalized.includes("articulo")) {
+            mapped = "name"
+          } else if (normalized.includes("marca") || normalized.includes("brand") ||
+                     normalized.includes("fabric")) {
+            mapped = "brand"
+          } else if (normalized.includes("stock") || normalized.includes("cantidad") ||
+                     normalized.includes("exist") || normalized.includes("invent")) {
+            mapped = "stock"
+          }
+        }
+        
         if (mapped) {
           columnMap[idx] = mapped
         }
@@ -229,7 +405,19 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
           products: [],
           errors: ['El archivo debe tener al menos una columna "nombre" o "sku"'],
           warnings: [],
+          detectedColumns: [],
         }
+      }
+
+      // Build detected columns list for UI feedback
+      const detectedColumnsList = Object.entries(columnMap).map(([idx, field]) => 
+        `${rawHeaders[Number(idx)]} → ${field}`
+      )
+      console.log("Columnas detectadas:", detectedColumnsList.join(", "))
+      
+      // Check if category was detected
+      if (!mappedFields.has("category")) {
+        warnings.push(`⚠️ No se detectó columna de categoría. Columnas disponibles: ${rawHeaders.join(", ")}`)
       }
 
       // Process rows
@@ -289,11 +477,13 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
             .replace(/-+/g, "-")
         }
 
-        if (seenSkus.has(product.sku!)) {
-          warnings.push(`Fila ${rowNum}: SKU duplicado "${product.sku}"`)
-        } else {
-          seenSkus.add(product.sku!)
+        // Handle duplicate SKUs - last one wins (will be used for upsert)
+        const existingIndex = seenSkus.get(product.sku!)
+        if (existingIndex !== undefined) {
+          // Replace the existing product with the new one
+          warnings.push(`Fila ${rowNum}: SKU duplicado "${product.sku}" - se usará esta versión`)
         }
+        // Track this SKU position (will be updated at the end)
 
         // Calculate sale_price if missing - try multiple sources
         if (!product.sale_price || product.sale_price <= 0) {
@@ -327,11 +517,20 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
           product.stock = 0
         }
 
-        products.push(product as CSVProduct)
+        // Add or replace product based on SKU
+        const existingIdx = seenSkus.get(product.sku!)
+        if (existingIdx !== undefined) {
+          // Replace existing product with this one
+          products[existingIdx] = product as CSVProduct
+        } else {
+          // Add new product and track its position
+          seenSkus.set(product.sku!, products.length)
+          products.push(product as CSVProduct)
+        }
       }
 
       setProgress(100)
-      return { products, errors, warnings }
+      return { products, errors, warnings, detectedColumns: detectedColumnsList }
     },
     [parseCSVLine, detectSeparator, parseNumber],
   )
@@ -359,16 +558,18 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
     setErrors([])
     setWarnings([])
     setProgress(0)
+    setDetectedColumns([])
 
     const reader = new FileReader()
     reader.onload = async (event) => {
       const text = event.target?.result as string
-      const { products, errors, warnings } = await parseCSV(text)
+      const { products, errors, warnings, detectedColumns: cols } = await parseCSV(text)
       setAllProducts(products)
       setPreview(products.slice(0, 100))
       setTotalRows(products.length)
       setErrors(errors.slice(0, 50))
       setWarnings(warnings.slice(0, 20))
+      setDetectedColumns(cols || [])
       setParsing(false)
     }
     reader.readAsText(selectedFile, "UTF-8")
@@ -398,6 +599,7 @@ export function CSVImportModal({ open, onClose, onImport }: CSVImportModalProps)
     setWarnings([])
     setProgress(0)
     setParsing(false)
+    setDetectedColumns([])
     onClose()
   }
 
@@ -505,6 +707,23 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
               </>
             )}
           </div>
+
+          {/* Detected columns info */}
+          {detectedColumns.length > 0 && (
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-2 text-blue-400 mb-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="font-medium text-sm">Columnas detectadas ({detectedColumns.length})</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {detectedColumns.map((col, i) => (
+                  <span key={i} className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+                    {col}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Errors */}
           {errors.length > 0 && (
