@@ -197,14 +197,14 @@ export default function ConfiguracionPage() {
     setWhatsappConfig({
       enabled: !!config.whatsapp_enabled,
       phoneNumber: config.whatsapp_phone || "",
-      notifyOnSale: true,
+      notifyOnSale: true, // This seems to be hardcoded, might need to be fetched if it can be changed per kiosko
       verified: !!config.whatsapp_verified,
     })
 
     setTelegramConfig({
       enabled: !!config.telegram_enabled,
       chatId: config.telegram_chat_id || "",
-      notifyOnSale: true,
+      notifyOnSale: true, // This seems to be hardcoded, might need to be fetched if it can be changed per kiosko
       verified: !!config.telegram_verified,
     })
   }
@@ -273,6 +273,7 @@ export default function ConfiguracionPage() {
 
       toast.success("Configuración guardada", "Los cambios se aplicaron correctamente")
     } catch (error) {
+      console.error("Error saving configuration:", error)
       toast.error("Error al guardar", "No se pudo guardar la configuración")
     } finally {
       setIsSaving(false)
@@ -299,21 +300,23 @@ export default function ConfiguracionPage() {
         expires_at: expiresAt,
       })
 
+      // In production, you would send this code via WhatsApp API
       toast.success("Verificación iniciada", `Código: ${verificationCode} (en producción se enviaría por WhatsApp)`)
 
+      // For now, we'll just mark it as verified on successful initiation for demo purposes
+      // In a real app, this would happen after the user inputs the code
       await supabase
         .from("notification_configs")
         .update({
           whatsapp_verified: true,
-          telegram_verified: true,
           updated_at: new Date().toISOString(),
         })
         .eq("kiosko_id", selectedKiosko)
 
       setWhatsappConfig({ ...whatsappConfig, verified: true })
-      setTelegramConfig({ ...telegramConfig, verified: true })
-      await loadKioskoConfig()
+      await loadKioskoConfig() // Reload to reflect the verified status
     } catch (error) {
+      console.error("Error verifying phone:", error)
       toast.error("Error de verificación", "No se pudo verificar el teléfono")
     } finally {
       setIsVerifying(false)
@@ -373,7 +376,7 @@ export default function ConfiguracionPage() {
         .from("notification_configs")
         .update({
           telegram_chat_id: telegramConfig.chatId,
-          telegram_enabled: true,
+          telegram_enabled: true, // Ensure it's enabled if we're testing
           updated_at: new Date().toISOString(),
         })
         .eq("kiosko_id", selectedKiosko)
@@ -406,10 +409,16 @@ export default function ConfiguracionPage() {
         await loadKioskoConfig()
         toast.success("¡Mensaje enviado!", "Revisá tu Telegram y usá /kioscos para verificar")
       } else {
-        toast.error("Error al enviar", "Verificá que el Chat ID sea correcto")
+        const errorText = await response.text()
+        console.error("Telegram test send error:", errorText)
+        toast.error(
+          "Error al enviar",
+          `Verificá que el Chat ID sea correcto. ${errorText ? `Detalle: ${errorText}` : ""}`,
+        )
       }
-    } catch (error) {
-      toast.error("Error de conexión", "No se pudo enviar el mensaje de prueba")
+    } catch (error: any) {
+      console.error("Error testing Telegram:", error)
+      toast.error("Error de conexión", error.message || "No se pudo enviar el mensaje de prueba")
     } finally {
       setIsTestingTelegram(false)
     }
@@ -420,18 +429,22 @@ export default function ConfiguracionPage() {
     setIsCheckingTelegram(true)
     try {
       const response = await fetch("/api/telegram/setup")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
       setTelegramStatus(data)
 
       if (!data.configured) {
-        toast.warning("Telegram no configurado", data.error || "Falta el token del bot")
+        toast.warning("Telegram no configurado", data.error || "Falta el token del bot o la URL del webhook.")
       } else if (data.webhook?.lastErrorMessage) {
         toast.error("Error en webhook", data.webhook.lastErrorMessage)
       } else {
         toast.success("Telegram OK", `Bot: @${data.bot?.username || "desconocido"}`)
       }
-    } catch (error) {
-      toast.error("Error", "No se pudo verificar el estado de Telegram")
+    } catch (error: any) {
+      console.error("Error checking Telegram status:", error)
+      toast.error("Error", `No se pudo verificar el estado de Telegram: ${error.message}`)
     } finally {
       setIsCheckingTelegram(false)
     }
@@ -446,16 +459,20 @@ export default function ConfiguracionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       })
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
 
       if (data.success) {
-        toast.success("Webhook configurado", "El bot de Telegram está listo")
-        await checkTelegramStatus()
+        toast.success("Webhook configurado", "El bot de Telegram está listo para recibir mensajes.")
+        await checkTelegramStatus() // Refresh status after setup
       } else {
-        toast.error("Error", data.error || "No se pudo configurar el webhook")
+        toast.error("Error", data.error || "No se pudo configurar el webhook. Verificá tu token.")
       }
-    } catch (error) {
-      toast.error("Error", "No se pudo configurar el webhook")
+    } catch (error: any) {
+      console.error("Error setting up Telegram webhook:", error)
+      toast.error("Error", `No se pudo configurar el webhook: ${error.message}`)
     } finally {
       setIsCheckingTelegram(false)
     }
@@ -464,6 +481,14 @@ export default function ConfiguracionPage() {
   // Manejar el cambio de teléfono - requiere verificación
   const handlePhoneChange = (newPhone: string) => {
     setKioskoData({ ...kioskoData, phone: newPhone })
+    // When phone number changes, mark WhatsApp as unverified if it was previously verified
+    if (
+      whatsappConfig.verified &&
+      originalPhoneRef.current &&
+      originalPhoneRef.current.replace(/\D/g, "") !== newPhone.replace(/\D/g, "")
+    ) {
+      setWhatsappConfig((prev) => ({ ...prev, verified: false }))
+    }
   }
 
   // Al hacer blur del campo teléfono, verificar si cambió
@@ -471,12 +496,17 @@ export default function ConfiguracionPage() {
     const cleanedOriginal = originalPhoneRef.current.replace(/\D/g, "")
     const cleanedNew = kioskoData.phone.replace(/\D/g, "")
 
-    // Si el teléfono cambió y no está vacío
-    if (cleanedNew && cleanedOriginal !== cleanedNew) {
+    // If the phone number has changed and is not empty, and it wasn't verified before
+    if (cleanedNew && cleanedOriginal !== cleanedNew && !whatsappConfig.verified) {
       setPendingPhone(kioskoData.phone)
       setShowPhoneVerification(true)
-      // Restaurar el teléfono original hasta que se verifique
+      // Temporarily revert to original phone number until verified, to avoid saving an unverified number
       setKioskoData({ ...kioskoData, phone: originalPhoneRef.current })
+    } else if (cleanedNew && cleanedOriginal !== cleanedNew && whatsappConfig.verified) {
+      // If it changed and was verified, we need to re-verify
+      setPendingPhone(kioskoData.phone)
+      setShowPhoneVerification(true)
+      setKioskoData({ ...kioskoData, phone: originalPhoneRef.current }) // Revert to old number until verified
     }
   }
 
@@ -484,9 +514,9 @@ export default function ConfiguracionPage() {
   const handlePhoneVerified = async (verifiedPhone: string) => {
     setShowPhoneVerification(false)
     setKioskoData({ ...kioskoData, phone: verifiedPhone })
-    originalPhoneRef.current = verifiedPhone
+    originalPhoneRef.current = verifiedPhone // Update the ref to the newly verified number
 
-    // Guardar el teléfono verificado en la base de datos
+    // Save the verified phone number to the database
     try {
       await supabase
         .from("kioscos")
@@ -496,21 +526,23 @@ export default function ConfiguracionPage() {
         })
         .eq("id", selectedKiosko)
 
-      // Marcar WhatsApp como no verificado ya que el teléfono cambió
+      // Mark WhatsApp as verified and update the config
       await supabase
         .from("notification_configs")
         .update({
-          whatsapp_verified: false,
+          whatsapp_verified: true,
           updated_at: new Date().toISOString(),
         })
         .eq("kiosko_id", selectedKiosko)
 
-      setWhatsappConfig({ ...whatsappConfig, verified: false })
-
-      toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado")
-      await loadKioskoConfig()
+      setWhatsappConfig({ ...whatsappConfig, phoneNumber: verifiedPhone, verified: true })
+      toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado correctamente")
+      await loadKioskoConfig() // Reload to ensure all states are consistent
     } catch (error) {
-      toast.error("Error", "No se pudo guardar el teléfono")
+      console.error("Error saving verified phone:", error)
+      toast.error("Error", "No se pudo guardar el teléfono verificado")
+    } finally {
+      setPendingPhone("")
     }
   }
 
@@ -532,7 +564,7 @@ export default function ConfiguracionPage() {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      // Call the delete function
+      // Call the delete function (assuming this RPC exists in your Supabase setup)
       const { error: rpcError } = await supabase.rpc("delete_user_account", { user_id: user.id })
 
       if (rpcError) throw rpcError
@@ -542,6 +574,7 @@ export default function ConfiguracionPage() {
       router.push("/")
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "No se pudo eliminar la cuenta"
+      console.error("Error deleting account:", error)
       toast.error("Error al eliminar", message)
     } finally {
       setIsDeleting(false)
@@ -554,6 +587,9 @@ export default function ConfiguracionPage() {
         <h1 className="text-2xl font-bold text-white">Configuración</h1>
         <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
           <p className="text-gray-400">Primero debes crear un kiosco para configurar notificaciones.</p>
+          <Button asChild className="mt-4">
+            <a href="/dashboard/kioscos/new">Crear Kiosco</a>
+          </Button>
         </div>
       </div>
     )
@@ -685,95 +721,45 @@ export default function ConfiguracionPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-green-400" />
+          {/* WhatsApp Section - Marked as "Coming Soon" */}
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6 relative overflow-hidden">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-[#0a0f1a]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+              <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-3 rounded-full border border-green-500/30 mb-3">
+                <span className="text-green-400 font-semibold text-lg">Proximamente</span>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  WhatsApp Business
-                  {whatsappConfig.verified && (
-                    <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                      <CheckCircle className="w-3 h-3" />
-                      Verificado
-                    </span>
-                  )}
-                </h3>
-                <p className="text-sm text-gray-500">Recibe notificaciones y consulta estadísticas por WhatsApp</p>
-              </div>
-              <Switch
-                checked={whatsappConfig.enabled}
-                onCheckedChange={(checked) => setWhatsappConfig({ ...whatsappConfig, enabled: checked })}
-                className="data-[state=checked]:bg-green-500"
-              />
+              <p className="text-gray-400 text-sm text-center max-w-xs">
+                La integracion con WhatsApp Business estara disponible pronto
+              </p>
             </div>
 
-            {whatsappConfig.enabled && (
-              <div className="space-y-4 pt-4 border-t border-cyan-500/10">
-                {/* Step by step guide */}
-                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <p className="text-sm font-medium text-green-400 mb-3">📱 Cómo configurar WhatsApp (2 pasos):</p>
-                  <ol className="text-sm text-green-200/90 space-y-2 list-decimal list-inside">
-                    <li>
-                      <span className="font-medium">Ingresá tu número de WhatsApp</span> con el código de país (+54 para
-                      Argentina)
-                    </li>
-                    <li>
-                      <span className="font-medium">Tocá "Verificar"</span> y te llegará un código para confirmar
-                    </li>
-                  </ol>
+            <div className="flex items-center justify-between mb-6 opacity-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-green-400" />
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Tu número de WhatsApp</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ej: +5491112345678"
-                      value={whatsappConfig.phoneNumber}
-                      onChange={(e) => setWhatsappConfig({ ...whatsappConfig, phoneNumber: e.target.value })}
-                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
-                    />
-                    <Button
-                      onClick={handleVerifyPhone}
-                      disabled={isVerifying || whatsappConfig.verified}
-                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-6"
-                    >
-                      {isVerifying ? "Verificando..." : whatsappConfig.verified ? "✓ Verificado" : "Verificar"}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    💡 Formato correcto: <span className="font-mono">+5491112345678</span> (sin espacios ni guiones)
-                  </p>
-                </div>
-
-                {!whatsappConfig.verified && (
-                  <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-200">
-                      <p className="font-semibold mb-1">⚠️ Verificación requerida</p>
-                      <p className="text-amber-300/80">
-                        Necesitás verificar tu número para empezar a recibir notificaciones. Es un paso de seguridad.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
-                  <div>
-                    <p className="text-white font-medium">🔔 Notificar cada venta</p>
-                    <p className="text-sm text-gray-500">Recibís un mensaje cada vez que se hace una venta</p>
-                  </div>
-                  <Switch
-                    checked={whatsappConfig.notifyOnSale}
-                    onCheckedChange={(checked) => setWhatsappConfig({ ...whatsappConfig, notifyOnSale: checked })}
-                    className="data-[state=checked]:bg-cyan-500"
-                  />
+                <div>
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">WhatsApp Business</h3>
+                  <p className="text-sm text-gray-500">Recibe notificaciones y consulta estadisticas por WhatsApp</p>
                 </div>
               </div>
-            )}
+              <Switch checked={false} disabled className="data-[state=checked]:bg-green-500 opacity-50" />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-cyan-500/10 opacity-50">
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm font-medium text-green-400 mb-3">Funcionalidades planeadas:</p>
+                <ul className="text-sm text-green-200/90 space-y-2 list-disc list-inside">
+                  <li>Notificaciones de ventas en tiempo real</li>
+                  <li>Consultar ventas del dia con un mensaje</li>
+                  <li>Alertas de stock bajo automaticas</li>
+                  <li>Resumen diario/semanal/mensual</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
+          {/* Telegram Section */}
           <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">

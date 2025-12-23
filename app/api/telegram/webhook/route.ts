@@ -1,9 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
-// Telegram Bot Webhook Handler
-// Este endpoint recibe los mensajes de Telegram y responde automáticamente
-// Vinculado al DUEÑO de los kioscos, no a un kiosco específico
+// Telegram Bot Webhook Handler - Following official Telegram Bot API best practices
+// https://core.telegram.org/bots/tutorial
+
+const COMMANDS = {
+  START: "/start",
+  KIOSCOS: "/kioscos",
+  VENTAS: "/ventas",
+  MES: "/mes",
+  STOCK: "/stock",
+  AYUDA: "/ayuda",
+  HELP: "/help",
+} as const
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,19 +23,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    // Extract message data
-    const message = body.message
+    // Handle both message and callback_query updates
+    const message = body.message || body.edited_message
+    const callbackQuery = body.callback_query
+
+    // Handle callback queries (inline button presses)
+    if (callbackQuery) {
+      await handleCallbackQuery(botToken, callbackQuery)
+      return NextResponse.json({ ok: true })
+    }
+
     if (!message) {
       return NextResponse.json({ ok: true })
     }
 
     const chatId = message.chat.id
-    const text = message.text || ""
+    const text = (message.text || "").trim()
     const firstName = message.from?.first_name || "Usuario"
+
+    // Ignore non-command messages in groups (only respond to commands)
+    if (message.chat.type !== "private" && !text.startsWith("/")) {
+      return NextResponse.json({ ok: true })
+    }
 
     const supabase = await createServerClient()
 
-    // PRIMERO: Buscar owner por telegram_chat_id en profiles (método preferido)
+    // Find owner by telegram_chat_id in profiles
     let ownerId: string | null = null
     let ownerKioscos: { id: string; name: string }[] = []
 
@@ -38,13 +60,11 @@ export async function POST(request: NextRequest) {
 
     if (ownerProfile) {
       ownerId = ownerProfile.id
-
-      // Try to find kioscos by owner_id
       const { data: allKioscos } = await supabase.from("kioscos").select("id, name, owner_id").eq("owner_id", ownerId)
 
       ownerKioscos = allKioscos || []
     } else {
-      // FALLBACK: Buscar por notification_configs (legacy)
+      // Fallback: Search by notification_configs
       const { data: configs } = await supabase
         .from("notification_configs")
         .select("kiosko_id, kioscos(id, name, owner_id)")
@@ -66,252 +86,413 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle /start command - Return the Chat ID (siempre funciona)
-    if (text === "/start" || text.startsWith("/start")) {
-      const welcomeMessage = `
-👋 ¡Hola ${firstName}!
+    // Extract command and arguments
+    const [command, ...args] = text.split(" ")
+    const argument = args.join(" ").trim()
 
-🆔 <b>Tu Chat ID es:</b>
+    // Route commands
+    switch (
+      command.toLowerCase().split("@")[0] // Remove @botname suffix
+    ) {
+      case COMMANDS.START:
+        await handleStart(botToken, chatId, firstName, ownerKioscos)
+        break
+
+      case COMMANDS.KIOSCOS:
+        await handleKioscos(botToken, chatId, ownerKioscos)
+        break
+
+      case COMMANDS.VENTAS:
+        await handleVentas(botToken, chatId, ownerKioscos, argument, supabase)
+        break
+
+      case COMMANDS.MES:
+        await handleMes(botToken, chatId, ownerKioscos, argument, supabase)
+        break
+
+      case COMMANDS.STOCK:
+        await handleStock(botToken, chatId, ownerKioscos, argument, supabase)
+        break
+
+      case COMMANDS.AYUDA:
+      case COMMANDS.HELP:
+        await handleAyuda(botToken, chatId, ownerKioscos)
+        break
+
+      default:
+        if (text.startsWith("/")) {
+          await sendMessage(botToken, chatId, `Comando no reconocido.\n\nUsa /ayuda para ver los comandos disponibles.`)
+        }
+        break
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ ok: true })
+  }
+}
+
+// Command Handlers
+
+async function handleStart(
+  botToken: string,
+  chatId: number,
+  firstName: string,
+  ownerKioscos: { id: string; name: string }[],
+) {
+  const isLinked = ownerKioscos.length > 0
+
+  const message = `
+<b>Hola ${firstName}!</b>
+
+<b>Tu Chat ID es:</b>
 <code>${chatId}</code>
 
-📋 <b>¿Cómo configurarlo?</b>
-1. Copiá el número de arriba (tocá para copiar)
-2. Andá a Atlas ONE → Configuración → Integraciones
+${isLinked ? `<b>Kioscos vinculados:</b> ${ownerKioscos.length}` : `<b>Estado:</b> No vinculado`}
+
+<b>Como configurarlo:</b>
+1. Copia el numero de arriba (toca para copiar)
+2. Anda a Atlas ONE - Configuracion - Integraciones
 3. Pegalo en el campo "Chat ID de Telegram"
-4. Presioná "Probar Telegram"
-5. Guardá los cambios
-6. ¡Listo! Vas a recibir notificaciones
+4. Presiona "Probar Telegram"
+5. Guarda los cambios
+6. Listo! Vas a recibir notificaciones
 
-🤖 <b>Comandos disponibles:</b>
+<b>Comandos disponibles:</b>
 /kioscos - Ver tus kioscos
-/ventas - Ver ventas del día
+/ventas - Ver ventas del dia
 /ventas [nombre] - Ver ventas de un kiosco
+/mes - Resumen del mes
 /stock - Ver productos con stock bajo
-/ayuda - Más información
+/ayuda - Mas informacion
+  `.trim()
 
-${ownerKioscos.length > 0 ? `✅ Ya tenés ${ownerKioscos.length} kiosco(s) vinculados.` : "⏳ Aún no estás vinculado. Configurá tu Chat ID en la app."}
-      `.trim()
+  const keyboard = isLinked
+    ? {
+        inline_keyboard: [
+          [
+            { text: "Ver Ventas de Hoy", callback_data: "ventas_hoy" },
+            { text: "Ver Stock Bajo", callback_data: "stock_bajo" },
+          ],
+          [{ text: "Mis Kioscos", callback_data: "mis_kioscos" }],
+        ],
+      }
+    : undefined
 
-      await sendTelegramMessage(botToken, chatId, welcomeMessage)
-      return NextResponse.json({ ok: true })
-    }
+  await sendMessage(botToken, chatId, message, keyboard)
+}
 
-    // Check if user is linked
-    if (ownerKioscos.length === 0) {
-      await sendTelegramMessage(
-        botToken,
-        chatId,
-        `⚠️ No encontré ningún kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abrí Atlas ONE\n2. Andá a Configuración → Integraciones\n3. Pegá el Chat ID\n4. Presioná "Probar Telegram"\n5. Guardá los cambios\n\nDespués de eso, usá /start para verificar.`,
-      )
-      return NextResponse.json({ ok: true })
-    }
+async function handleKioscos(botToken: string, chatId: number, ownerKioscos: { id: string; name: string }[]) {
+  if (ownerKioscos.length === 0) {
+    await sendNotLinkedMessage(botToken, chatId)
+    return
+  }
 
-    // Handle /kioscos command - list all owner's kioscos
-    if (text === "/kioscos") {
-      const kioscoList = ownerKioscos.map((k, i) => `${i + 1}. <b>${k.name}</b>`).join("\n")
+  const kioscoList = ownerKioscos.map((k, i) => `${i + 1}. <b>${k.name}</b>`).join("\n")
 
-      const message = `
-🏪 <b>Tus Kioscos</b>
+  const message = `
+<b>Tus Kioscos</b>
 
 ${kioscoList}
 
-💡 Usá los comandos con el nombre del kiosco:
-• <code>/ventas ${ownerKioscos[0]?.name || "MiKiosco"}</code>
-• <code>/stock ${ownerKioscos[0]?.name || "MiKiosco"}</code>
+<b>Tip:</b> Usa los comandos con el nombre del kiosco:
+<code>/ventas ${ownerKioscos[0]?.name || "MiKiosco"}</code>
+<code>/stock ${ownerKioscos[0]?.name || "MiKiosco"}</code>
 
 O sin nombre para ver un resumen general.
-      `.trim()
+  `.trim()
 
-      await sendTelegramMessage(botToken, chatId, message)
-      return NextResponse.json({ ok: true })
+  await sendMessage(botToken, chatId, message)
+}
+
+async function handleVentas(
+  botToken: string,
+  chatId: number,
+  ownerKioscos: { id: string; name: string }[],
+  kioscoName: string,
+  supabase: any,
+) {
+  if (ownerKioscos.length === 0) {
+    await sendNotLinkedMessage(botToken, chatId)
+    return
+  }
+
+  let targetKioscos = ownerKioscos
+  if (kioscoName) {
+    targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
+    if (targetKioscos.length === 0) {
+      await sendMessage(botToken, chatId, `No encontre un kiosco con ese nombre.\n\nUsa /kioscos para ver la lista.`)
+      return
     }
+  }
 
-    // Handle /ventas command (with optional kiosco name)
-    if (text.startsWith("/ventas")) {
-      const kioscoName = text.replace("/ventas", "").trim()
+  const kioskoIds = targetKioscos.map((k) => k.id)
+  const today = new Date().toISOString().split("T")[0]
 
-      // Filter kioscos by name if provided
-      let targetKioscos = ownerKioscos
-      if (kioscoName) {
-        targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
-        if (targetKioscos.length === 0) {
-          await sendTelegramMessage(
-            botToken,
-            chatId,
-            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`,
-          )
-          return NextResponse.json({ ok: true })
-        }
-      }
+  const { data: sales } = await supabase
+    .from("sales")
+    .select("kiosko_id, total_amount, created_at")
+    .in("kiosko_id", kioskoIds)
+    .gte("created_at", `${today}T00:00:00`)
+    .lte("created_at", `${today}T23:59:59`)
 
-      const kioskoIds = targetKioscos.map((k) => k.id)
+  if (!sales || sales.length === 0) {
+    const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : "en tus kioscos"
+    await sendMessage(botToken, chatId, `No hay ventas registradas hoy ${scope}.`)
+    return
+  }
 
-      // Get today's sales
-      const today = new Date().toISOString().split("T")[0]
-      const { data: sales } = await supabase
-        .from("sales")
-        .select("kiosko_id, total_amount, created_at")
-        .in("kiosko_id", kioskoIds)
-        .gte("created_at", `${today}T00:00:00`)
-        .lte("created_at", `${today}T23:59:59`)
+  const salesByKiosco = new Map<string, { count: number; total: number }>()
+  sales.forEach((s: any) => {
+    const existing = salesByKiosco.get(s.kiosko_id) || { count: 0, total: 0 }
+    salesByKiosco.set(s.kiosko_id, {
+      count: existing.count + 1,
+      total: existing.total + Number(s.total_amount),
+    })
+  })
 
-      if (!sales || sales.length === 0) {
-        const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : "en tus kioscos"
-        await sendTelegramMessage(botToken, chatId, `📊 No hay ventas registradas hoy ${scope}.`)
-        return NextResponse.json({ ok: true })
-      }
+  let message = `<b>Ventas de Hoy</b>\n\n`
+  let grandTotal = 0
+  let grandCount = 0
 
-      // Group by kiosco
-      const salesByKiosco = new Map<string, { count: number; total: number }>()
-      sales.forEach((s) => {
-        const existing = salesByKiosco.get(s.kiosko_id) || { count: 0, total: 0 }
-        salesByKiosco.set(s.kiosko_id, {
-          count: existing.count + 1,
-          total: existing.total + Number(s.total_amount),
-        })
-      })
-
-      let message = `📊 <b>Ventas de Hoy</b>\n\n`
-      let grandTotal = 0
-      let grandCount = 0
-
-      salesByKiosco.forEach((data, kId) => {
-        const kiosko = targetKioscos.find((k) => k.id === kId)
-        if (kiosko) {
-          message += `🏪 <b>${kiosko.name}</b>\n`
-          message += `   🛒 ${data.count} ventas\n`
-          message += `   💰 $${data.total.toLocaleString("es-AR")}\n\n`
-          grandTotal += data.total
-          grandCount += data.count
-        }
-      })
-
-      if (targetKioscos.length > 1) {
-        message += `━━━━━━━━━━━━━━━\n`
-        message += `📈 <b>TOTAL:</b> ${grandCount} ventas - $${grandTotal.toLocaleString("es-AR")}`
-      }
-
-      message += `\n\n🕐 ${new Date().toLocaleTimeString("es-AR")}`
-
-      await sendTelegramMessage(botToken, chatId, message.trim())
-      return NextResponse.json({ ok: true })
+  salesByKiosco.forEach((data, kId) => {
+    const kiosko = targetKioscos.find((k) => k.id === kId)
+    if (kiosko) {
+      message += `<b>${kiosko.name}</b>\n`
+      message += `   ${data.count} ventas\n`
+      message += `   $${data.total.toLocaleString("es-AR")}\n\n`
+      grandTotal += data.total
+      grandCount += data.count
     }
+  })
 
-    // Handle /stock command (with optional kiosco name)
-    if (text.startsWith("/stock")) {
-      const kioscoName = text.replace("/stock", "").trim()
+  if (targetKioscos.length > 1) {
+    message += `---------------\n`
+    message += `<b>TOTAL:</b> ${grandCount} ventas - $${grandTotal.toLocaleString("es-AR")}`
+  }
 
-      let targetKioscos = ownerKioscos
-      if (kioscoName) {
-        targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
-        if (targetKioscos.length === 0) {
-          await sendTelegramMessage(
-            botToken,
-            chatId,
-            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`,
-          )
-          return NextResponse.json({ ok: true })
-        }
-      }
+  message += `\n\n${new Date().toLocaleTimeString("es-AR")}`
 
-      const kioskoIds = targetKioscos.map((k) => k.id)
+  await sendMessage(botToken, chatId, message.trim())
+}
 
-      // Get low stock products
-      const { data: products } = await supabase
-        .from("products")
-        .select("kiosko_id, name, stock_quantity, min_stock_level")
-        .in("kiosko_id", kioskoIds)
-        .order("stock_quantity", { ascending: true })
-        .limit(20)
+async function handleMes(
+  botToken: string,
+  chatId: number,
+  ownerKioscos: { id: string; name: string }[],
+  kioscoName: string,
+  supabase: any,
+) {
+  if (ownerKioscos.length === 0) {
+    await sendNotLinkedMessage(botToken, chatId)
+    return
+  }
 
-      const lowStock = products?.filter((p) => p.stock_quantity <= (p.min_stock_level || 10)) || []
-
-      if (lowStock.length === 0) {
-        const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : ""
-        await sendTelegramMessage(botToken, chatId, `✅ ¡No hay productos con stock bajo ${scope}!`)
-        return NextResponse.json({ ok: true })
-      }
-
-      // Group by kiosco
-      const stockByKiosco = new Map<string, { name: string; stock: number }[]>()
-      lowStock.forEach((p) => {
-        const existing = stockByKiosco.get(p.kiosko_id) || []
-        existing.push({ name: p.name, stock: p.stock_quantity })
-        stockByKiosco.set(p.kiosko_id, existing)
-      })
-
-      let message = `⚠️ <b>Productos con Stock Bajo</b>\n\n`
-
-      stockByKiosco.forEach((prods, kId) => {
-        const kiosko = targetKioscos.find((k) => k.id === kId)
-        if (kiosko) {
-          message += `🏪 <b>${kiosko.name}</b>\n`
-          prods.slice(0, 5).forEach((p) => {
-            message += `   • ${p.name}: <b>${p.stock}</b> unid.\n`
-          })
-          if (prods.length > 5) {
-            message += `   ... y ${prods.length - 5} más\n`
-          }
-          message += `\n`
-        }
-      })
-
-      message += `💡 Hacé un pedido a proveedores desde la app.`
-
-      await sendTelegramMessage(botToken, chatId, message.trim())
-      return NextResponse.json({ ok: true })
+  let targetKioscos = ownerKioscos
+  if (kioscoName) {
+    targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
+    if (targetKioscos.length === 0) {
+      await sendMessage(botToken, chatId, `No encontre un kiosco con ese nombre.\n\nUsa /kioscos para ver la lista.`)
+      return
     }
+  }
 
-    // Handle /ayuda or /help command
-    if (text === "/ayuda" || text === "/help") {
-      const helpMessage = `
-🤖 <b>Atlas ONE Bot - Ayuda</b>
+  const kioskoIds = targetKioscos.map((k) => k.id)
 
-📱 <b>Vinculado a:</b> ${ownerKioscos.length} kiosco${ownerKioscos.length > 1 ? "s" : ""}
+  // Get first day of current month
+  const now = new Date()
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0]
+
+  const { data: sales } = await supabase
+    .from("sales")
+    .select("kiosko_id, total_amount, created_at")
+    .in("kiosko_id", kioskoIds)
+    .gte("created_at", `${firstDay}T00:00:00`)
+    .lte("created_at", `${lastDay}T23:59:59`)
+
+  if (!sales || sales.length === 0) {
+    const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : "en tus kioscos"
+    await sendMessage(botToken, chatId, `No hay ventas registradas este mes ${scope}.`)
+    return
+  }
+
+  const salesByKiosco = new Map<string, { count: number; total: number }>()
+  sales.forEach((s: any) => {
+    const existing = salesByKiosco.get(s.kiosko_id) || { count: 0, total: 0 }
+    salesByKiosco.set(s.kiosko_id, {
+      count: existing.count + 1,
+      total: existing.total + Number(s.total_amount),
+    })
+  })
+
+  const monthName = now.toLocaleDateString("es-AR", { month: "long" })
+  let message = `<b>Resumen de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</b>\n\n`
+  let grandTotal = 0
+  let grandCount = 0
+
+  salesByKiosco.forEach((data, kId) => {
+    const kiosko = targetKioscos.find((k) => k.id === kId)
+    if (kiosko) {
+      message += `<b>${kiosko.name}</b>\n`
+      message += `   ${data.count} ventas\n`
+      message += `   $${data.total.toLocaleString("es-AR")}\n\n`
+      grandTotal += data.total
+      grandCount += data.count
+    }
+  })
+
+  if (targetKioscos.length > 1) {
+    message += `---------------\n`
+    message += `<b>TOTAL:</b> ${grandCount} ventas - $${grandTotal.toLocaleString("es-AR")}`
+  }
+
+  // Calculate daily average
+  const daysElapsed = now.getDate()
+  const dailyAvg = grandTotal / daysElapsed
+
+  message += `\n\n<b>Promedio diario:</b> $${dailyAvg.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
+
+  await sendMessage(botToken, chatId, message.trim())
+}
+
+async function handleStock(
+  botToken: string,
+  chatId: number,
+  ownerKioscos: { id: string; name: string }[],
+  kioscoName: string,
+  supabase: any,
+) {
+  if (ownerKioscos.length === 0) {
+    await sendNotLinkedMessage(botToken, chatId)
+    return
+  }
+
+  let targetKioscos = ownerKioscos
+  if (kioscoName) {
+    targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
+    if (targetKioscos.length === 0) {
+      await sendMessage(botToken, chatId, `No encontre un kiosco con ese nombre.\n\nUsa /kioscos para ver la lista.`)
+      return
+    }
+  }
+
+  const kioskoIds = targetKioscos.map((k) => k.id)
+
+  const { data: products } = await supabase
+    .from("products")
+    .select("kiosko_id, name, stock_quantity, min_stock_level")
+    .in("kiosko_id", kioskoIds)
+    .order("stock_quantity", { ascending: true })
+    .limit(20)
+
+  const lowStock = products?.filter((p: any) => p.stock_quantity <= (p.min_stock_level || 10)) || []
+
+  if (lowStock.length === 0) {
+    const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : ""
+    await sendMessage(botToken, chatId, `No hay productos con stock bajo ${scope}!`)
+    return
+  }
+
+  const stockByKiosco = new Map<string, { name: string; stock: number }[]>()
+  lowStock.forEach((p: any) => {
+    const existing = stockByKiosco.get(p.kiosko_id) || []
+    existing.push({ name: p.name, stock: p.stock_quantity })
+    stockByKiosco.set(p.kiosko_id, existing)
+  })
+
+  let message = `<b>Productos con Stock Bajo</b>\n\n`
+
+  stockByKiosco.forEach((prods, kId) => {
+    const kiosko = targetKioscos.find((k) => k.id === kId)
+    if (kiosko) {
+      message += `<b>${kiosko.name}</b>\n`
+      prods.slice(0, 5).forEach((p) => {
+        message += `   - ${p.name}: <b>${p.stock}</b> unid.\n`
+      })
+      if (prods.length > 5) {
+        message += `   ... y ${prods.length - 5} mas\n`
+      }
+      message += `\n`
+    }
+  })
+
+  message += `Hace un pedido a proveedores desde la app.`
+
+  await sendMessage(botToken, chatId, message.trim())
+}
+
+async function handleAyuda(botToken: string, chatId: number, ownerKioscos: { id: string; name: string }[]) {
+  const message = `
+<b>Atlas ONE Bot - Ayuda</b>
+
+<b>Vinculado a:</b> ${ownerKioscos.length} kiosco${ownerKioscos.length !== 1 ? "s" : ""}
 
 <b>Comandos disponibles:</b>
 
 /kioscos - Ver lista de tus kioscos
 /ventas - Ventas de hoy (todos)
 /ventas [nombre] - Ventas de un kiosco
+/mes - Resumen del mes actual
+/mes [nombre] - Resumen de un kiosco
 /stock - Stock bajo (todos)
 /stock [nombre] - Stock de un kiosco
 /ayuda - Este mensaje
 
 <b>Ejemplos:</b>
-• <code>/ventas</code> → Resumen de todos
-• <code>/ventas Centro</code> → Solo "Kiosco Centro"
-• <code>/stock Estación</code> → Stock de "Kiosco Estación"
+- <code>/ventas</code> - Resumen de todos
+- <code>/ventas Centro</code> - Solo "Kiosco Centro"
+- <code>/mes</code> - Ventas del mes
+- <code>/stock Estacion</code> - Stock de "Kiosco Estacion"
 
-<b>Notificaciones automáticas:</b>
-• 🛒 Cada venta que hagas
-• ⚠️ Alertas de stock bajo
+<b>Notificaciones automaticas:</b>
+- Cada venta que hagas
+- Alertas de stock bajo
 
-<b>¿Problemas?</b>
-Contactanos en soporte@atlasone.com
-      `.trim()
+<b>Problemas?</b>
+soporte@atlasone.app
+  `.trim()
 
-      await sendTelegramMessage(botToken, chatId, helpMessage)
-      return NextResponse.json({ ok: true })
-    }
+  await sendMessage(botToken, chatId, message)
+}
 
-    // Default response for unknown commands
-    if (text.startsWith("/")) {
-      await sendTelegramMessage(
-        botToken,
-        chatId,
-        `❓ Comando no reconocido.\n\nUsá /ayuda para ver los comandos disponibles.`,
-      )
-    }
+async function handleCallbackQuery(botToken: string, query: any) {
+  const chatId = query.message?.chat.id
+  const data = query.data
+  const queryId = query.id
 
-    return NextResponse.json({ ok: true })
-  } catch (error) {
-    // Always return 200 to Telegram to avoid retries
-    return NextResponse.json({ ok: true })
+  // Answer the callback to remove loading state
+  await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: queryId }),
+  })
+
+  if (!chatId) return
+
+  // Handle different callback data
+  switch (data) {
+    case "ventas_hoy":
+      await sendMessage(botToken, chatId, "Usa /ventas para ver las ventas de hoy.")
+      break
+    case "stock_bajo":
+      await sendMessage(botToken, chatId, "Usa /stock para ver productos con stock bajo.")
+      break
+    case "mis_kioscos":
+      await sendMessage(botToken, chatId, "Usa /kioscos para ver tus kioscos.")
+      break
   }
 }
 
-async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
+async function sendNotLinkedMessage(botToken: string, chatId: number) {
+  await sendMessage(
+    botToken,
+    chatId,
+    `No encontre ningun kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abri Atlas ONE\n2. Anda a Configuracion - Integraciones\n3. Pega el Chat ID\n4. Presiona "Probar Telegram"\n5. Guarda los cambios\n\nDespues de eso, usa /start para verificar.`,
+  )
+}
+
+async function sendMessage(botToken: string, chatId: number, text: string, replyMarkup?: any) {
   try {
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
@@ -320,18 +501,18 @@ async function sendTelegramMessage(botToken: string, chatId: number, text: strin
         chat_id: chatId,
         text: text,
         parse_mode: "HTML",
+        reply_markup: replyMarkup,
       }),
     })
   } catch {
-    // Silent fail - notification errors shouldn't break the app
+    // Silent fail
   }
 }
 
-// GET endpoint for webhook verification
 export async function GET() {
   return NextResponse.json({
     status: "Atlas ONE Telegram Bot Webhook",
     info: "This endpoint receives Telegram bot updates",
-    setup: "Use Telegram API to set webhook to this URL",
+    commands: Object.values(COMMANDS),
   })
 }
