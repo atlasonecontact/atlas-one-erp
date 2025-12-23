@@ -47,13 +47,14 @@ BEGIN
     RAISE NOTICE 'Procesando: % (ID: %)', v_email, v_user_id;
 
     -- Crear o actualizar profile
-    INSERT INTO profiles (id, username, full_name, role, business_name, telegram_chat_id)
+    INSERT INTO profiles (id, username, full_name, role, business_name, theme, telegram_chat_id)
     VALUES (
       v_user_id,
       split_part(v_email, '@', 1),
       'Usuario Demo - ' || v_business_name,
       'owner',
       v_business_name,
+      'cyan',
       v_telegram_chat_id
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -112,11 +113,11 @@ BEGIN
       -- Crear empleados
       INSERT INTO employees (kiosko_id, username, name, position, status, permissions)
       VALUES
-        (v_kiosko_id, split_part(v_email, '@', 1) || '.maria.gonzalez', 'María González', 'Cajero', 'active', 
+        (v_kiosko_id, split_part(p_email, '@', 1) || '.maria.gonzalez', 'María González', 'Cajero', 'active', 
          '{"can_sell": true, "can_manage_cash": true, "can_view_reports": false, "can_manage_products": false}'::jsonb),
-        (v_kiosko_id, split_part(v_email, '@', 1) || '.pedro.sanchez', 'Pedro Sánchez', 'Cajero', 'active', 
+        (v_kiosko_id, split_part(p_email, '@', 1) || '.pedro.sanchez', 'Pedro Sánchez', 'Cajero', 'active', 
          '{"can_sell": true, "can_manage_cash": true, "can_view_reports": false, "can_manage_products": false}'::jsonb),
-        (v_kiosko_id, split_part(v_email, '@', 1) || '.laura.fernandez', 'Laura Fernández', 'Supervisor', 'active', 
+        (v_kiosko_id, split_part(p_email, '@', 1) || '.laura.fernandez', 'Laura Fernández', 'Supervisor', 'active', 
          '{"can_sell": true, "can_manage_cash": true, "can_view_reports": true, "can_manage_products": true}'::jsonb)
       ON CONFLICT (username) DO UPDATE SET
         kiosko_id = EXCLUDED.kiosko_id,
@@ -132,7 +133,7 @@ BEGIN
           INSERT INTO sales (kiosko_id, sale_number, total_amount, payment_method, status, created_at)
           VALUES (
             v_kiosko_id,
-            'VTA-DEMO-' || split_part(v_email, '@', 1) || '-' || LPAD((j * 10 + k)::TEXT, 6, '0'),
+            'VTA-DEMO-' || split_part(p_email, '@', 1) || '-' || LPAD((j * 10 + k)::TEXT, 6, '0'),
             (RANDOM() * 5000 + 500)::DECIMAL(10,2),
             CASE (RANDOM() * 3)::INT
               WHEN 0 THEN 'cash'

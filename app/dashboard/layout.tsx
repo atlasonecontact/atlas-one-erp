@@ -38,14 +38,12 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { ThemeProvider, useTheme } from "@/lib/theme-context"
 import { ThemeSelector } from "@/components/theme-selector"
+import { DarkModeToggle } from "@/components/dark-mode-toggle"
 import { OnlineStatus } from "@/components/online-status"
 import { KioskoSelector } from "@/components/kiosko-selector"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { getSingleOrNull } from "@/lib/supabase/utils"
 import { ToastProvider } from "@/components/ui/toast-provider"
-import { BottomNavigation } from "@/components/mobile/bottom-navigation"
-import { MobileHeader } from "@/components/mobile/mobile-header"
-import { MobileMenuDrawer } from "@/components/mobile/mobile-menu-drawer"
-import { CameraScanner } from "@/components/mobile/camera-scanner"
 
 interface UserProfile {
   id: string
@@ -85,55 +83,42 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
   useEffect(() => {
     const loadUser = async () => {
-      let supabase
-      try {
-        supabase = createClient()
-      } catch (e) {
+      const supabase = createClient()
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+
+      if (!authUser) {
         router.push("/login")
         return
       }
 
-      let authUser
-      try {
-        const { data, error: authError } = await supabase.auth.getUser()
-        if (authError || !data?.user) {
-          router.push("/login")
-          return
-        }
-        authUser = data.user
-      } catch (fetchError) {
-        router.push("/login")
-        return
-      }
+      const profile = await getSingleOrNull(supabase.from("profiles").select("*").eq("id", authUser.id).single())
 
-      try {
-        const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single()
-
+      if (profile) {
         setUser({
           id: authUser.id,
-          full_name: profile?.full_name || authUser.email?.split("@")[0] || "Usuario",
           email: authUser.email || "",
-          role: profile?.role || "owner",
-          business_name: profile?.business_name || "Mi Negocio",
-          theme: profile?.theme || "cyan",
+          full_name: profile.full_name || authUser.email || "Usuario",
+          role: profile.role || "admin",
+          business_name: profile.business_name || "Mi Negocio",
+          theme: profile.theme || "cyan",
         })
-      } catch (profileError) {
+      } else {
+        // Fallback if no profile yet
         setUser({
           id: authUser.id,
-          full_name: authUser.email?.split("@")[0] || "Usuario",
           email: authUser.email || "",
-          role: "owner",
+          full_name: authUser.email || "Usuario",
+          role: "admin",
           business_name: "Mi Negocio",
           theme: "cyan",
         })
-      } finally {
-        setIsLoading(false)
       }
+      setIsLoading(false)
     }
 
     loadUser()
@@ -141,14 +126,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = "/login"
-  }
+    const { error } = await supabase.auth.signOut()
 
-  const handleBarcodeScan = (barcode: string) => {
-    // Navigate to ventas with the scanned barcode
-    router.push(`/dashboard/ventas?scan=${encodeURIComponent(barcode)}`)
-    setIsScannerOpen(false)
+    if (error) {
+      console.error("[v0] Logout error:", error)
+    }
+
+    // Force navigation and clear cache
+    window.location.href = "/login"
   }
 
   if (isLoading) {
@@ -165,15 +150,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   if (!user) return null
 
   const isDashboardActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/estadisticas")
+
   const effectiveDashboardOpen = collapsed ? false : dashboardOpen
 
   return (
-    <div className="min-h-screen bg-[#030712]">
-      <MobileHeader userName={user.full_name} />
-
+    <div className="min-h-screen bg-[#030712] flex">
+      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full bg-[#0a0f1a] border-r flex-col transition-all duration-300 z-50 hidden lg:flex",
+          "fixed left-0 top-0 h-full bg-[#0a0f1a] border-r flex flex-col transition-all duration-300 z-50",
           collapsed ? "w-20" : "w-64",
         )}
         style={{ borderColor: config.border }}
@@ -335,11 +320,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </button>
       </aside>
 
-      {/* Main content - responsive margins */}
-      <div className={cn("flex-1 transition-all duration-300", "lg:ml-64", collapsed && "lg:ml-20")}>
-        {/* Desktop Top bar - hidden on mobile */}
+      {/* Main content */}
+      <div className={cn("flex-1 transition-all duration-300", collapsed ? "ml-20" : "ml-64")}>
+        {/* Top bar */}
         <header
-          className="sticky top-0 z-40 bg-[#030712]/80 backdrop-blur-xl border-b hidden lg:block"
+          className="sticky top-0 z-40 bg-[#030712]/80 backdrop-blur-xl border-b"
           style={{ borderColor: config.border }}
         >
           <div className="flex items-center justify-between px-6 py-4">
@@ -366,7 +351,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             {/* Right section */}
             <div className="flex items-center gap-3">
               <OnlineStatus />
+              <DarkModeToggle />
               <ThemeSelector />
+
+              {/* Notifications */}
               <NotificationsDropdown />
 
               {/* User menu */}
@@ -419,20 +407,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page content - responsive padding */}
-        <main className={cn("p-4 lg:p-6", "pb-24 lg:pb-6")}>{children}</main>
+        {/* Page content */}
+        <main className="p-6">{children}</main>
       </div>
-
-      <BottomNavigation onMenuClick={() => setIsMobileMenuOpen(true)} onScanClick={() => setIsScannerOpen(true)} />
-
-      <MobileMenuDrawer
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-        user={user}
-        onLogout={handleLogout}
-      />
-
-      <CameraScanner isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScan={handleBarcodeScan} />
     </div>
   )
 }
