@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@supabase/supabase-js"
 
 // Debug endpoint to check Telegram configuration
 // GET /api/telegram/debug?chatId=YOUR_CHAT_ID
@@ -8,14 +8,40 @@ export async function GET(request: NextRequest) {
   try {
     const chatId = request.nextUrl.searchParams.get("chatId")
     
+    // Debug: Check environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    const envStatus = {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceRoleKey: !!serviceRoleKey,
+      serviceRoleKeyLength: serviceRoleKey?.length || 0,
+      serviceRoleKeyPrefix: serviceRoleKey?.substring(0, 10) || "NOT_SET",
+    }
+    
     if (!chatId) {
       return NextResponse.json({ 
         error: "Falta el parámetro chatId",
-        usage: "/api/telegram/debug?chatId=TU_CHAT_ID"
+        usage: "/api/telegram/debug?chatId=TU_CHAT_ID",
+        envStatus
       }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json({
+        error: "Variables de entorno no configuradas",
+        envStatus,
+        searchedChatId: chatId
+      }, { status: 500 })
+    }
+
+    // Create admin client directly here for debugging
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
 
     // 1. Check profiles table
     const { data: profiles, error: profileError } = await supabase
@@ -51,6 +77,7 @@ export async function GET(request: NextRequest) {
       .limit(10)
 
     return NextResponse.json({
+      envStatus,
       searchedChatId: chatId,
       foundInProfiles: profiles?.length || 0,
       foundInNotificationConfigs: configs?.length || 0,
@@ -72,7 +99,8 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     return NextResponse.json({ 
-      error: error.message || "Error interno" 
+      error: error.message || "Error interno",
+      stack: error.stack
     }, { status: 500 })
   }
 }
