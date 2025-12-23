@@ -148,27 +148,39 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
           // If user is an employee, load their employee info
           if (profile.role === "employee") {
-            const { data: empData } = await supabase
+            console.log("[Dashboard] Loading employee info for user:", authUser.id)
+            const { data: empData, error: empError } = await supabase
               .from("employees")
               .select("id, kiosko_id, name, permissions")
               .eq("user_id", authUser.id)
-              .single()
+              .maybeSingle()
+
+            console.log("[Dashboard] Employee query result:", { empData, empError })
+
+            if (empError) {
+              console.error("[Dashboard] Error loading employee:", empError)
+            }
 
             if (empData) {
+              const permissions = empData.permissions || {
+                can_sell: true,
+                can_view_reports: false,
+                can_manage_inventory: false,
+                can_manage_employees: false,
+              }
+              console.log("[Dashboard] Employee permissions:", permissions)
+              
               setEmployeeInfo({
                 id: empData.id,
                 kiosko_id: empData.kiosko_id,
                 name: empData.name,
-                permissions: empData.permissions || {
-                  can_sell: true,
-                  can_view_reports: false,
-                  can_manage_inventory: false,
-                  can_manage_employees: false,
-                },
+                permissions,
               })
               // Set the employee's kiosko as selected
               localStorage.setItem("selectedKioskoId", empData.kiosko_id)
               window.dispatchEvent(new CustomEvent("kioskoChanged", { detail: empData.kiosko_id }))
+            } else {
+              console.warn("[Dashboard] No employee record found for user_id:", authUser.id)
             }
           }
         }

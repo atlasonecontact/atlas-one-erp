@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // Telegram Bot Webhook Handler - Following official Telegram Bot API best practices
 // https://core.telegram.org/bots/tutorial
+// Uses admin client to bypass RLS since webhook requests come from Telegram (no user session)
 
 const COMMANDS = {
   START: "/start",
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    const supabase = await createServerClient()
+    // Use admin client to bypass RLS - webhook has no user session
+    const supabase = createAdminClient()
 
     // Find owner by telegram_chat_id in profiles
     let ownerId: string | null = null
@@ -152,7 +154,7 @@ ${isLinked ? `<b>Kioscos vinculados:</b> ${ownerKioscos.length}` : `<b>Estado:</
 
 <b>Como configurarlo:</b>
 1. Copia el numero de arriba (toca para copiar)
-2. Anda a Atlas ONE - Configuracion - Integraciones
+2. Anda a Atlas ONE - Configuracion - Notificaciones
 3. Pegalo en el campo "Chat ID de Telegram"
 4. Presiona "Probar Telegram"
 5. Guarda los cambios
@@ -488,7 +490,7 @@ async function sendNotLinkedMessage(botToken: string, chatId: number) {
   await sendMessage(
     botToken,
     chatId,
-    `No encontre ningun kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abri Atlas ONE\n2. Anda a Configuracion - Integraciones\n3. Pega el Chat ID\n4. Presiona "Probar Telegram"\n5. Guarda los cambios\n\nDespues de eso, usa /start para verificar.`,
+    `No encontre ningun kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abri Atlas ONE\n2. Anda a Configuracion - Notificaciones\n3. Pega el Chat ID\n4. Presiona "Probar Telegram"\n5. Guarda los cambios\n\nDespues de eso, usa /start para verificar.`,
   )
 }
 

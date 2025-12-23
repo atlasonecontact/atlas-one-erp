@@ -162,7 +162,7 @@ export function FinancialKPIs({ data, isLoading = false }: FinancialKPIsProps) {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 relative overflow-hidden">
       <h3 className="text-sm font-medium text-white mb-4">KPIs Financieros</h3>
       <div className="space-y-1 divide-y divide-cyan-500/10">
         <KPIRow 

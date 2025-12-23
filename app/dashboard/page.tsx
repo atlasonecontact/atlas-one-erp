@@ -160,13 +160,13 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Left column - Category Mix */}
-            <div className="space-y-4 lg:space-y-6">
+            <div className="space-y-4 lg:space-y-6 relative z-0">
               <CategoryMixChart isLoading={isLoading} />
               <FinancialKPIs isLoading={isLoading} />
             </div>
 
             {/* Center column - Analytics Chart + Performance */}
-            <div className="md:col-span-1 lg:col-span-2 space-y-4 lg:space-y-6">
+            <div className="md:col-span-1 lg:col-span-2 space-y-4 lg:space-y-6 relative z-0">
               <AnalyticsChart title="Analítica" subtitle="Últimos 12 Meses" isLoading={isLoading} />
 
               {/* Bottom KPIs Row - responsive */}
@@ -179,7 +179,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Sales History Table */}
-          <SalesHistory isLoading={isLoading} />
+          <div className="relative z-10">
+            <SalesHistory isLoading={isLoading} />
+          </div>
 
           {/* Smart Insights + Alerts Row - responsive */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">

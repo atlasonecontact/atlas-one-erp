@@ -23,14 +23,18 @@ interface SalesHistoryProps {
   kioskoId?: string
 }
 
+const ITEMS_PER_PAGE = 5
+
 export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: SalesHistoryProps) {
   const [sales, setSales] = useState<SaleRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"all" | "day" | "week">("week")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const supabase = createClient()
 
   useEffect(() => {
+    setCurrentPage(1)
     loadSales()
   }, [filter])
 
@@ -119,6 +123,14 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
   }
 
   const isLoading = externalLoading || loading
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE)
+  const paginatedSales = sales.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+  
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString("es-AR", { day: "numeric", month: "short" })
@@ -158,7 +170,7 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 lg:p-5">
+    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 lg:p-5 relative overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h3 className="text-sm font-medium text-white">Historial de Ventas</h3>
         <div className="flex gap-2 overflow-x-auto">
@@ -191,7 +203,7 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
       ) : (
         <>
           <div className="lg:hidden space-y-3">
-            {sales.map((sale) => {
+            {paginatedSales.map((sale) => {
               const totalUnits = sale.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
               const mainProduct = sale.items?.[0]?.product_name || "Venta"
 
@@ -244,7 +256,7 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
                 </tr>
               </thead>
               <tbody>
-                {sales.map((sale) => {
+                {paginatedSales.map((sale) => {
                   const totalUnits = sale.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
                   const mainProduct = sale.items?.[0]?.product_name || "Venta"
 
@@ -292,6 +304,34 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-cyan-500/10">
+              <span className="text-xs text-gray-500">
+                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, sales.length)} de {sales.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <span className="text-xs text-gray-400">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
