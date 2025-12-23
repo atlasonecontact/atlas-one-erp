@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { KPICardV2 } from "@/components/dashboard/kpi-card-v2"
 import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
@@ -13,12 +14,44 @@ import { Plus, Calendar, TrendingUp, Receipt, Package, DollarSign, RefreshCw, Fi
 import Link from "next/link"
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data"
 import { useTheme } from "@/lib/theme-context"
+import { createClient } from "@/lib/supabase/client"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [period, setPeriod] = useState("30d")
   const [view, setView] = useState<"overview" | "notifications" | "history">("overview")
+  const [isAuthorized, setIsAuthorized] = useState(false)
   const { data, isLoading, refetch } = useDashboardData(period)
   const { config } = useTheme()
+
+  // Check if user is employee - redirect to ventas
+  useEffect(() => {
+    const checkAccess = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push("/login")
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+      if (profile?.role === "employee") {
+        // Employees cannot access general dashboard - redirect to ventas
+        router.replace("/dashboard/ventas")
+        return
+      }
+
+      setIsAuthorized(true)
+    }
+
+    checkAccess()
+  }, [router])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
@@ -36,6 +69,15 @@ export default function DashboardPage() {
 
     const formatDate = (d: Date) => `${d.getDate()} ${d.toLocaleString("es", { month: "short" })}`
     return `${formatDate(start)} - ${formatDate(end)}`
+  }
+
+  // Don't render until authorized
+  if (!isAuthorized) {
+    return (
+      <div className="h-[calc(100vh-120px)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

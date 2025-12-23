@@ -235,12 +235,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     return true
   })
 
-  // Filter dashboard items for employees - only show if they can view reports
-  const filteredDashboardItems = isOwner 
-    ? dashboardNavItems 
-    : employeeInfo?.permissions?.can_view_reports 
-      ? dashboardNavItems 
-      : [dashboardNavItems[0]] // Only show "General"
+  // Employees don't see dashboard section at all - it's owner only
+  // Only owners can view the main dashboard with KPIs and reports
+  const filteredDashboardItems = isOwner ? dashboardNavItems : []
 
   return (
     <div className="min-h-screen bg-[#030712]">

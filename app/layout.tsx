@@ -100,6 +100,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <link rel="icon" href="/images/logo-atlas.png" type="image/png" />
+        <link rel="shortcut icon" href="/images/logo-atlas.png" type="image/png" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="canonical" href="https://atlasone.com.ar" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
