@@ -67,11 +67,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/images/logo-atlas.png", type: "image/png" },
-      { url: "/icon-dark-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
     ],
-    apple: [{ url: "/images/logo-atlas.png", sizes: "180x180", type: "image/png" }],
-    shortcut: "/images/logo-atlas.png",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
   alternates: {
@@ -100,8 +101,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link rel="icon" href="/images/logo-atlas.png" type="image/png" />
-        <link rel="shortcut icon" href="/images/logo-atlas.png" type="image/png" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="canonical" href="https://atlasone.com.ar" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
