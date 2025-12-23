@@ -41,8 +41,8 @@ self.addEventListener("fetch", (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Solo maneja requests del mismo origen
-  if (url.origin !== self.location.origin) {
+  // Solo maneja requests del mismo origen y GET requests
+  if (url.origin !== self.location.origin || request.method !== "GET") {
     return
   }
 
@@ -50,7 +50,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Si la respuesta es válida, clona y guarda en cache
+        // Si la respuesta es válida, clona y guarda en cache (solo GET)
         if (response && response.status === 200 && response.type === "basic") {
           const responseToCache = response.clone()
           caches.open(CACHE_NAME).then((cache) => {

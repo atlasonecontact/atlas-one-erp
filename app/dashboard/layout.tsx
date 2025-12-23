@@ -90,39 +90,20 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const loadUser = async () => {
-      let supabase
       try {
-        supabase = createClient()
-      } catch (e) {
-        router.push("/login")
-        return
-      }
+        const supabase = createClient()
 
-      let authUser
-      try {
+        // Quick auth check first
         const { data, error: authError } = await supabase.auth.getUser()
+
         if (authError || !data?.user) {
           router.push("/login")
           return
         }
-        authUser = data.user
-      } catch (fetchError) {
-        router.push("/login")
-        return
-      }
 
-      try {
-        const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single()
+        const authUser = data.user
 
-        setUser({
-          id: authUser.id,
-          full_name: profile?.full_name || authUser.email?.split("@")[0] || "Usuario",
-          email: authUser.email || "",
-          role: profile?.role || "owner",
-          business_name: profile?.business_name || "Mi Negocio",
-          theme: profile?.theme || "cyan",
-        })
-      } catch (profileError) {
+        // Set basic user data immediately for faster UI
         setUser({
           id: authUser.id,
           full_name: authUser.email?.split("@")[0] || "Usuario",
@@ -131,8 +112,28 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           business_name: "Mi Negocio",
           theme: "cyan",
         })
-      } finally {
         setIsLoading(false)
+
+        // Load profile data in background (non-blocking)
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile) {
+              setUser({
+                id: authUser.id,
+                full_name: profile.full_name || authUser.email?.split("@")[0] || "Usuario",
+                email: authUser.email || "",
+                role: profile.role || "owner",
+                business_name: profile.business_name || "Mi Negocio",
+                theme: profile.theme || "cyan",
+              })
+            }
+          })
+      } catch (error) {
+        router.push("/login")
       }
     }
 
