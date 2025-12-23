@@ -43,12 +43,7 @@ export function KioskoSelector() {
         return
       }
 
-      // Check if user is an employee
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
 
       if (profile?.role === "employee") {
         // Employee: only load their assigned kiosko
@@ -57,7 +52,7 @@ export function KioskoSelector() {
           .from("employees")
           .select("kiosko_id, kioscos(id, name, location)")
           .eq("user_id", user.id)
-          .single()
+          .maybeSingle()
 
         if (employeeData?.kioscos) {
           const kiosko = employeeData.kioscos as unknown as Kiosko
