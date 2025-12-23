@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmployeeModal } from "@/components/employees/employee-modal"
-import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar } from "lucide-react"
+import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 type Shift = {
@@ -49,6 +49,7 @@ export default function EmpleadosPage() {
   const [kioscos, setKioscos] = useState<any[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [showPinFor, setShowPinFor] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -152,6 +153,23 @@ export default function EmpleadosPage() {
     if (shifts.length === 0) return null
     const days = shifts.sort((a, b) => a.day_of_week - b.day_of_week).map((s) => DAY_NAMES[s.day_of_week])
     return days.join(", ")
+  }
+
+  const handleDelete = async (employee: Employee) => {
+    const confirmed = window.confirm(`Eliminar a ${employee.name}? Esta acción no se puede deshacer.`)
+    if (!confirmed) return
+
+    try {
+      setDeletingId(employee.id)
+      const { error } = await supabase.from("employees").delete().eq("id", employee.id)
+      if (error) throw error
+      await loadEmployees()
+    } catch (err) {
+      console.error("Error deleting employee", err)
+      alert("No se pudo eliminar el empleado. Intenta de nuevo.")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const getPermissionCount = (permissions: Employee["permissions"]) => {
@@ -411,6 +429,16 @@ export default function EmpleadosPage() {
                   title="Editar empleado"
                 >
                   <UserCog className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(employee)}
+                  disabled={deletingId === employee.id}
+                  className="bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-500/30"
+                  title="Eliminar empleado"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
