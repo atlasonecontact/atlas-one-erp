@@ -32,6 +32,10 @@ import {
   LogOut,
   Plug,
   Bike,
+  Calculator,
+  FileText,
+  CreditCard,
+  Receipt,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
@@ -76,6 +80,21 @@ const dashboardNavItems = [
   { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
 ]
 
+const finanzasSubItems = [
+  { href: "/dashboard/estadisticas/finanzas", label: "Resumen", icon: BarChart3 },
+  { href: "/dashboard/estadisticas/finanzas/ingresos-wallets", label: "Ingresos Wallets", icon: Wallet },
+  { href: "/dashboard/estadisticas/finanzas/ingresos-tarjetas", label: "Ingresos Tarjetas", icon: CreditCard },
+]
+
+const contabilidadItems = [
+  { href: "/dashboard/contabilidad/emitir-factura", label: "Emitir Factura", icon: FileText },
+  { href: "/dashboard/contabilidad/facturas-emitidas", label: "Facturas Emitidas", icon: Receipt },
+  { href: "/dashboard/contabilidad/cuentas", label: "Cuentas", icon: Calculator },
+  { href: "/dashboard/contabilidad/asientos", label: "Asientos Contables", icon: FileText },
+  { href: "/dashboard/contabilidad/libro-mayor", label: "Libro Mayor", icon: FileText },
+  { href: "/dashboard/contabilidad/balance", label: "Balance", icon: BarChart3 },
+]
+
 // All nav items with permission requirements
 const allNavItems = [
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart, permission: "can_sell" },
@@ -96,6 +115,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { config } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const [dashboardOpen, setDashboardOpen] = useState(true)
+  const [finanzasOpen, setFinanzasOpen] = useState(false)
+  const [contabilidadOpen, setContabilidadOpen] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -130,11 +151,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
 
         // Load profile data in background (non-blocking)
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authUser.id)
-          .single()
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single()
 
         if (profile) {
           setUser({
@@ -169,7 +186,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 can_manage_employees: false,
               }
               console.log("[Dashboard] Employee permissions:", permissions)
-              
+
               setEmployeeInfo({
                 id: empData.id,
                 kiosko_id: empData.kiosko_id,
@@ -218,7 +235,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   if (!user) return null
 
   const isDashboardActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/estadisticas")
+  const isFinanzasActive = pathname.startsWith("/dashboard/estadisticas/finanzas")
+  const isContabilidadActive = pathname.startsWith("/dashboard/contabilidad")
   const effectiveDashboardOpen = collapsed ? false : dashboardOpen
+  const effectiveFinanzasOpen = collapsed ? false : finanzasOpen
+  const effectiveContabilidadOpen = collapsed ? false : contabilidadOpen
 
   // Filter navigation items based on user role and permissions
   const isOwner = user.role !== "employee"
@@ -304,6 +325,67 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <div className="mt-1 space-y-1">
                   {filteredDashboardItems.map((item) => {
                     const isActive = pathname === item.href
+                    if (item.href === "/dashboard/estadisticas/finanzas") {
+                      return (
+                        <div key={item.href}>
+                          <button
+                            type="button"
+                            onClick={() => setFinanzasOpen((v) => !v)}
+                            className={cn(
+                              "ml-4 w-[calc(100%-1rem)] flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+                              isFinanzasActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                            )}
+                            style={
+                              isFinanzasActive
+                                ? {
+                                    backgroundColor: config.primaryMuted,
+                                    color: config.primary,
+                                    borderColor: config.border,
+                                  }
+                                : {}
+                            }
+                          >
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="text-sm flex-1 text-left">{item.label}</span>
+                            <ChevronDown
+                              className={cn(
+                                "w-3 h-3 transition-transform",
+                                effectiveFinanzasOpen ? "rotate-0" : "-rotate-90",
+                              )}
+                            />
+                          </button>
+                          {effectiveFinanzasOpen && (
+                            <div className="mt-1 space-y-1">
+                              {finanzasSubItems.map((subItem) => {
+                                const isSubActive = pathname === subItem.href
+                                return (
+                                  <Link key={subItem.href} href={subItem.href}>
+                                    <div
+                                      className={cn(
+                                        "ml-8 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+                                        isSubActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                                      )}
+                                      style={
+                                        isSubActive
+                                          ? {
+                                              backgroundColor: config.primaryMuted,
+                                              color: config.primary,
+                                              borderColor: config.border,
+                                            }
+                                          : {}
+                                      }
+                                    >
+                                      <subItem.icon className="w-3 h-3 shrink-0" />
+                                      <span className="text-xs">{subItem.label}</span>
+                                    </div>
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
                     return (
                       <Link key={item.href} href={item.href}>
                         <div
@@ -331,6 +413,81 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               )}
             </div>
           ) : null}
+
+          {isOwner &&
+            (collapsed ? (
+              <Link href="/dashboard/contabilidad/emitir-factura">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    isContabilidadActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                    "justify-center px-3",
+                  )}
+                  style={
+                    isContabilidadActive
+                      ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                      : {}
+                  }
+                >
+                  <Calculator className="w-5 h-5 shrink-0" />
+                </div>
+              </Link>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setContabilidadOpen((v) => !v)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    isContabilidadActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                  )}
+                  style={
+                    isContabilidadActive
+                      ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                      : {}
+                  }
+                >
+                  <Calculator className="w-5 h-5 shrink-0" />
+                  <span className="text-sm font-medium flex-1 text-left">Contabilidad</span>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform",
+                      effectiveContabilidadOpen ? "rotate-0" : "-rotate-90",
+                    )}
+                  />
+                </button>
+
+                {effectiveContabilidadOpen && (
+                  <div className="mt-1 space-y-1">
+                    {contabilidadItems.map((item) => {
+                      const isActive = pathname === item.href
+                      return (
+                        <Link key={item.href} href={item.href}>
+                          <div
+                            className={cn(
+                              "ml-4 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+                              isActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                            )}
+                            style={
+                              isActive
+                                ? {
+                                    backgroundColor: config.primaryMuted,
+                                    color: config.primary,
+                                    borderColor: config.border,
+                                  }
+                                : {}
+                            }
+                          >
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="text-sm">{item.label}</span>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
 
           {/* Rest of navigation */}
           {navItems.map((item) => {
