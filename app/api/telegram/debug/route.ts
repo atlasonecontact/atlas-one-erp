@@ -36,11 +36,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Create admin client directly here for debugging
+    // db.schema needs to be 'public' and we need to set role to 'service_role'
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
       },
+      db: {
+        schema: 'public'
+      }
+    })
+    
+    // Also try with explicit RLS bypass
+    const supabaseBypass = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'supabase-admin'
+        }
+      }
     })
 
     // 1. Check profiles table
