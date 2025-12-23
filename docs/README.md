@@ -93,7 +93,7 @@ Si necesitas configurar Telegram con privacidad por usuario:
 
 ### Flujo: Nuevo Usuario Demo
 
-```
+\`\`\`
 1. Ejecutar script 202 (crear usuario y kiosko)
    ↓
 2. Usuario obtiene su Chat ID (@userinfobot)
@@ -107,11 +107,11 @@ Si necesitas configurar Telegram con privacidad por usuario:
 6. Usuario guarda configuración
    ↓
 7. ✅ Usuario recibe notificaciones privadas
-```
+\`\`\`
 
 ### Flujo: Configurar Bot Telegram (Admin)
 
-```
+\`\`\`
 1. Crear bot con @BotFather
    ↓
 2. Obtener Token
@@ -121,11 +121,11 @@ Si necesitas configurar Telegram con privacidad por usuario:
 4. Reiniciar app
    ↓
 5. ✅ Bot disponible para todos los usuarios
-```
+\`\`\`
 
 ### Flujo: Usuario Configura su Telegram
 
-```
+\`\`\`
 1. @userinfobot → Obtener Chat ID
    ↓
 2. Dashboard → Configuración → Telegram
@@ -139,7 +139,7 @@ Si necesitas configurar Telegram con privacidad por usuario:
 6. @AtlasOneERP_bot → /start
    ↓
 7. ✅ Recibe notificaciones automáticas
-```
+\`\`\`
 
 ---
 
@@ -201,21 +201,21 @@ R: Sí. Service Worker implementado automáticamente.
 ## 🚀 Empezar Ahora
 
 ### Opción 1: Configuración Rápida (5 minutos)
-```bash
+\`\`\`bash
 1. Ejecutar en Supabase: scripts/202_fix_demo_complete.sql
 2. Configurar .env.local con TELEGRAM_BOT_TOKEN
 3. npm run dev
 4. Login y probar
-```
+\`\`\`
 
 ### Opción 2: Configuración Completa (15 minutos)
-```bash
+\`\`\`bash
 1. Leer GUIA_RAPIDA_SOLUCION.md
 2. Crear bot de Telegram (@BotFather)
 3. Ejecutar script 202
 4. Configurar cada usuario (TELEGRAM_PASO_A_PASO.txt)
 5. Verificar con queries SQL
-```
+\`\`\`
 
 ---
 

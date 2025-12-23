@@ -17,36 +17,36 @@ Ahora **CADA usuario configura su propio Chat ID de Telegram** desde el Dashboar
 ### Para Demo 1: `demo.maxi-kiosco@atlasone.com`
 
 #### 1️⃣ Obtener Chat ID Personal
-```
+\`\`\`
 Usuario 1:
 1. Abrir Telegram
 2. Buscar @userinfobot
 3. Enviar /start
 4. Copiar su Chat ID: 123456789 (ejemplo)
-```
+\`\`\`
 
 #### 2️⃣ Login al Sistema
-```
+\`\`\`
 Email: demo.maxi-kiosco@atlasone.com
 Password: Demo123456!
-```
+\`\`\`
 
 #### 3️⃣ Configurar en Dashboard
-```
+\`\`\`
 1. Ir a Dashboard → Configuración
 2. Pestaña "Notificaciones"
 3. Sección "Telegram"
 4. Pegar su Chat ID: 123456789
 5. Click "🧪 Probar"
 6. Guardar Cambios
-```
+\`\`\`
 
 #### 4️⃣ Iniciar Bot
-```
+\`\`\`
 1. Buscar @AtlasOneBot en Telegram
 2. Enviar /start
 3. El bot responderá con confirmación
-```
+\`\`\`
 
 ✅ Ahora este usuario recibe SOLO sus notificaciones
 
@@ -55,29 +55,29 @@ Password: Demo123456!
 ### Para Demo 2: `demo.mini-market@atlasone.com`
 
 #### 1️⃣ Obtener Chat ID Personal (DIFERENTE)
-```
+\`\`\`
 Usuario 2:
 1. Abrir Telegram (desde SU cuenta)
 2. Buscar @userinfobot
 3. Enviar /start
 4. Copiar SU Chat ID: 987654321 (DIFERENTE al usuario 1)
-```
+\`\`\`
 
 #### 2️⃣ Login al Sistema
-```
+\`\`\`
 Email: demo.mini-market@atlasone.com
 Password: Demo123456!
-```
+\`\`\`
 
 #### 3️⃣ Configurar en Dashboard
-```
+\`\`\`
 1. Ir a Dashboard → Configuración
 2. Pestaña "Notificaciones"
 3. Sección "Telegram"
 4. Pegar SU Chat ID: 987654321
 5. Click "🧪 Probar"
 6. Guardar Cambios
-```
+\`\`\`
 
 ✅ Ahora este usuario recibe SOLO sus notificaciones
 
@@ -91,24 +91,24 @@ Password: Demo123456!
 - El bot envía mensajes A ESE Chat ID específico
 
 ### Un Bot, Múltiples Usuarios
-```
+\`\`\`
 Bot de Telegram (@AtlasOneBot)
     │
     ├── Usuario 1 (Chat ID: 123456789) → Recibe notificaciones del Kiosko 1
     ├── Usuario 2 (Chat ID: 987654321) → Recibe notificaciones del Kiosko 2
     ├── Usuario 3 (Chat ID: 555666777) → Recibe notificaciones del Kiosko 3
     └── ...
-```
+\`\`\`
 
 ### Base de Datos
-```sql
+\`\`\`sql
 -- Tabla: notification_configs
 kiosko_id | telegram_chat_id | telegram_enabled | telegram_verified
 ----------+------------------+------------------+-------------------
 uuid-1    | 123456789       | true             | true              -- Kiosko 1
 uuid-2    | 987654321       | true             | true              -- Kiosko 2
 uuid-3    | 555666777       | true             | true              -- Kiosko 3
-```
+\`\`\`
 
 Cada kiosko tiene:
 - ✅ Su propio Chat ID
@@ -120,57 +120,57 @@ Cada kiosko tiene:
 ## 📱 Pasos para Cada Usuario Demo
 
 ### Usuario Demo 1 (Maxi Kiosco)
-```bash
+\`\`\`bash
 # Su Telegram:
 1. @userinfobot → Chat ID: XXXXXXXXX
 2. Login: demo.maxi-kiosco@atlasone.com
 3. Dashboard → Config → Telegram → Pegar XXXXXXXXX
 4. @AtlasOneBot → /start
-```
+\`\`\`
 
 ### Usuario Demo 2 (Mini Market)
-```bash
+\`\`\`bash
 # Su Telegram (DIFERENTE):
 1. @userinfobot → Chat ID: YYYYYYYYY
 2. Login: demo.mini-market@atlasone.com
 3. Dashboard → Config → Telegram → Pegar YYYYYYYYY
 4. @AtlasOneBot → /start
-```
+\`\`\`
 
 ### Usuario Demo 3 (Licorería)
-```bash
+\`\`\`bash
 # Su Telegram (DIFERENTE):
 1. @userinfobot → Chat ID: ZZZZZZZZZ
 2. Login: demo.licoreria@atlasone.com
 3. Dashboard → Config → Telegram → Pegar ZZZZZZZZZ
 4. @AtlasOneBot → /start
-```
+\`\`\`
 
 ---
 
 ## 🛠️ Scripts Actualizados
 
 ### Script 202 (Crear Demos)
-```sql
+\`\`\`sql
 -- YA NO establece un Chat ID por defecto
 -- Cada usuario debe configurarlo manualmente
 v_telegram_chat_id TEXT := NULL;
-```
+\`\`\`
 
 ### Script 203 (Actualizar Chat ID)
-```sql
+\`\`\`sql
 -- Ahora trabaja con UN usuario específico
 -- Ya no actualiza todos a la vez
 v_email TEXT := 'demo.maxi-kiosco@atlasone.com';
 v_new_chat_id TEXT := 'CHAT_ID_ESPECÍFICO_DE_ESTE_USUARIO';
-```
+\`\`\`
 
 ---
 
 ## ✅ Verificar Configuración
 
 ### SQL para ver estado de TODOS los demos:
-```sql
+\`\`\`sql
 SELECT 
   '✅ ESTADO TELEGRAM' as titulo,
   u.email,
@@ -186,23 +186,23 @@ LEFT JOIN kioscos k ON k.owner_id = u.id
 LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
 WHERE u.email LIKE 'demo.%@atlasone.com'
 ORDER BY u.email;
-```
+\`\`\`
 
 ### Resultado Esperado (después de configurar):
-```
+\`\`\`
 email                           | chat_id    | habilitado | verificado
 --------------------------------+------------+------------+-----------
 demo.maxi-kiosco@atlasone.com  | 123456789  | ✅         | ✅
 demo.mini-market@atlasone.com  | 987654321  | ✅         | ✅
 demo.licoreria@atlasone.com    | 555666777  | ✅         | ✅
-```
+\`\`\`
 
 ---
 
 ## 🎯 Flujo de Notificaciones
 
 ### Cuando Usuario 1 hace una venta:
-```
+\`\`\`
 Venta en Kiosko 1
     ↓
 Sistema busca notification_configs WHERE kiosko_id = uuid-1
@@ -212,10 +212,10 @@ Encuentra telegram_chat_id = 123456789
 Bot envía mensaje A 123456789
     ↓
 Usuario 1 recibe notificación en SU Telegram
-```
+\`\`\`
 
 ### Cuando Usuario 2 hace una venta:
-```
+\`\`\`
 Venta en Kiosko 2
     ↓
 Sistema busca notification_configs WHERE kiosko_id = uuid-2
@@ -225,7 +225,7 @@ Encuentra telegram_chat_id = 987654321
 Bot envía mensaje A 987654321
     ↓
 Usuario 2 recibe notificación en SU Telegram
-```
+\`\`\`
 
 ✅ Cada uno recibe SOLO sus propias notificaciones
 
@@ -236,23 +236,23 @@ Usuario 2 recibe notificación en SU Telegram
 Solo necesitas **UN bot** para todos los usuarios:
 
 ### 1. Crear el Bot
-```
+\`\`\`
 1. Telegram → @BotFather
 2. /newbot
 3. Nombre: Atlas One ERP Bot
 4. Username: AtlasOneERP_bot
 5. Copiar Token
-```
+\`\`\`
 
 ### 2. Configurar en .env.local
-```env
+\`\`\`env
 TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
-```
+\`\`\`
 
 ### 3. Reiniciar App
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ✅ El bot funciona para TODOS los usuarios
 ✅ Cada usuario configura SU Chat ID

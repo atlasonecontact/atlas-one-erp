@@ -20,16 +20,16 @@ He creado el script **`202_fix_demo_complete.sql`** que:
 - ✅ Crea productos, empleados, ventas y caja
 
 **Ejecutar:**
-```bash
+\`\`\`bash
 # Desde Supabase SQL Editor, ejecuta:
 scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 **O desde terminal:**
-```bash
+\`\`\`bash
 # Si tienes psql instalado:
 psql -h [HOST] -U postgres -d postgres -f scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 ---
 
@@ -47,10 +47,10 @@ El proyecto necesita un Service Worker para cachear recursos. Crea estos archivo
 #### B. Variables de Entorno
 
 Asegúrate de tener en tu `.env.local`:
-```env
+\`\`\`env
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
-```
+\`\`\`
 
 #### C. Productos y Datos Offline
 
@@ -86,16 +86,16 @@ El sistema ya guarda:
 #### C. Configurar Variables de Entorno
 
 Agrega a tu `.env.local`:
-```env
+\`\`\`env
 TELEGRAM_BOT_TOKEN=1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ
-```
+\`\`\`
 
 #### D. Actualizar Chat ID en Base de Datos
 
 El script `202_fix_demo_complete.sql` ya configura el Chat ID `8494177500`.
 
 **Para cambiar tu Chat ID:**
-```sql
+\`\`\`sql
 -- Actualiza con TU Chat ID
 UPDATE notification_configs 
 SET telegram_chat_id = 'TU_CHAT_ID_AQUI',
@@ -113,11 +113,11 @@ SET telegram_chat_id = 'TU_CHAT_ID_AQUI'
 WHERE id IN (
   SELECT id FROM auth.users WHERE email LIKE 'demo.%@atlasone.com'
 );
-```
+\`\`\`
 
 #### E. Verificar Configuración
 
-```sql
+\`\`\`sql
 -- Ver estado de Telegram para demos
 SELECT 
   u.email,
@@ -130,28 +130,28 @@ INNER JOIN profiles p ON u.id = p.id
 LEFT JOIN kioscos k ON k.owner_id = u.id
 LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
 WHERE u.email LIKE 'demo.%@atlasone.com';
-```
+\`\`\`
 
 ---
 
 ## 🚀 PASOS COMPLETOS EN ORDEN
 
 ### 1. Ejecutar Script de Reparación
-```bash
+\`\`\`bash
 # Desde Supabase SQL Editor
 Ejecutar: scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 ### 2. Configurar Telegram
-```bash
+\`\`\`bash
 # 1. Obtener Chat ID (@userinfobot)
 # 2. Crear Bot (@BotFather)
 # 3. Agregar a .env.local:
 echo "TELEGRAM_BOT_TOKEN=tu-token-aqui" >> .env.local
-```
+\`\`\`
 
 ### 3. Actualizar Chat ID en DB
-```sql
+\`\`\`sql
 -- Reemplaza 'TU_CHAT_ID' con tu Chat ID real
 DO $$
 DECLARE
@@ -173,17 +173,17 @@ BEGIN
     )
   );
 END $$;
-```
+\`\`\`
 
 ### 4. Reiniciar App
-```bash
+\`\`\`bash
 npm run dev
 # O si está en producción:
 vercel --prod
-```
+\`\`\`
 
 ### 5. Verificar Todo
-```bash
+\`\`\`bash
 # Login con usuario demo:
 # Email: demo.maxi-kiosco@atlasone.com
 # Password: Demo123456!
@@ -195,14 +195,14 @@ vercel --prod
 ✅ Caja abierta
 ✅ Funciona offline (probar en DevTools)
 ✅ Notificaciones Telegram (si configurado)
-```
+\`\`\`
 
 ---
 
 ## 📊 VERIFICACIÓN FINAL
 
 Ejecuta esto en Supabase SQL Editor:
-```sql
+\`\`\`sql
 SELECT 
   '✅ ESTADO DEMOS' as status,
   u.email,
@@ -217,23 +217,23 @@ LEFT JOIN kioscos k ON k.owner_id = u.id
 LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
 WHERE u.email LIKE 'demo.%@atlasone.com'
 ORDER BY u.email;
-```
+\`\`\`
 
 ---
 
 ## 🆘 TROUBLESHOOTING
 
 ### Problema: "No products found"
-```bash
+\`\`\`bash
 # Verifica que el kiosko tenga productos
 SELECT COUNT(*) FROM products WHERE kiosko_id = 'TU_KIOSKO_ID';
 
 # Si es 0, ejecuta:
 scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 ### Problema: Telegram no envía mensajes
-```bash
+\`\`\`bash
 # 1. Verifica el token:
 echo $TELEGRAM_BOT_TOKEN
 
@@ -246,10 +246,10 @@ curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
 - Token correcto en .env.local
 - Bot iniciado en Telegram (/start)
 - Chat ID correcto
-```
+\`\`\`
 
 ### Problema: Offline no funciona
-```bash
+\`\`\`bash
 # 1. Verifica que localStorage funcione:
 # Abre Console (F12) y ejecuta:
 localStorage.setItem('test', 'ok')
@@ -261,7 +261,7 @@ JSON.parse(localStorage.getItem('atlas.offline.salesQueue.v1') || '[]')
 # 3. Intenta una venta offline y verifica:
 # - Se guarda en localStorage
 # - Se sincroniza al reconectar
-```
+\`\`\`
 
 ---
 

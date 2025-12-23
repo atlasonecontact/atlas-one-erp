@@ -5,10 +5,10 @@
 ### ✅ 1. Usuario demo existe pero sin kiosko
 
 **SOLUCIÓN:**
-```bash
+\`\`\`bash
 # Ejecutar en Supabase SQL Editor:
 scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 Este script:
 - ✅ Crea usuarios si no existen
@@ -53,21 +53,21 @@ El sistema ya NO usa un Chat ID compartido. Ahora **cada usuario configura su Te
 **PASO 2: Configura Variables de Entorno**
 
 Crea o edita `.env.local`:
-```env
+\`\`\`env
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
-```
+\`\`\`
 
 **PASO 3: Reinicia la App**
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 **PASO 4: CADA Usuario Configura su Chat ID**
 
 **Usuario 1 (Maxi Kiosco):**
-```bash
+\`\`\`bash
 1. Abrir Telegram
 2. Buscar @userinfobot
 3. Enviar /start
@@ -78,10 +78,10 @@ npm run dev
 8. Click "🧪 Probar"
 9. Guardar Cambios
 10. Buscar @AtlasOneERP_bot → /start
-```
+\`\`\`
 
 **Usuario 2 (Mini Market):**
-```bash
+\`\`\`bash
 1. Abrir SU Telegram (cuenta diferente)
 2. Buscar @userinfobot
 3. Enviar /start
@@ -92,7 +92,7 @@ npm run dev
 8. Click "🧪 Probar"
 9. Guardar Cambios
 10. Buscar @AtlasOneERP_bot → /start
-```
+\`\`\`
 
 ✅ Cada usuario recibe SOLO sus notificaciones en su chat privado
 
@@ -103,15 +103,15 @@ npm run dev
 ## 🎯 EJECUTAR TODO EN ORDEN
 
 ### 1️⃣ Base de Datos
-```bash
+\`\`\`bash
 # En Supabase SQL Editor:
 
 # 1. Reparar usuarios y crear kioscos (SIN Chat ID compartido)
 Ejecutar: scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 ### 2️⃣ Variables de Entorno (Bot Único)
-```bash
+\`\`\`bash
 # Crear .env.local si no existe
 touch .env.local
 
@@ -119,15 +119,15 @@ touch .env.local
 NEXT_PUBLIC_SUPABASE_URL=tu-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-key
 TELEGRAM_BOT_TOKEN=tu-token-bot  # Un solo bot para todos
-```
+\`\`\`
 
 ### 3️⃣ Reiniciar App
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ### 4️⃣ Cada Usuario Configura su Telegram
-```bash
+\`\`\`bash
 # Usuario 1:
 1. @userinfobot → Obtiene Chat ID
 2. Login: demo.maxi-kiosco@atlasone.com
@@ -141,15 +141,15 @@ npm run dev
 4. Guardar
 
 # Repetir para cada usuario demo
-```
+\`\`\`
 
 ### 4️⃣ Probar Todo
 
 **Login:**
-```
+\`\`\`
 Email: demo.maxi-kiosco@atlasone.com
 Password: Demo123456!
-```
+\`\`\`
 
 **Verificar:**
 - ✅ Dashboard se carga
@@ -165,7 +165,7 @@ Password: Demo123456!
 
 ### En Supabase SQL Editor:
 
-```sql
+\`\`\`sql
 -- Ver estado de demos
 SELECT 
   '✅ VERIFICACIÓN DEMOS' as titulo,
@@ -182,7 +182,7 @@ LEFT JOIN kioscos k ON k.owner_id = u.id
 LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
 WHERE u.email LIKE 'demo.%@atlasone.com'
 ORDER BY u.email;
-```
+\`\`\`
 
 **Resultado esperado:**
 - `tiene_kiosko`: ✅
@@ -196,13 +196,13 @@ ORDER BY u.email;
 ## 🆘 TROUBLESHOOTING
 
 ### Problema: "No se encuentra el kiosko"
-```bash
+\`\`\`bash
 # Ejecuta de nuevo:
 scripts/202_fix_demo_complete.sql
-```
+\`\`\`
 
 ### Problema: Telegram no envía
-```bash
+\`\`\`bash
 # 1. Verifica el token en .env.local
 cat .env.local | grep TELEGRAM
 
@@ -226,10 +226,10 @@ WHERE u.email LIKE 'demo.%@atlasone.com';
 curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" \
   -H "Content-Type: application/json" \
   -d '{"chat_id":"<CHAT_ID_DEL_USUARIO>","text":"Test"}'
-```
+\`\`\`
 
 ### Problema: Offline no funciona
-```bash
+\`\`\`bash
 # 1. Verifica Service Worker
 # F12 → Application → Service Workers
 # Debe estar "Activated and running"
@@ -241,10 +241,10 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" \
 # 3. Verifica cache
 # Application → Cache Storage
 # Debe tener "atlas-one-v1"
-```
+\`\`\`
 
 ### Problema: Error CORS
-```bash
+\`\`\`bash
 # Agrega a next.config.mjs:
 async headers() {
   return [
@@ -259,7 +259,7 @@ async headers() {
     }
   ]
 }
-```
+\`\`\`
 
 ---
 
