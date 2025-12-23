@@ -1,18 +1,15 @@
 -- ============================================
--- Script 201: Seed Data para Usuarios Demo (Sin crear usuarios Auth)
+-- Script 202: Fix Completo para Usuarios Demo
 -- ============================================
--- Este script asume que los usuarios demo ya existen en auth.users
--- y solo crea los datos asociados (kioscos, productos, etc.)
--- 
--- PREREQUISITO: Los usuarios deben existir en Supabase Auth:
--- - demo.maxi-kiosco@atlasone.com (password: Demo123456!)
--- - demo.mini-market@atlasone.com (password: Demo123456!)
--- - demo.licoreria@atlasone.com (password: Demo123456!)
--- - demo.vinoteca@atlasone.com (password: Demo123456!)
--- - demo.libreria@atlasone.com (password: Demo123456!)
--- - demo.jugueteria@atlasone.com (password: Demo123456!)
--- - demo.dietetica@atlasone.com (password: Demo123456!)
+-- Este script:
+-- 1. Busca usuarios demo existentes en auth.users
+-- 2. Si no tienen kiosko, lo crea con datos
+-- 3. Si NO existen en auth.users, los crea
+-- 4. Configura Telegram para todos
 -- ============================================
+
+-- Habilitar extensión pgcrypto si no está habilitada
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 DO $$
 DECLARE
@@ -20,7 +17,8 @@ DECLARE
   v_kiosko_id UUID;
   v_email TEXT;
   v_business_name TEXT;
-  v_telegram_chat_id TEXT := '8494177500';
+  v_telegram_chat_id TEXT := '8494177500'; -- Tu Chat ID real
+  v_instance_id UUID;
   demo_users TEXT[][] := ARRAY[
     ['demo.maxi-kiosco@atlasone.com', 'Maxi Kiosco Demo'],
     ['demo.mini-market@atlasone.com', 'Mini Market Demo'],
@@ -31,22 +29,71 @@ DECLARE
     ['demo.dietetica@atlasone.com', 'Dietética Demo']
   ];
 BEGIN
+  -- Obtener el instance_id
+  SELECT id INTO v_instance_id FROM auth.instances LIMIT 1;
+  IF v_instance_id IS NULL THEN
+    v_instance_id := '00000000-0000-0000-0000-000000000000'::uuid;
+  END IF;
+
   -- Iterar sobre cada usuario demo
   FOR i IN 1..array_length(demo_users, 1) LOOP
     v_email := demo_users[i][1];
     v_business_name := demo_users[i][2];
 
-    -- Buscar el user_id
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Procesando: %', v_email;
+
+    -- Buscar el user_id en auth.users
     SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
 
+    -- =========================================
+    -- PASO 1: Crear usuario si NO existe
+    -- =========================================
     IF v_user_id IS NULL THEN
-      RAISE NOTICE 'Usuario no encontrado: % - Debes crearlo primero en Supabase Auth', v_email;
-      CONTINUE;
+      RAISE NOTICE '  → Usuario NO existe. Creando...';
+      
+      v_user_id := gen_random_uuid();
+      
+      -- Crear en auth.users
+      INSERT INTO auth.users (
+        instance_id, id, aud, role, email, encrypted_password,
+        email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+        is_super_admin, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new,
+        email_change, phone, phone_confirmed_at, phone_change,
+        phone_change_token, phone_change_sent_at, 
+        email_change_token_current, email_change_confirm_status,
+        banned_until, reauthentication_token, reauthentication_sent_at,
+        is_sso_user, deleted_at, is_anonymous
+      ) VALUES (
+        v_instance_id, v_user_id, 'authenticated', 'authenticated', v_email,
+        crypt('Demo123456!', gen_salt('bf')), NOW(),
+        jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
+        jsonb_build_object('full_name', 'Usuario Demo - ' || v_business_name),
+        false, NOW(), NOW(),
+        '', '', '', '', NULL, NULL, '', '', NULL, '', 0,
+        NULL, '', NULL, false, NULL, false
+      );
+
+      -- Crear identity
+      INSERT INTO auth.identities (
+        id, provider_id, user_id, identity_data, provider,
+        last_sign_in_at, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), v_user_id::text, v_user_id,
+        jsonb_build_object('sub', v_user_id::text, 'email', v_email, 
+                          'email_verified', true, 'phone_verified', false),
+        'email', NULL, NOW(), NOW()
+      );
+
+      RAISE NOTICE '  ✓ Usuario creado con ID: %', v_user_id;
+    ELSE
+      RAISE NOTICE '  ✓ Usuario ya existe con ID: %', v_user_id;
     END IF;
 
-    RAISE NOTICE 'Procesando: % (ID: %)', v_email, v_user_id;
-
-    -- Crear o actualizar profile
+    -- =========================================
+    -- PASO 2: Crear o actualizar profile
+    -- =========================================
     INSERT INTO profiles (id, username, full_name, role, business_name, telegram_chat_id)
     VALUES (
       v_user_id,
@@ -59,14 +106,19 @@ BEGIN
     ON CONFLICT (id) DO UPDATE SET
       full_name = EXCLUDED.full_name,
       business_name = EXCLUDED.business_name,
-      telegram_chat_id = EXCLUDED.telegram_chat_id,
+      telegram_chat_id = v_telegram_chat_id,
       updated_at = NOW();
 
-    -- Verificar si ya tiene kiosko
+    RAISE NOTICE '  ✓ Profile actualizado';
+
+    -- =========================================
+    -- PASO 3: Verificar/Crear Kiosko
+    -- =========================================
     SELECT id INTO v_kiosko_id FROM kioscos WHERE owner_id = v_user_id LIMIT 1;
 
-    -- Si no existe kiosko, crearlo con todos los datos
     IF v_kiosko_id IS NULL THEN
+      RAISE NOTICE '  → Kiosko NO existe. Creando datos completos...';
+
       -- Crear kiosko
       INSERT INTO kioscos (owner_id, name, location, city, phone, cuit, status)
       VALUES (
@@ -80,18 +132,18 @@ BEGIN
       )
       RETURNING id INTO v_kiosko_id;
 
-      -- Crear configuración de notificaciones
-      INSERT INTO notification_configs (kiosko_id, telegram_chat_id, telegram_enabled, telegram_verified, created_at, updated_at)
-      SELECT v_kiosko_id, v_telegram_chat_id, true, false, NOW(), NOW()
-      WHERE NOT EXISTS (
-        SELECT 1 FROM notification_configs nc WHERE nc.kiosko_id = v_kiosko_id
-      );
+      RAISE NOTICE '  ✓ Kiosko creado con ID: %', v_kiosko_id;
 
-      UPDATE notification_configs
-      SET telegram_chat_id = v_telegram_chat_id,
-          telegram_enabled = true,
-          updated_at = NOW()
-      WHERE kiosko_id = v_kiosko_id;
+      -- Configurar notificaciones de Telegram
+      INSERT INTO notification_configs (kiosko_id, telegram_chat_id, telegram_enabled, telegram_verified)
+      VALUES (v_kiosko_id, v_telegram_chat_id, true, true)
+      ON CONFLICT (kiosko_id) DO UPDATE SET
+        telegram_chat_id = v_telegram_chat_id,
+        telegram_enabled = true,
+        telegram_verified = true,
+        updated_at = NOW();
+
+      RAISE NOTICE '  ✓ Telegram configurado (Chat ID: %)', v_telegram_chat_id;
 
       -- Crear productos
       INSERT INTO products (kiosko_id, sku, name, category, cost, price, stock_quantity, min_stock_level, barcode, is_active)
@@ -109,6 +161,8 @@ BEGIN
         (v_kiosko_id, 'GOL-SUGUS', 'Caramelos Sugus x8', 'Golosinas', 100, 250, 60, 30, '7790895004126', true),
         (v_kiosko_id, 'LIM-CIFF-500', 'Cif Crema 500ml', 'Limpieza', 800, 1500, 15, 8, '7790895005102', true);
 
+      RAISE NOTICE '  ✓ 12 productos creados';
+
       -- Crear empleados
       INSERT INTO employees (kiosko_id, username, name, position, status, permissions)
       VALUES
@@ -120,11 +174,9 @@ BEGIN
          '{"can_sell": true, "can_manage_cash": true, "can_view_reports": true, "can_manage_products": true}'::jsonb)
       ON CONFLICT (username) DO UPDATE SET
         kiosko_id = EXCLUDED.kiosko_id,
-        name = EXCLUDED.name,
-        position = EXCLUDED.position,
-        status = EXCLUDED.status,
-        permissions = EXCLUDED.permissions,
-        updated_at = NOW();
+        name = EXCLUDED.name;
+
+      RAISE NOTICE '  ✓ 3 empleados creados';
 
       -- Crear ventas de ejemplo (últimos 30 días)
       FOR j IN 0..29 LOOP
@@ -146,39 +198,66 @@ BEGIN
         END LOOP;
       END LOOP;
 
+      RAISE NOTICE '  ✓ Ventas históricas creadas (30 días)';
+
       -- Crear caja abierta para hoy
       INSERT INTO cash_registers (kiosko_id, opening_balance, status, opened_at)
-      VALUES (
-        v_kiosko_id,
-        10000,
-        'open',
-        date_trunc('day', NOW())
-      );
+      VALUES (v_kiosko_id, 10000, 'open', date_trunc('day', NOW()))
+      ON CONFLICT DO NOTHING;
 
-      RAISE NOTICE 'Datos creados para: % (Kiosko ID: %)', v_email, v_kiosko_id;
+      RAISE NOTICE '  ✓ Caja registradora abierta';
+
     ELSE
-      RAISE NOTICE 'Ya existe kiosko para: % (Kiosko ID: %)', v_email, v_kiosko_id;
+      -- Kiosko ya existe, solo actualizar Telegram
+      RAISE NOTICE '  ✓ Kiosko ya existe con ID: %', v_kiosko_id;
+      
+      UPDATE notification_configs
+      SET telegram_chat_id = v_telegram_chat_id,
+          telegram_enabled = true,
+          telegram_verified = true,
+          updated_at = NOW()
+      WHERE kiosko_id = v_kiosko_id;
+
+      -- Si no existía config, crearla
+      INSERT INTO notification_configs (kiosko_id, telegram_chat_id, telegram_enabled, telegram_verified)
+      VALUES (v_kiosko_id, v_telegram_chat_id, true, true)
+      ON CONFLICT (kiosko_id) DO NOTHING;
+
+      RAISE NOTICE '  ✓ Telegram actualizado';
     END IF;
 
   END LOOP;
 
-  RAISE NOTICE 'Proceso completado!';
+  RAISE NOTICE '================================================';
+  RAISE NOTICE '✅ PROCESO COMPLETADO!';
+  RAISE NOTICE '================================================';
 END $$;
 
 -- ============================================
--- Verificación final
+-- Verificación Final
 -- ============================================
+
+SELECT 
+  '✅ RESUMEN FINAL' as status,
+  COUNT(*) as total_demos
+FROM auth.users 
+WHERE email LIKE 'demo.%@atlasone.com';
 
 SELECT 
   u.email,
   p.business_name,
   k.name as kiosko,
+  k.status as estado_kiosko,
   (SELECT COUNT(*) FROM products WHERE kiosko_id = k.id) as productos,
   (SELECT COUNT(*) FROM employees WHERE kiosko_id = k.id) as empleados,
   (SELECT COUNT(*) FROM sales WHERE kiosko_id = k.id) as ventas,
-  (SELECT status FROM cash_registers WHERE kiosko_id = k.id ORDER BY opened_at DESC LIMIT 1) as estado_caja
+  (SELECT status FROM cash_registers WHERE kiosko_id = k.id ORDER BY opened_at DESC LIMIT 1) as estado_caja,
+  nc.telegram_chat_id,
+  nc.telegram_enabled,
+  nc.telegram_verified
 FROM auth.users u
 INNER JOIN profiles p ON u.id = p.id
 LEFT JOIN kioscos k ON k.owner_id = u.id
+LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
 WHERE u.email LIKE 'demo.%@atlasone.com'
 ORDER BY u.email;
