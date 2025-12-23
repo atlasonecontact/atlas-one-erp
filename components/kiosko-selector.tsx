@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Building2, Check, ChevronDown, Plus } from "lucide-react"
+import { Building2, Check, ChevronDown, Plus, User } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -25,6 +25,7 @@ export function KioskoSelector() {
   const [kioscos, setKioscos] = useState<Kiosko[]>([])
   const [selectedKiosko, setSelectedKiosko] = useState<Kiosko | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isEmployee, setIsEmployee] = useState(false)
 
   useEffect(() => {
     loadKioscos()
@@ -42,6 +43,33 @@ export function KioskoSelector() {
         return
       }
 
+      // Check if user is an employee
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+      if (profile?.role === "employee") {
+        // Employee: only load their assigned kiosko
+        setIsEmployee(true)
+        const { data: employeeData } = await supabase
+          .from("employees")
+          .select("kiosko_id, kioscos(id, name, location)")
+          .eq("user_id", user.id)
+          .single()
+
+        if (employeeData?.kioscos) {
+          const kiosko = employeeData.kioscos as unknown as Kiosko
+          setKioscos([kiosko])
+          setSelectedKiosko(kiosko)
+          localStorage.setItem("selectedKioskoId", kiosko.id)
+        }
+        setIsLoading(false)
+        return
+      }
+
+      // Owner: load all their kioscos
       const { data, error: kioskoError } = await supabase
         .from("kioscos")
         .select("id, name, location")
@@ -83,6 +111,15 @@ export function KioskoSelector() {
   }
 
   if (kioscos.length === 0) {
+    // Employees without a kiosko shouldn't see "Crear kiosco"
+    if (isEmployee) {
+      return (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+          <Building2 className="w-4 h-4 text-red-400" />
+          <span className="text-sm text-red-400">Sin kiosco asignado</span>
+        </div>
+      )
+    }
     return (
       <Button
         variant="ghost"
@@ -93,6 +130,22 @@ export function KioskoSelector() {
         <Plus className="w-4 h-4 mr-2" />
         Crear kiosco
       </Button>
+    )
+  }
+
+  // Employee with a single kiosko - show simple view with employee badge
+  if (isEmployee && kioscos.length === 1) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+        <Building2 className="w-4 h-4 text-cyan-400" />
+        <div className="flex flex-col">
+          <span className="text-sm text-white font-medium">{selectedKiosko?.name}</span>
+          <div className="flex items-center gap-1">
+            <User className="w-3 h-3 text-green-400" />
+            <span className="text-xs text-green-400">Empleado</span>
+          </div>
+        </div>
+      </div>
     )
   }
 

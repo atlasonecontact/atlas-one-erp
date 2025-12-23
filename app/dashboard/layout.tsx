@@ -56,6 +56,19 @@ interface UserProfile {
   theme: string
 }
 
+interface EmployeeInfo {
+  id: string
+  kiosko_id: string
+  name: string
+  permissions: {
+    can_sell: boolean
+    can_view_reports: boolean
+    can_manage_inventory: boolean
+    can_manage_employees: boolean
+  }
+}
+
+// Full navigation items for owners
 const dashboardNavItems = [
   { href: "/dashboard", label: "General", icon: LayoutDashboard },
   { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
@@ -63,17 +76,18 @@ const dashboardNavItems = [
   { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
 ]
 
-const navItems = [
-  { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
-  { href: "/dashboard/productos", label: "Productos", icon: Package },
-  { href: "/dashboard/stock", label: "Stock", icon: Warehouse },
-  { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag },
-  { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike },
-  { href: "/dashboard/caja", label: "Caja", icon: Wallet },
-  { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2 },
-  { href: "/dashboard/empleados", label: "Empleados", icon: Users },
-  { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug },
-  { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
+// All nav items with permission requirements
+const allNavItems = [
+  { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart, permission: "can_sell" },
+  { href: "/dashboard/productos", label: "Productos", icon: Package, permission: "can_manage_inventory" },
+  { href: "/dashboard/stock", label: "Stock", icon: Warehouse, permission: "can_manage_inventory" },
+  { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
+  { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
+  { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
+  { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2, ownerOnly: true },
+  { href: "/dashboard/empleados", label: "Empleados", icon: Users, permission: "can_manage_employees" },
+  { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug, ownerOnly: true },
+  { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, ownerOnly: true },
 ]
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
@@ -83,6 +97,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [dashboardOpen, setDashboardOpen] = useState(true)
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -115,23 +130,48 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
 
         // Load profile data in background (non-blocking)
-        supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", authUser.id)
           .single()
-          .then(({ data: profile }) => {
-            if (profile) {
-              setUser({
-                id: authUser.id,
-                full_name: profile.full_name || authUser.email?.split("@")[0] || "Usuario",
-                email: authUser.email || "",
-                role: profile.role || "owner",
-                business_name: profile.business_name || "Mi Negocio",
-                theme: profile.theme || "cyan",
-              })
-            }
+
+        if (profile) {
+          setUser({
+            id: authUser.id,
+            full_name: profile.full_name || authUser.email?.split("@")[0] || "Usuario",
+            email: authUser.email || "",
+            role: profile.role || "owner",
+            business_name: profile.business_name || "Mi Negocio",
+            theme: profile.theme || "cyan",
           })
+
+          // If user is an employee, load their employee info
+          if (profile.role === "employee") {
+            const { data: empData } = await supabase
+              .from("employees")
+              .select("id, kiosko_id, name, permissions")
+              .eq("user_id", authUser.id)
+              .single()
+
+            if (empData) {
+              setEmployeeInfo({
+                id: empData.id,
+                kiosko_id: empData.kiosko_id,
+                name: empData.name,
+                permissions: empData.permissions || {
+                  can_sell: true,
+                  can_view_reports: false,
+                  can_manage_inventory: false,
+                  can_manage_employees: false,
+                },
+              })
+              // Set the employee's kiosko as selected
+              localStorage.setItem("selectedKioskoId", empData.kiosko_id)
+              window.dispatchEvent(new CustomEvent("kioskoChanged", { detail: empData.kiosko_id }))
+            }
+          }
+        }
       } catch (error) {
         router.push("/login")
       }
@@ -167,6 +207,28 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   const isDashboardActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/estadisticas")
   const effectiveDashboardOpen = collapsed ? false : dashboardOpen
+
+  // Filter navigation items based on user role and permissions
+  const isOwner = user.role !== "employee"
+  const navItems = allNavItems.filter((item) => {
+    // Owners see everything
+    if (isOwner) return true
+    // Owner-only items are hidden from employees
+    if (item.ownerOnly) return false
+    // Check permission if required
+    if (item.permission && employeeInfo?.permissions) {
+      return employeeInfo.permissions[item.permission as keyof typeof employeeInfo.permissions]
+    }
+    // Default: show the item
+    return true
+  })
+
+  // Filter dashboard items for employees - only show if they can view reports
+  const filteredDashboardItems = isOwner 
+    ? dashboardNavItems 
+    : employeeInfo?.permissions?.can_view_reports 
+      ? dashboardNavItems 
+      : [dashboardNavItems[0]] // Only show "General"
 
   return (
     <div className="min-h-screen bg-[#030712]">
@@ -231,7 +293,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
               {effectiveDashboardOpen && (
                 <div className="mt-1 space-y-1">
-                  {dashboardNavItems.map((item) => {
+                  {filteredDashboardItems.map((item) => {
                     const isActive = pathname === item.href
                     return (
                       <Link key={item.href} href={item.href}>
@@ -305,7 +367,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
-                <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                <p className="text-xs text-gray-500 truncate capitalize">
+                  {user.role === "owner" ? "Dueño" : user.role === "employee" ? "Empleado" : user.role}
+                </p>
               </div>
             </div>
           )}
@@ -431,6 +495,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         onClose={() => setIsMobileMenuOpen(false)}
         user={user}
         onLogout={handleLogout}
+        employeePermissions={employeeInfo?.permissions}
       />
 
       <CameraScanner isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScan={handleBarcodeScan} />

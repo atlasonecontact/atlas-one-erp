@@ -33,48 +33,88 @@ interface UserProfile {
   business_name: string
 }
 
+interface EmployeePermissions {
+  can_sell: boolean
+  can_view_reports: boolean
+  can_manage_inventory: boolean
+  can_manage_employees: boolean
+}
+
 interface MobileMenuDrawerProps {
   isOpen: boolean
   onClose: () => void
   user: UserProfile | null
   onLogout: () => void
+  employeePermissions?: EmployeePermissions | null
 }
 
+// Menu items with permission requirements
 const menuSections = [
   {
     title: "Dashboard",
     items: [
       { href: "/dashboard", label: "General", icon: LayoutDashboard },
-      { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
-      { href: "/dashboard/estadisticas/ventas", label: "Ventas Stats", icon: ShoppingCart },
-      { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
+      { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3, permission: "can_view_reports" },
+      { href: "/dashboard/estadisticas/ventas", label: "Ventas Stats", icon: ShoppingCart, permission: "can_view_reports" },
+      { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet, permission: "can_view_reports" },
     ],
   },
   {
     title: "Operaciones",
     items: [
-      { href: "/dashboard/ventas", label: "Punto de Venta", icon: ShoppingCart },
-      { href: "/dashboard/productos", label: "Productos", icon: Package },
-      { href: "/dashboard/stock", label: "Stock", icon: Warehouse },
-      { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag },
-      { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike },
-      { href: "/dashboard/caja", label: "Caja", icon: Wallet },
+      { href: "/dashboard/ventas", label: "Punto de Venta", icon: ShoppingCart, permission: "can_sell" },
+      { href: "/dashboard/productos", label: "Productos", icon: Package, permission: "can_manage_inventory" },
+      { href: "/dashboard/stock", label: "Stock", icon: Warehouse, permission: "can_manage_inventory" },
+      { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
+      { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
+      { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
     ],
   },
   {
     title: "Gestión",
+    ownerOnly: true,
     items: [
-      { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2 },
-      { href: "/dashboard/empleados", label: "Empleados", icon: Users },
-      { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug },
-      { href: "/dashboard/configuracion", label: "Configuración", icon: Settings },
+      { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2, ownerOnly: true },
+      { href: "/dashboard/empleados", label: "Empleados", icon: Users, permission: "can_manage_employees" },
+      { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug, ownerOnly: true },
+      { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, ownerOnly: true },
     ],
   },
 ]
 
-export function MobileMenuDrawer({ isOpen, onClose, user, onLogout }: MobileMenuDrawerProps) {
+export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePermissions }: MobileMenuDrawerProps) {
   const pathname = usePathname()
   const { config } = useTheme()
+  
+  const isOwner = user?.role !== "employee"
+
+  // Filter menu sections based on permissions
+  const filteredSections = menuSections
+    .map((section) => {
+      // Skip owner-only sections for employees
+      if (section.ownerOnly && !isOwner) {
+        // But check if any items in the section are accessible
+        const accessibleItems = section.items.filter((item) => {
+          if (item.ownerOnly) return false
+          if (!item.permission) return true
+          return employeePermissions?.[item.permission as keyof EmployeePermissions]
+        })
+        if (accessibleItems.length === 0) return null
+        return { ...section, items: accessibleItems }
+      }
+
+      // Filter items within the section
+      const filteredItems = section.items.filter((item) => {
+        if (isOwner) return true
+        if (item.ownerOnly) return false
+        if (!item.permission) return true
+        return employeePermissions?.[item.permission as keyof EmployeePermissions]
+      })
+
+      if (filteredItems.length === 0) return null
+      return { ...section, items: filteredItems }
+    })
+    .filter(Boolean) as typeof menuSections
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -129,7 +169,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout }: MobileMenu
                   <p className="text-white font-medium truncate">{user.full_name}</p>
                   <p className="text-sm text-gray-500 truncate">{user.email}</p>
                   <p className="text-xs capitalize mt-0.5" style={{ color: config.primary }}>
-                    {user.role === "owner" ? "Dueño" : user.role}
+                    {user.role === "owner" ? "Dueño" : user.role === "employee" ? "Empleado" : user.role}
                   </p>
                 </div>
               </div>
@@ -138,7 +178,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout }: MobileMenu
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto momentum-scroll p-4 space-y-6">
-            {menuSections.map((section) => (
+            {filteredSections.map((section) => (
               <div key={section.title}>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">
                   {section.title}
