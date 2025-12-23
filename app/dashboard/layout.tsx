@@ -278,7 +278,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <LayoutDashboard className="w-5 h-5 shrink-0" />
               </div>
             </Link>
-          ) : (
+          ) : filteredDashboardItems.length > 0 ? (
             <div>
               <button
                 type="button"
@@ -330,7 +330,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Rest of navigation */}
           {navItems.map((item) => {
