@@ -40,16 +40,22 @@ export async function POST(request: NextRequest) {
       .eq("id", kiosko.owner_id)
       .maybeSingle()
 
+    const formattedTimestamp = new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(new Date())
+
     const message = `
-🛒 <b>Nueva Venta - ${kiosko.name}</b>
+  🛒 <b>Nueva Venta - ${kiosko.name}</b>
 
-💰 Total: <b>$${total.toLocaleString()}</b>
-📦 Items: ${items} (${itemsSummary})
-💳 Método: ${paymentMethod}
-${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
-🕐 ${new Date().toLocaleString("es-AR")}
+  💰 Total: <b>$${total.toLocaleString()}</b>
+  📦 Items: ${items} (${itemsSummary})
+  💳 Método: ${paymentMethod}
+  ${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
+  🕐 ${formattedTimestamp}
 
-#${saleId}
+  #${saleId}
     `.trim()
 
     const notifications = []
