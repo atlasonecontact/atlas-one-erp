@@ -67,11 +67,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/images/logo-atlas.png", type: "image/png" },
       { url: "/icon-dark-32x32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: "/icon.svg",
+    apple: [{ url: "/images/logo-atlas.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/images/logo-atlas.png",
   },
   manifest: "/manifest.json",
   alternates: {

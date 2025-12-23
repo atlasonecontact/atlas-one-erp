@@ -70,17 +70,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 400 })
     }
 
-    // Ensure profile exists for employee user
-    await admin.from("profiles").upsert(
+    // Ensure profile exists for employee user with role = "employee"
+    const { error: profileError } = await admin.from("profiles").upsert(
       {
         id: created.user.id,
         username: email.split("@")[0],
         full_name: fullName,
         role: "employee",
         business_name: "",
+        updated_at: new Date().toISOString(),
       },
       { onConflict: "id" },
     )
+
+    if (profileError) {
+      console.error("[api/employees/create-user] Error creating profile:", profileError)
+      // Don't fail the request, just log the error
+    } else {
+      console.log("[api/employees/create-user] Profile created with role=employee for:", created.user.id)
+    }
 
     return NextResponse.json({ userId: created.user.id })
   } catch (error: any) {
