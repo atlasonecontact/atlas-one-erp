@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 const DEMO_TYPES = [
   "maxi-kiosco",
@@ -33,41 +33,43 @@ export async function POST(req: NextRequest) {
     const email = demoEmail(type)
     const password = "Demo123456!"
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
-    const { data: kioscoData, error: kioscoError } = await supabase
-      .from("kioscos")
-      .select(`
-        id,
-        name,
-        owner_id,
-        profiles!kioscos_owner_id_fkey(id, email)
-      `)
-      .eq("profiles.email", email)
-      .single()
+    // Verify the demo user exists in auth.users
+    const {
+      data: { users },
+      error: usersError,
+    } = await supabase.auth.admin.listUsers()
 
-    if (kioscoError || !kioscoData) {
-      console.error("[demo/ensure] Error finding demo kiosko:", { email, error: kioscoError })
+    if (usersError) {
+      console.error("[demo/ensure] Error fetching users:", usersError)
       return NextResponse.json(
-        {
-          error: `No se encontró un kiosco para el usuario demo ${type}. Contactá al administrador.`,
-        },
+        { error: "Error al verificar usuario demo. Contactá al administrador." },
+        { status: 500 },
+      )
+    }
+
+    const demoUser = users?.find((u) => u.email === email)
+
+    if (!demoUser) {
+      console.error("[demo/ensure] Demo user not found:", { email, type })
+      return NextResponse.json(
+        { error: `No se encontró el usuario demo ${type}. Ejecutá el script SQL: scripts/200_create_demo_users.sql` },
         { status: 404 },
       )
     }
 
-    console.log("[demo/ensure] Successfully found demo setup:", {
+    console.log("[demo/ensure] Demo user verified:", {
       email,
-      kioskoId: kioscoData.id,
-      kioskoName: kioscoData.name,
+      userId: demoUser.id,
+      type,
     })
 
+    // Return credentials - the login flow will handle kiosco selection
     return NextResponse.json({
       ok: true,
       email,
       password,
-      kioskoId: kioscoData.id,
-      kioskoName: kioscoData.name,
     })
   } catch (error: any) {
     console.error("[api/demo/ensure] Unexpected error:", error)

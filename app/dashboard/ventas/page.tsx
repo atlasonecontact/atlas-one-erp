@@ -1,18 +1,21 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { Cart } from "@/components/pos/cart"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
-import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi } from "lucide-react"
+import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useScanner } from "@/lib/hooks/use-scanner"
 import { useToast } from "@/components/ui/toast-provider"
 import { enqueueSale, flushQueuedSales } from "@/lib/offline/sales-queue"
+import { cn } from "@/lib/utils"
+import { useTheme } from "@/lib/theme-context"
 
 export interface CartItem {
   id: string
@@ -23,6 +26,8 @@ export interface CartItem {
 }
 
 export default function VentasPage() {
+  const searchParams = useSearchParams()
+  const { config } = useTheme()
   const [searchQuery, setSearchQuery] = useState("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState("all")
@@ -37,51 +42,55 @@ export default function VentasPage() {
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
+  const [showMobileCart, setShowMobileCart] = useState(false)
 
   const supabase = createClient()
   const toast = useToast()
 
-  // Scanner integration
-  const handleBarcodeScanned = useCallback((barcode: string) => {
-    console.log("[v0] Barcode scanned:", barcode)
-    
-    // Search for product by barcode
-    const product = products.find(p => 
-      p.barcode === barcode || 
-      p.id === barcode ||
-      p.sku === barcode
-    )
-
-    if (product) {
-      addToCart(product)
-      toast.success("Producto agregado", `${product.name} x1`)
-    } else {
-      // If not found, search by name (partial match)
-      const matchByName = products.find(p => 
-        p.name.toLowerCase().includes(barcode.toLowerCase())
-      )
-      
-      if (matchByName) {
-        addToCart(matchByName)
-        toast.success("Producto agregado", `${matchByName.name} x1`)
-      } else {
-        toast.warning("Producto no encontrado", `Código: ${barcode}`)
-        setSearchQuery(barcode)
-      }
+  useEffect(() => {
+    const scanParam = searchParams.get("scan")
+    if (scanParam && products.length > 0) {
+      handleBarcodeScanned(scanParam)
+      // Clear the URL param
+      window.history.replaceState({}, "", "/dashboard/ventas")
     }
-  }, [products])
+  }, [searchParams, products])
 
-  const { 
-    isListening, 
-    lastScan, 
+  // Scanner integration
+  const handleBarcodeScanned = useCallback(
+    (barcode: string) => {
+      // Search for product by barcode
+      const product = products.find((p) => p.barcode === barcode || p.id === barcode || p.sku === barcode)
+
+      if (product) {
+        addToCart(product)
+        toast.success("Producto agregado", `${product.name} x1`)
+      } else {
+        // If not found, search by name (partial match)
+        const matchByName = products.find((p) => p.name.toLowerCase().includes(barcode.toLowerCase()))
+
+        if (matchByName) {
+          addToCart(matchByName)
+          toast.success("Producto agregado", `${matchByName.name} x1`)
+        } else {
+          toast.warning("Producto no encontrado", `Código: ${barcode}`)
+          setSearchQuery(barcode)
+        }
+      }
+    },
+    [products, toast],
+  )
+
+  const {
+    isListening,
+    lastScan,
     isBluetoothSupported,
     bluetoothDevice,
     isConnecting,
-    startListening, 
+    startListening,
     stopListening,
     connectBluetoothScanner,
     disconnectBluetoothScanner,
-    error: scannerError,
   } = useScanner({
     onScan: handleBarcodeScanned,
     minLength: 4,
@@ -117,7 +126,6 @@ export default function VentasPage() {
       .maybeSingle()
 
     if (employeeData) {
-      console.log("[v0] User is employee:", employeeData.name)
       setUserRole("employee")
       setEmployeeId(employeeData.id)
       setEmployeeName(employeeData.name || "")
@@ -125,7 +133,6 @@ export default function VentasPage() {
       loadKioskoInfo(employeeData.kiosko_id)
       loadProducts(employeeData.kiosko_id)
     } else {
-      console.log("[v0] User is owner, loading kioscos")
       const { data: kioscos } = await supabase
         .from("kioscos")
         .select("id, name, location")
@@ -133,25 +140,19 @@ export default function VentasPage() {
         .limit(1)
 
       if (kioscos && kioscos.length > 0) {
-        console.log("[v0] Found kiosco:", kioscos[0].id)
         setUserRole("owner")
         setKioskoId(kioscos[0].id)
         setKioskoName(kioscos[0].name || "ATLAS ONE")
         setKioskoAddress(kioscos[0].location || "")
         loadProducts(kioscos[0].id)
       } else {
-        console.log("[v0] No kioscos found")
         setIsLoading(false)
       }
     }
   }
 
   const loadKioskoInfo = async (kiosko_id: string) => {
-    const { data } = await supabase
-      .from("kioscos")
-      .select("name, location")
-      .eq("id", kiosko_id)
-      .single()
+    const { data } = await supabase.from("kioscos").select("name, location").eq("id", kiosko_id).single()
 
     if (data) {
       setKioskoName(data.name || "ATLAS ONE")
@@ -159,51 +160,56 @@ export default function VentasPage() {
     }
   }
 
-  const loadProducts = useCallback(async (kiosko_id: string) => {
-    try {
-      const { data: productsData, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("kiosko_id", kiosko_id)
-        .gt("stock_quantity", 0)
-        .order("name")
+  const loadProducts = useCallback(
+    async (kiosko_id: string) => {
+      try {
+        const { data: productsData, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("kiosko_id", kiosko_id)
+          .gt("stock_quantity", 0)
+          .order("name")
 
-      if (error) throw error
+        if (error) throw error
 
-      if (productsData) {
-        const mappedProducts = productsData.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          category: p.category || "Sin categoría",
-          price: p.price || 0,
-          stock: p.stock_quantity || 0,
-          status: p.stock_quantity <= 10 ? "low_stock" : "active",
-        }))
-        setProducts(mappedProducts)
+        if (productsData) {
+          const mappedProducts = productsData.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category || "Sin categoría",
+            price: p.price || 0,
+            stock: p.stock_quantity || 0,
+            barcode: p.barcode,
+            sku: p.sku,
+            status: p.stock_quantity <= 10 ? "low_stock" : "active",
+          }))
+          setProducts(mappedProducts)
 
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(`atlas.cache.products.${kiosko_id}.v1`, JSON.stringify(mappedProducts))
-        }
-      }
-    } catch {
-      if (typeof window !== "undefined") {
-        const cached = window.localStorage.getItem(`atlas.cache.products.${kiosko_id}.v1`)
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached)
-            if (Array.isArray(parsed)) {
-              setProducts(parsed)
-              toast.warning("Modo offline", "Mostrando productos guardados")
-            }
-          } catch {
-            // ignore
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(`atlas.cache.products.${kiosko_id}.v1`, JSON.stringify(mappedProducts))
           }
         }
+      } catch {
+        if (typeof window !== "undefined") {
+          const cached = window.localStorage.getItem(`atlas.cache.products.${kiosko_id}.v1`)
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached)
+              if (Array.isArray(parsed)) {
+                setProducts(parsed)
+                toast.warning("Modo offline", "Mostrando productos guardados")
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } finally {
+        setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [supabase, toast])
+    },
+    [supabase, toast],
+  )
 
   const syncOfflineSales = useCallback(async () => {
     if (typeof window === "undefined") return
@@ -251,6 +257,9 @@ export default function VentasPage() {
       }
       return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, stock: product.stock }]
     })
+    if (window.innerWidth < 1024) {
+      // Don't auto-show, just update the count
+    }
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -294,10 +303,7 @@ export default function VentasPage() {
 
   const handlePayment = async (method: string) => {
     try {
-      console.log("[v0] Processing payment:", { kioskoId, employeeId, total, method })
-
       const isOffline = typeof window !== "undefined" && !window.navigator.onLine
-
       const saleNumber = `V-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
 
       if (isOffline) {
@@ -323,6 +329,7 @@ export default function VentasPage() {
         setShowPayment(false)
         setShowReceipt(true)
         setCart([])
+        setShowMobileCart(false)
         return
       }
 
@@ -339,12 +346,7 @@ export default function VentasPage() {
         .select()
         .single()
 
-      if (saleError) {
-        console.error("[v0] Sale error:", saleError)
-        throw saleError
-      }
-
-      console.log("[v0] Sale created:", saleData.id)
+      if (saleError) throw saleError
 
       const saleItems = cart.map((item) => ({
         sale_id: saleData.id,
@@ -355,13 +357,7 @@ export default function VentasPage() {
       }))
 
       const { error: itemsError } = await supabase.from("sale_items").insert(saleItems)
-
-      if (itemsError) {
-        console.error("[v0] Sale items error:", itemsError)
-        throw itemsError
-      }
-
-      console.log("[v0] Sale items created")
+      if (itemsError) throw itemsError
 
       for (const item of cart) {
         const newStock = item.stock - item.quantity
@@ -371,12 +367,11 @@ export default function VentasPage() {
           .eq("id", item.id)
       }
 
-      console.log("[v0] Stock updated")
-
       setLastSale({ items: cart, total, method })
       setShowPayment(false)
       setShowReceipt(true)
       setCart([])
+      setShowMobileCart(false)
 
       loadProducts(kioskoId)
     } catch (error) {
@@ -413,6 +408,7 @@ export default function VentasPage() {
         setShowPayment(false)
         setShowReceipt(true)
         setCart([])
+        setShowMobileCart(false)
         return
       }
 
@@ -428,118 +424,250 @@ export default function VentasPage() {
     )
   }
 
+  const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0)
+
   return (
-    <div className="h-[calc(100vh-120px)] flex gap-6">
-      {/* Left side - Products */}
-      <div className="flex-1 flex flex-col">
-        {/* Scanner status */}
-        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-[#0a0f1a]/50 border border-cyan-500/10">
-          <div className="flex items-center gap-2">
-            {isListening ? (
-              <Wifi className="w-4 h-4 text-green-400" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-gray-500" />
-            )}
-            <span className={`text-sm ${isListening ? "text-green-400" : "text-gray-500"}`}>
-              {isListening ? "Scanner activo" : "Scanner inactivo"}
-            </span>
-          </div>
-          
-          {lastScan && (
-            <span className="text-xs text-gray-500 ml-auto">
-              Último: {lastScan.barcode} ({lastScan.timestamp.toLocaleTimeString()})
-            </span>
-          )}
-
-          {isBluetoothSupported && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={bluetoothDevice ? disconnectBluetoothScanner : connectBluetoothScanner}
-              disabled={isConnecting}
-              className={`ml-2 h-7 text-xs ${
-                bluetoothDevice 
-                  ? "border-green-500/30 text-green-400" 
-                  : "border-cyan-500/30 text-cyan-400"
-              } bg-transparent`}
-            >
-              {isConnecting ? (
-                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+    <>
+      <div className="lg:h-[calc(100vh-120px)] flex flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* Left side - Products */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Scanner status - hidden on mobile (we use camera scanner instead) */}
+          <div className="hidden lg:flex items-center gap-3 mb-4 p-3 rounded-lg bg-[#0a0f1a]/50 border border-cyan-500/10">
+            <div className="flex items-center gap-2">
+              {isListening ? (
+                <Wifi className="w-4 h-4 text-green-400" />
               ) : (
-                <Bluetooth className="w-3 h-3 mr-1" />
+                <WifiOff className="w-4 h-4 text-gray-500" />
               )}
-              {bluetoothDevice ? "Desconectar" : "Bluetooth"}
-            </Button>
-          )}
-        </div>
+              <span className={`text-sm ${isListening ? "text-green-400" : "text-gray-500"}`}>
+                {isListening ? "Scanner activo" : "Scanner inactivo"}
+              </span>
+            </div>
 
-        {/* Search and filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <Input
-              type="text"
-              placeholder="Buscar por nombre, código o escanear..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
-            />
+            {lastScan && (
+              <span className="text-xs text-gray-500 ml-auto">
+                Último: {lastScan.barcode} ({lastScan.timestamp.toLocaleTimeString()})
+              </span>
+            )}
+
+            {isBluetoothSupported && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={bluetoothDevice ? disconnectBluetoothScanner : connectBluetoothScanner}
+                disabled={isConnecting}
+                className={`ml-2 h-7 text-xs ${
+                  bluetoothDevice ? "border-green-500/30 text-green-400" : "border-cyan-500/30 text-cyan-400"
+                } bg-transparent`}
+              >
+                {isConnecting ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <Bluetooth className="w-3 h-3 mr-1" />
+                )}
+                {bluetoothDevice ? "Desconectar" : "Bluetooth"}
+              </Button>
+            )}
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => isListening ? stopListening() : startListening()}
-            className={`gap-2 bg-transparent ${
-              isListening 
-                ? "border-green-500/30 text-green-400 hover:bg-green-500/10" 
-                : "border-cyan-500/20 text-gray-400 hover:text-white"
-            }`}
-          >
-            <Barcode className="w-4 h-4" />
-            {isListening ? "Escuchando..." : "Escanear"}
-          </Button>
-          <Link href="/dashboard/ventas/historial">
+
+          {/* Search and filters */}
+          <div className="flex items-center gap-2 lg:gap-4 mb-4 lg:mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Buscar productos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500 h-11 lg:h-10 text-base lg:text-sm"
+              />
+            </div>
+            {/* Desktop only buttons */}
             <Button
               variant="outline"
-              className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
+              onClick={() => (isListening ? stopListening() : startListening())}
+              className={cn(
+                "gap-2 bg-transparent hidden lg:flex",
+                isListening
+                  ? "border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  : "border-cyan-500/20 text-gray-400 hover:text-white",
+              )}
             >
-              <History className="w-4 h-4" />
-              Historial
+              <Barcode className="w-4 h-4" />
+              {isListening ? "Escuchando..." : "Escanear"}
             </Button>
-          </Link>
+            <Link href="/dashboard/ventas/historial">
+              <Button
+                variant="outline"
+                className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2 h-11 lg:h-10"
+              >
+                <History className="w-4 h-4" />
+                <span className="hidden sm:inline">Historial</span>
+              </Button>
+            </Link>
+          </div>
+
+          {/* Categories - horizontal scroll on mobile */}
+          <div className="flex gap-2 mb-4 lg:mb-6 overflow-x-auto pb-2 hide-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "px-4 py-2.5 lg:py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors touch-target",
+                  selectedCategory === cat
+                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                    : "bg-[#0a0f1a] text-gray-400 border border-cyan-500/10 hover:text-white active:bg-white/5",
+                )}
+              >
+                {cat === "all" ? "Todos" : cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Products grid - scrollable on mobile */}
+          <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-visible">
+            <ProductGrid products={filteredProducts} onAddToCart={addToCart} />
+          </div>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === cat
-                  ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                  : "bg-[#0a0f1a] text-gray-400 border border-cyan-500/10 hover:text-white"
-              }`}
-            >
-              {cat === "all" ? "Todos" : cat}
-            </button>
-          ))}
+        {/* Right side - Cart (desktop only, hidden on mobile) */}
+        <div className="hidden lg:block">
+          <Cart
+            items={cart}
+            subtotal={subtotal}
+            tax={tax}
+            total={total}
+            onUpdateQuantity={updateQuantity}
+            onRemove={removeFromCart}
+            onClear={clearCart}
+            onCheckout={() => setShowPayment(true)}
+          />
         </div>
-
-        {/* Products grid */}
-        <ProductGrid products={filteredProducts} onAddToCart={addToCart} />
       </div>
 
-      {/* Right side - Cart */}
-      <Cart
-        items={cart}
-        subtotal={subtotal}
-        tax={tax}
-        total={total}
-        onUpdateQuantity={updateQuantity}
-        onRemove={removeFromCart}
-        onClear={clearCart}
-        onCheckout={() => setShowPayment(true)}
-      />
+      {cart.length > 0 && (
+        <button
+          onClick={() => setShowMobileCart(true)}
+          className="fixed bottom-24 right-4 z-40 lg:hidden flex items-center gap-2 px-4 py-3 rounded-full shadow-lg fab haptic-tap"
+          style={{
+            backgroundColor: config.primary,
+            boxShadow: `0 4px 20px ${config.primary}50`,
+          }}
+        >
+          <ShoppingCart className="w-5 h-5 text-black" />
+          <span className="text-black font-bold">{cartItemCount}</span>
+          <span className="text-black font-semibold">
+            ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+          </span>
+        </button>
+      )}
+
+      {showMobileCart && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowMobileCart(false)} />
+
+          {/* Cart Sheet */}
+          <div className="absolute bottom-0 left-0 right-0 bg-[#0a0f1a] rounded-t-3xl max-h-[85vh] flex flex-col slide-up safe-area-bottom">
+            {/* Handle */}
+            <div className="flex justify-center py-3">
+              <div className="w-10 h-1 bg-gray-600 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-4 pb-3 border-b"
+              style={{ borderColor: config.border }}
+            >
+              <h2 className="text-lg font-semibold text-white">Carrito ({cartItemCount})</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowMobileCart(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Cart Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 momentum-scroll">
+              {cart.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-[#030712] border"
+                  style={{ borderColor: config.border }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium truncate">{item.name}</p>
+                    <p className="text-sm" style={{ color: config.primary }}>
+                      ${item.price.toLocaleString("es-AR")} c/u
+                    </p>
+                  </div>
+
+                  {/* Quantity controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-white/10 active:bg-white/20"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center text-white font-medium">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      disabled={item.quantity >= item.stock}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-white/10 active:bg-white/20 disabled:opacity-50"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <p className="text-white font-semibold w-20 text-right">
+                    ${(item.price * item.quantity).toLocaleString("es-AR")}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer with totals and checkout */}
+            <div className="p-4 border-t space-y-3" style={{ borderColor: config.border }}>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>Subtotal</span>
+                  <span>${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>IVA (21%)</span>
+                  <span>${tax.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold text-white">
+                  <span>Total</span>
+                  <span style={{ color: config.primary }}>
+                    ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={clearCart}
+                  className="flex-1 h-12 border-red-500/30 text-red-400 hover:bg-red-500/10 bg-transparent"
+                >
+                  Vaciar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowMobileCart(false)
+                    setShowPayment(true)
+                  }}
+                  className="flex-1 h-12 text-black font-semibold"
+                  style={{ backgroundColor: config.primary }}
+                >
+                  Cobrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       <PaymentModal
@@ -564,6 +692,6 @@ export default function VentasPage() {
           storeAddress={kioskoAddress}
         />
       )}
-    </div>
+    </>
   )
 }
