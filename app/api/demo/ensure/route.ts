@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const email = demoEmail(type)
     const password = "Demo123456!"
 
-    // Verificar que el usuario demo existe (fue creado por el script SQL 200_create_demo_users.sql)
+    // Verificar que el usuario demo existe (fue creado por el script SQL)
     const { data: listData, error: listError } = await admin.auth.admin.listUsers()
     if (listError) {
       return NextResponse.json({ error: listError.message }, { status: 400 })
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         {
-          error: `Usuario demo no encontrado. Ejecutá el script SQL: scripts/200_create_demo_users.sql`,
+          error: `❌ Usuario demo no encontrado.\n\n🔧 Solución:\n1. Ve a Supabase SQL Editor\n2. Ejecutá: scripts/202_fix_demo_complete.sql\n3. Reintentá iniciar la demo`,
         },
         { status: 404 }
       )
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     if (!kiosko) {
       return NextResponse.json(
         {
-          error: `El usuario demo existe pero no tiene kiosko. Ejecutá el script SQL: scripts/200_create_demo_users.sql`,
+          error: `❌ El usuario demo existe pero no tiene kiosko.\n\n🔧 Solución:\n1. Ve a Supabase SQL Editor\n2. Ejecutá: scripts/202_fix_demo_complete.sql\n3. El script va a crear el kiosko con productos, empleados y ventas\n4. Reintentá iniciar la demo\n\n📚 Ver guía: GUIA_RAPIDA_SOLUCION.md`,
         },
         { status: 500 }
       )
