@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const text = message.text || ""
     const firstName = message.from?.first_name || "Usuario"
 
-    console.log(`[Telegram] Received message from ${chatId}: ${text}`)
+    console.log(`[v0][Telegram] Received message from chatId ${chatId}: ${text}`)
 
     const supabase = await createServerClient()
 
@@ -33,33 +33,43 @@ export async function POST(request: NextRequest) {
     let ownerId: string | null = null
     let ownerKioscos: { id: string; name: string }[] = []
 
-    const { data: ownerProfile } = await supabase
+    console.log(`[v0][Telegram] Searching for owner with telegram_chat_id: ${chatId}`)
+
+    const { data: ownerProfile, error: profileError } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, full_name")
       .eq("telegram_chat_id", chatId.toString())
       .maybeSingle()
 
+    console.log(`[v0][Telegram] Profile search result:`, ownerProfile, profileError)
+
     if (ownerProfile) {
       ownerId = ownerProfile.id
+      console.log(`[v0][Telegram] Found owner by profile: ${ownerId} (${ownerProfile.full_name})`)
     } else {
       // FALLBACK: Buscar por notification_configs (legacy)
+      console.log(`[v0][Telegram] No profile found, trying notification_configs...`)
       const { data: configs } = await supabase
         .from("notification_configs")
         .select("kiosko_id, kioscos(id, name, owner_id)")
         .eq("telegram_chat_id", chatId.toString())
 
+      console.log(`[v0][Telegram] Notification configs result:`, configs)
+
       if (configs && configs.length > 0) {
         ownerId = (configs[0].kioscos as any)?.owner_id
+        console.log(`[v0][Telegram] Found owner by notification_config: ${ownerId}`)
       }
     }
 
     // Obtener todos los kioscos del owner
     if (ownerId) {
-      const { data: allKioscos } = await supabase
-        .from("kioscos")
-        .select("id, name")
-        .eq("owner_id", ownerId)
+      const { data: allKioscos } = await supabase.from("kioscos").select("id, name").eq("owner_id", ownerId)
+
       ownerKioscos = allKioscos || []
+      console.log(`[v0][Telegram] Found ${ownerKioscos.length} kioscos for owner ${ownerId}:`, ownerKioscos)
+    } else {
+      console.log(`[v0][Telegram] No owner found for chatId ${chatId}`)
     }
 
     // Handle /start command - Return the Chat ID (siempre funciona)
@@ -74,8 +84,9 @@ export async function POST(request: NextRequest) {
 1. Copiá el número de arriba (tocá para copiar)
 2. Andá a Atlas ONE → Configuración → Integraciones
 3. Pegalo en el campo "Chat ID de Telegram"
-4. Guardá los cambios
-5. ¡Listo! Vas a recibir notificaciones
+4. Presioná "Probar Telegram"
+5. Guardá los cambios
+6. ¡Listo! Vas a recibir notificaciones
 
 🤖 <b>Comandos disponibles:</b>
 /kioscos - Ver tus kioscos
@@ -93,17 +104,17 @@ ${ownerKioscos.length > 0 ? `✅ Ya tenés ${ownerKioscos.length} kiosco(s) vinc
 
     // Check if user is linked
     if (ownerKioscos.length === 0) {
-      await sendTelegramMessage(botToken, chatId, 
-        `⚠️ No encontré ningún kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abrí Atlas ONE\n2. Andá a Configuración → Integraciones\n3. Pegá el Chat ID\n4. Guardá los cambios\n\nDespués de eso, usá /start para verificar.`
+      await sendTelegramMessage(
+        botToken,
+        chatId,
+        `⚠️ No encontré ningún kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abrí Atlas ONE\n2. Andá a Configuración → Integraciones\n3. Pegá el Chat ID\n4. Presioná "Probar Telegram"\n5. Guardá los cambios\n\nDespués de eso, usá /start para verificar.`,
       )
       return NextResponse.json({ ok: true })
     }
 
     // Handle /kioscos command - list all owner's kioscos
     if (text === "/kioscos") {
-      const kioscoList = ownerKioscos
-        .map((k, i) => `${i + 1}. <b>${k.name}</b>`)
-        .join("\n")
+      const kioscoList = ownerKioscos.map((k, i) => `${i + 1}. <b>${k.name}</b>`).join("\n")
 
       const message = `
 🏪 <b>Tus Kioscos</b>
@@ -124,25 +135,25 @@ O sin nombre para ver un resumen general.
     // Handle /ventas command (with optional kiosco name)
     if (text.startsWith("/ventas")) {
       const kioscoName = text.replace("/ventas", "").trim()
-      
+
       // Filter kioscos by name if provided
       let targetKioscos = ownerKioscos
       if (kioscoName) {
-        targetKioscos = ownerKioscos.filter(k => 
-          k.name.toLowerCase().includes(kioscoName.toLowerCase())
-        )
+        targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
         if (targetKioscos.length === 0) {
-          await sendTelegramMessage(botToken, chatId, 
-            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`,
           )
           return NextResponse.json({ ok: true })
         }
       }
 
-      const kioskoIds = targetKioscos.map(k => k.id)
+      const kioskoIds = targetKioscos.map((k) => k.id)
 
       // Get today's sales
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString().split("T")[0]
       const { data: sales } = await supabase
         .from("sales")
         .select("kiosko_id, total_amount, created_at")
@@ -158,11 +169,11 @@ O sin nombre para ver un resumen general.
 
       // Group by kiosco
       const salesByKiosco = new Map<string, { count: number; total: number }>()
-      sales.forEach(s => {
+      sales.forEach((s) => {
         const existing = salesByKiosco.get(s.kiosko_id) || { count: 0, total: 0 }
         salesByKiosco.set(s.kiosko_id, {
           count: existing.count + 1,
-          total: existing.total + Number(s.total_amount)
+          total: existing.total + Number(s.total_amount),
         })
       })
 
@@ -171,7 +182,7 @@ O sin nombre para ver un resumen general.
       let grandCount = 0
 
       salesByKiosco.forEach((data, kId) => {
-        const kiosko = targetKioscos.find(k => k.id === kId)
+        const kiosko = targetKioscos.find((k) => k.id === kId)
         if (kiosko) {
           message += `🏪 <b>${kiosko.name}</b>\n`
           message += `   🛒 ${data.count} ventas\n`
@@ -195,21 +206,21 @@ O sin nombre para ver un resumen general.
     // Handle /stock command (with optional kiosco name)
     if (text.startsWith("/stock")) {
       const kioscoName = text.replace("/stock", "").trim()
-      
+
       let targetKioscos = ownerKioscos
       if (kioscoName) {
-        targetKioscos = ownerKioscos.filter(k => 
-          k.name.toLowerCase().includes(kioscoName.toLowerCase())
-        )
+        targetKioscos = ownerKioscos.filter((k) => k.name.toLowerCase().includes(kioscoName.toLowerCase()))
         if (targetKioscos.length === 0) {
-          await sendTelegramMessage(botToken, chatId, 
-            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            `❌ No encontré un kiosco con ese nombre.\n\nUsá /kioscos para ver la lista.`,
           )
           return NextResponse.json({ ok: true })
         }
       }
 
-      const kioskoIds = targetKioscos.map(k => k.id)
+      const kioskoIds = targetKioscos.map((k) => k.id)
 
       // Get low stock products
       const { data: products } = await supabase
@@ -219,7 +230,7 @@ O sin nombre para ver un resumen general.
         .order("stock_quantity", { ascending: true })
         .limit(20)
 
-      const lowStock = products?.filter(p => p.stock_quantity <= (p.min_stock_level || 10)) || []
+      const lowStock = products?.filter((p) => p.stock_quantity <= (p.min_stock_level || 10)) || []
 
       if (lowStock.length === 0) {
         const scope = kioscoName ? `en ${targetKioscos[0]?.name}` : ""
@@ -229,7 +240,7 @@ O sin nombre para ver un resumen general.
 
       // Group by kiosco
       const stockByKiosco = new Map<string, { name: string; stock: number }[]>()
-      lowStock.forEach(p => {
+      lowStock.forEach((p) => {
         const existing = stockByKiosco.get(p.kiosko_id) || []
         existing.push({ name: p.name, stock: p.stock_quantity })
         stockByKiosco.set(p.kiosko_id, existing)
@@ -238,10 +249,10 @@ O sin nombre para ver un resumen general.
       let message = `⚠️ <b>Productos con Stock Bajo</b>\n\n`
 
       stockByKiosco.forEach((prods, kId) => {
-        const kiosko = targetKioscos.find(k => k.id === kId)
+        const kiosko = targetKioscos.find((k) => k.id === kId)
         if (kiosko) {
           message += `🏪 <b>${kiosko.name}</b>\n`
-          prods.slice(0, 5).forEach(p => {
+          prods.slice(0, 5).forEach((p) => {
             message += `   • ${p.name}: <b>${p.stock}</b> unid.\n`
           })
           if (prods.length > 5) {
@@ -292,8 +303,10 @@ Contactanos en soporte@atlasone.com
 
     // Default response for unknown commands
     if (text.startsWith("/")) {
-      await sendTelegramMessage(botToken, chatId, 
-        `❓ Comando no reconocido.\n\nUsá /ayuda para ver los comandos disponibles.`
+      await sendTelegramMessage(
+        botToken,
+        chatId,
+        `❓ Comando no reconocido.\n\nUsá /ayuda para ver los comandos disponibles.`,
       )
     }
 
@@ -328,9 +341,9 @@ async function sendTelegramMessage(botToken: string, chatId: number, text: strin
 
 // GET endpoint for webhook verification
 export async function GET(request: NextRequest) {
-  return NextResponse.json({ 
+  return NextResponse.json({
     status: "Atlas ONE Telegram Bot Webhook",
     info: "This endpoint receives Telegram bot updates",
-    setup: "Use Telegram API to set webhook to this URL"
+    setup: "Use Telegram API to set webhook to this URL",
   })
 }

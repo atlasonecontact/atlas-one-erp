@@ -338,13 +338,37 @@ export default function ConfiguracionPage() {
     setIsTestingTelegram(true)
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error("No se pudo obtener el usuario autenticado")
+      }
+
+      console.log("[v0] Testing Telegram for user:", user.id, "chatId:", telegramConfig.chatId)
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          telegram_chat_id: telegramConfig.chatId,
+        })
+        .eq("id", user.id)
+
+      if (profileError) {
+        console.error("[v0] Error updating profile:", profileError)
+        throw profileError
+      }
+
+      console.log("[v0] Profile updated successfully")
+
+      // Now update notification_configs for the selected kiosko
       const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
       if (!config) {
         throw new Error("No se pudo cargar la configuración de notificaciones")
       }
 
-      // Update notification_configs
-      await supabase
+      const { error: configError } = await supabase
         .from("notification_configs")
         .update({
           telegram_chat_id: telegramConfig.chatId,
@@ -353,18 +377,12 @@ export default function ConfiguracionPage() {
         })
         .eq("kiosko_id", selectedKiosko)
 
-      // IMPORTANTE: También actualizar profiles para que el bot pueda encontrar el owner
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({
-            telegram_chat_id: telegramConfig.chatId,
-          })
-          .eq("id", user.id)
+      if (configError) {
+        console.error("[v0] Error updating notification config:", configError)
+        throw configError
       }
+
+      console.log("[v0] Notification config updated successfully")
 
       // Now send the test message
       const response = await fetch("/api/notifications/telegram", {
@@ -372,7 +390,7 @@ export default function ConfiguracionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId: telegramConfig.chatId,
-          message: `✅ <b>¡Test exitoso!</b>\n\n🎉 Tu configuración de Telegram está funcionando correctamente.\n\n📱 Chat ID: <code>${telegramConfig.chatId}</code>\n🏪 Kiosco: ${kioskoData.name || "Mi Kiosco"}\n\nAhora vas a recibir notificaciones de ventas automáticamente.`,
+          message: `✅ <b>¡Test exitoso!</b>\n\n🎉 Tu configuración de Telegram está funcionando correctamente.\n\n📱 Chat ID: <code>${telegramConfig.chatId}</code>\n🏪 Kiosco: ${kioskoData.name || "Mi Kiosco"}\n\nAhora vas a recibir notificaciones de ventas automáticamente.\n\n💡 <b>Próximos pasos:</b>\n1. Presioná "Guardar cambios" abajo\n2. Usá /kioscos en el bot para ver tus kioscos`,
         }),
       })
 
@@ -388,7 +406,7 @@ export default function ConfiguracionPage() {
 
         setTelegramConfig({ ...telegramConfig, verified: true, enabled: true })
         await loadKioskoConfig()
-        toast.success("¡Mensaje enviado!", "Revisá tu Telegram para confirmarlo")
+        toast.success("¡Mensaje enviado!", "Revisá tu Telegram y usá /kioscos para verificar")
       } else {
         const error = await response.json()
         console.error("[v0] Telegram test error:", error)
