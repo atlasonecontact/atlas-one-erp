@@ -17,7 +17,7 @@ DECLARE
   v_kiosko_id UUID;
   v_email TEXT;
   v_business_name TEXT;
-  v_telegram_chat_id TEXT := '8494177500'; -- Tu Chat ID real
+  v_telegram_chat_id TEXT := NULL; -- Cada usuario debe configurar su propio Chat ID
   v_instance_id UUID;
   demo_users TEXT[][] := ARRAY[
     ['demo.maxi-kiosco@atlasone.com', 'Maxi Kiosco Demo'],
@@ -134,16 +134,15 @@ BEGIN
 
       RAISE NOTICE '  ✓ Kiosko creado con ID: %', v_kiosko_id;
 
-      -- Configurar notificaciones de Telegram
+      -- Configurar notificaciones de Telegram (sin Chat ID por defecto)
       INSERT INTO notification_configs (kiosko_id, telegram_chat_id, telegram_enabled, telegram_verified)
-      VALUES (v_kiosko_id, v_telegram_chat_id, true, true)
+      VALUES (v_kiosko_id, NULL, false, false)
       ON CONFLICT (kiosko_id) DO UPDATE SET
-        telegram_chat_id = v_telegram_chat_id,
-        telegram_enabled = true,
-        telegram_verified = true,
+        telegram_enabled = false,
+        telegram_verified = false,
         updated_at = NOW();
 
-      RAISE NOTICE '  ✓ Telegram configurado (Chat ID: %)', v_telegram_chat_id;
+      RAISE NOTICE '  ⚠️  Telegram NO configurado - El usuario debe configurar su Chat ID';
 
       -- Crear productos
       INSERT INTO products (kiosko_id, sku, name, category, cost, price, stock_quantity, min_stock_level, barcode, is_active)
@@ -208,22 +207,15 @@ BEGIN
       RAISE NOTICE '  ✓ Caja registradora abierta';
 
     ELSE
-      -- Kiosko ya existe, solo actualizar Telegram
+      -- Kiosko ya existe, verificar config de notificaciones
       RAISE NOTICE '  ✓ Kiosko ya existe con ID: %', v_kiosko_id;
       
-      UPDATE notification_configs
-      SET telegram_chat_id = v_telegram_chat_id,
-          telegram_enabled = true,
-          telegram_verified = true,
-          updated_at = NOW()
-      WHERE kiosko_id = v_kiosko_id;
-
-      -- Si no existía config, crearla
+      -- Si no existe config, crearla vacía
       INSERT INTO notification_configs (kiosko_id, telegram_chat_id, telegram_enabled, telegram_verified)
-      VALUES (v_kiosko_id, v_telegram_chat_id, true, true)
+      VALUES (v_kiosko_id, NULL, false, false)
       ON CONFLICT (kiosko_id) DO NOTHING;
 
-      RAISE NOTICE '  ✓ Telegram actualizado';
+      RAISE NOTICE '  ℹ️  Telegram debe ser configurado por el usuario';
     END IF;
 
   END LOOP;

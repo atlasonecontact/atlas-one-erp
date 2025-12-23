@@ -39,20 +39,18 @@ He creado todos los archivos necesarios:
 
 ### ✅ 3. Telegram no se sincroniza
 
-**PASO 1: Obtén tu Chat ID**
-1. Abre Telegram
-2. Busca: `@userinfobot`
-3. Envía: `/start`
-4. Copia el número (tu Chat ID)
+**⚠️ IMPORTANTE: Cada usuario debe configurar SU PROPIO Chat ID**
 
-**PASO 2: Crea un Bot**
-1. Busca: `@BotFather`
+El sistema ya NO usa un Chat ID compartido. Ahora **cada usuario configura su Telegram personal** desde el Dashboard.
+
+**PASO 1: Crear el Bot (Una Sola Vez)**
+1. Busca: `@BotFather` en Telegram
 2. Envía: `/newbot`
 3. Elige nombre: `Atlas One Bot`
 4. Elige username: `AtlasOneERP_bot` (debe terminar en _bot)
 5. Copia el **Token** que te da
 
-**PASO 3: Configura Variables de Entorno**
+**PASO 2: Configura Variables de Entorno**
 
 Crea o edita `.env.local`:
 ```env
@@ -61,27 +59,44 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 ```
 
-**PASO 4: Actualiza Chat ID en Base de Datos**
-
-Edita `scripts/203_update_telegram_chat_id.sql`:
-```sql
--- Línea 17, reemplaza con TU Chat ID:
-v_new_chat_id TEXT := 'TU_CHAT_ID_AQUI';
-```
-
-Luego ejecuta en Supabase:
-```bash
-scripts/203_update_telegram_chat_id.sql
-```
-
-**PASO 5: Inicia el Bot**
-1. Busca tu bot en Telegram (ej: @AtlasOneERP_bot)
-2. Envía: `/start`
-
-**PASO 6: Reinicia la App**
+**PASO 3: Reinicia la App**
 ```bash
 npm run dev
 ```
+
+**PASO 4: CADA Usuario Configura su Chat ID**
+
+**Usuario 1 (Maxi Kiosco):**
+```bash
+1. Abrir Telegram
+2. Buscar @userinfobot
+3. Enviar /start
+4. Copiar Chat ID (ej: 123456789)
+5. Login: demo.maxi-kiosco@atlasone.com
+6. Dashboard → Configuración → Notificaciones
+7. Pegar Chat ID: 123456789
+8. Click "🧪 Probar"
+9. Guardar Cambios
+10. Buscar @AtlasOneERP_bot → /start
+```
+
+**Usuario 2 (Mini Market):**
+```bash
+1. Abrir SU Telegram (cuenta diferente)
+2. Buscar @userinfobot
+3. Enviar /start
+4. Copiar SU Chat ID (ej: 987654321) - DIFERENTE al usuario 1
+5. Login: demo.mini-market@atlasone.com
+6. Dashboard → Configuración → Notificaciones
+7. Pegar SU Chat ID: 987654321
+8. Click "🧪 Probar"
+9. Guardar Cambios
+10. Buscar @AtlasOneERP_bot → /start
+```
+
+✅ Cada usuario recibe SOLO sus notificaciones en su chat privado
+
+📚 **Ver guía completa:** [docs/TELEGRAM_PRIVADO_POR_USUARIO.md](docs/TELEGRAM_PRIVADO_POR_USUARIO.md)
 
 ---
 
@@ -91,15 +106,11 @@ npm run dev
 ```bash
 # En Supabase SQL Editor:
 
-# 1. Reparar usuarios y crear kioscos
+# 1. Reparar usuarios y crear kioscos (SIN Chat ID compartido)
 Ejecutar: scripts/202_fix_demo_complete.sql
-
-# 2. Actualizar Chat ID (después de obtenerlo)
-Editar línea 17 con tu Chat ID
-Ejecutar: scripts/203_update_telegram_chat_id.sql
 ```
 
-### 2️⃣ Variables de Entorno
+### 2️⃣ Variables de Entorno (Bot Único)
 ```bash
 # Crear .env.local si no existe
 touch .env.local
@@ -107,17 +118,29 @@ touch .env.local
 # Agregar:
 NEXT_PUBLIC_SUPABASE_URL=tu-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-key
-TELEGRAM_BOT_TOKEN=tu-token-bot
+TELEGRAM_BOT_TOKEN=tu-token-bot  # Un solo bot para todos
 ```
 
-### 3️⃣ Verificar Service Worker
+### 3️⃣ Reiniciar App
 ```bash
-# Iniciar app
 npm run dev
+```
 
-# Abrir http://localhost:3000
-# F12 → Application → Service Workers
-# Debe decir "Activated and running"
+### 4️⃣ Cada Usuario Configura su Telegram
+```bash
+# Usuario 1:
+1. @userinfobot → Obtiene Chat ID
+2. Login: demo.maxi-kiosco@atlasone.com
+3. Dashboard → Config → Telegram → Pegar su Chat ID
+4. Guardar
+
+# Usuario 2:
+1. @userinfobot → Obtiene SU Chat ID (diferente)
+2. Login: demo.mini-market@atlasone.com
+3. Dashboard → Config → Telegram → Pegar SU Chat ID
+4. Guardar
+
+# Repetir para cada usuario demo
 ```
 
 ### 4️⃣ Probar Todo
@@ -183,12 +206,26 @@ scripts/202_fix_demo_complete.sql
 # 1. Verifica el token en .env.local
 cat .env.local | grep TELEGRAM
 
-# 2. Prueba el bot manualmente
+# 2. Verifica que CADA usuario configuró SU Chat ID
+# En Supabase SQL Editor:
+SELECT 
+  u.email,
+  nc.telegram_chat_id,
+  nc.telegram_enabled
+FROM auth.users u
+LEFT JOIN kioscos k ON k.owner_id = u.id
+LEFT JOIN notification_configs nc ON nc.kiosko_id = k.id
+WHERE u.email LIKE 'demo.%@atlasone.com';
+
+# 3. Cada usuario debe:
+# - Obtener SU Chat ID con @userinfobot
+# - Configurarlo en Dashboard → Configuración
+# - Iniciar el bot con /start
+
+# 4. Prueba el bot manualmente
 curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" \
   -H "Content-Type: application/json" \
-  -d '{"chat_id":"<TU_CHAT_ID>","text":"Test"}'
-
-# 3. Verifica que iniciaste el bot (/start)
+  -d '{"chat_id":"<CHAT_ID_DEL_USUARIO>","text":"Test"}'
 ```
 
 ### Problema: Offline no funciona
