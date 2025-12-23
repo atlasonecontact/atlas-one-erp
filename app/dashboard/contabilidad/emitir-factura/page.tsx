@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Receipt, CreditCard, MinusCircle, PlusCircle, ArrowRight, Building2 } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 const invoiceTypes = [
   {
@@ -82,6 +84,65 @@ const invoiceTypes = [
 
 export default function EmitirFacturaPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [arcaStatus, setArcaStatus] = useState<{ ready: boolean; reason?: string }>({
+    ready: false,
+    reason: "Comprobando integración ARCA...",
+  })
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Pick kiosko: employee -> assigned, owner -> first
+        const { data: employee } = await supabase
+          .from("employees")
+          .select("kiosko_id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle()
+
+        let kioskoId = employee?.kiosko_id as string | undefined
+
+        if (!kioskoId) {
+          const { data: kioskos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+          kioskoId = kioskos?.[0]?.id
+        }
+
+        if (!kioskoId) {
+          setArcaStatus({ ready: false, reason: "No hay un kiosco asignado" })
+          return
+        }
+
+        const { data: config } = await supabase
+          .from("integration_configs")
+          .select("arca_enabled, arca_cuit, arca_certificate, arca_private_key")
+          .eq("kiosko_id", kioskoId)
+          .maybeSingle()
+
+        if (!config?.arca_enabled) {
+          setArcaStatus({ ready: false, reason: "Activa ARCA en Integraciones para emitir" })
+          return
+        }
+        if (!config.arca_cuit || !config.arca_certificate || !config.arca_private_key) {
+          setArcaStatus({ ready: false, reason: "Falta CUIT, certificado o clave privada" })
+          return
+        }
+
+        setArcaStatus({ ready: true })
+      } catch (err) {
+        console.error("[ARCA] Error validando:", err)
+        setArcaStatus({ ready: false, reason: "No pudimos validar ARCA" })
+      }
+    }
+
+    loadConfig()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -92,6 +153,13 @@ export default function EmitirFacturaPage() {
       </div>
 
       {/* Invoice Types Grid */}
+      {!arcaStatus.ready && arcaStatus.reason && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-200">
+          <AlertTriangle className="w-5 h-5 mt-0.5" />
+          <div className="text-sm leading-relaxed">{arcaStatus.reason}</div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {invoiceTypes.map((type) => {
           const Icon = type.icon
@@ -128,9 +196,11 @@ export default function EmitirFacturaPage() {
         <div className="flex justify-end">
           <Button
             size="lg"
-            className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
+            disabled={!arcaStatus.ready}
+            className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-60"
           >
-            Continuar con {invoiceTypes.find((t) => t.id === selectedType)?.name}
+            {arcaStatus.ready ? "Continuar" : "Configura ARCA para emitir"} {" "}
+            {arcaStatus.ready && invoiceTypes.find((t) => t.id === selectedType)?.name}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

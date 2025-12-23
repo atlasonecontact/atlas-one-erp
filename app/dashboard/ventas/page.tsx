@@ -17,6 +17,81 @@ import { enqueueSale, flushQueuedSales } from "@/lib/offline/sales-queue"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
 
+// Function to send Telegram notification after sale
+async function sendSaleNotification(
+  kioskoId: string, 
+  saleNumber: string, 
+  total: number, 
+  paymentMethod: string,
+  items: { name: string; quantity: number; price: number }[]
+) {
+  try {
+    const supabase = createClient()
+    
+    // Get notification config for this kiosko
+    const { data: config } = await supabase
+      .from("notification_configs")
+      .select("telegram_chat_id, telegram_enabled")
+      .eq("kiosko_id", kioskoId)
+      .maybeSingle()
+    
+    if (!config?.telegram_enabled || !config?.telegram_chat_id) {
+      return // Notifications not enabled or no chat ID
+    }
+    
+    // Get kiosko name
+    const { data: kiosko } = await supabase
+      .from("kioscos")
+      .select("name")
+      .eq("id", kioskoId)
+      .single()
+    
+    // Format items list
+    const itemsList = items.slice(0, 5).map(item => 
+      `  • ${item.name} x${item.quantity} = $${(item.price * item.quantity).toLocaleString('es-AR')}`
+    ).join('\n')
+    const moreItems = items.length > 5 ? `\n  ... y ${items.length - 5} más` : ''
+    
+    // Format payment method
+    const paymentLabels: Record<string, string> = {
+      efectivo: '💵 Efectivo',
+      cash: '💵 Efectivo',
+      tarjeta: '💳 Tarjeta',
+      card: '💳 Tarjeta',
+      qr: '📱 QR',
+      transfer: '🏦 Transferencia'
+    }
+    const paymentLabel = paymentLabels[paymentMethod.toLowerCase()] || paymentMethod
+    
+    // Build message
+    const message = `🛒 <b>Nueva Venta!</b>
+
+🏪 ${kiosko?.name || 'Mi Kiosco'}
+🧾 #${saleNumber.split('-').slice(-1)[0]}
+
+<b>Productos:</b>
+${itemsList}${moreItems}
+
+💰 <b>Total: $${total.toLocaleString('es-AR')}</b>
+${paymentLabel}
+
+📅 ${new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}`
+
+    // Send notification
+    await fetch("/api/notifications/telegram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId: config.telegram_chat_id,
+        message
+      }),
+    })
+  } catch (error) {
+    console.error("[Telegram] Error sending sale notification:", error)
+    // Don't throw - notifications should not break the sale flow
+  }
+}
+
 export interface CartItem {
   id: string
   name: string
@@ -33,7 +108,14 @@ export default function VentasPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [showPayment, setShowPayment] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
-  const [lastSale, setLastSale] = useState<{ items: CartItem[]; total: number; method: string } | null>(null)
+  const [lastSale, setLastSale] = useState<{
+    saleId?: string
+    saleNumber?: string
+    items: CartItem[]
+    total: number
+    method: string
+    offline?: boolean
+  } | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string>("")
@@ -43,6 +125,9 @@ export default function VentasPage() {
   const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
   const [showMobileCart, setShowMobileCart] = useState(false)
+  const [arcaStatus, setArcaStatus] = useState<{ ready: boolean; reason?: string; environment?: string }>(
+    { ready: false, reason: "Cargando configuración de ARCA..." },
+  )
 
   const supabase = createClient()
   const toast = useToast()
@@ -211,6 +296,43 @@ export default function VentasPage() {
     [supabase, toast],
   )
 
+  const loadArcaConfig = useCallback(
+    async (kiosko_id: string) => {
+      try {
+        const { data: config, error } = await supabase
+          .from("integration_configs")
+          .select("arca_enabled, arca_cuit, arca_certificate, arca_private_key, arca_environment")
+          .eq("kiosko_id", kiosko_id)
+          .maybeSingle()
+
+        if (error) {
+          console.error("[ARCA] No se pudo cargar la config:", error)
+          setArcaStatus({ ready: false, reason: "No pudimos verificar ARCA. Revisa Integraciones." })
+          return
+        }
+
+        if (!config?.arca_enabled) {
+          setArcaStatus({ ready: false, reason: "Activa ARCA en Integraciones para emitir factura." })
+          return
+        }
+
+        if (!config.arca_cuit || !config.arca_certificate || !config.arca_private_key) {
+          setArcaStatus({
+            ready: false,
+            reason: "Falta CUIT, certificado o clave privada en ARCA.",
+          })
+          return
+        }
+
+        setArcaStatus({ ready: true, environment: config.arca_environment || "testing" })
+      } catch (err) {
+        console.error("[ARCA] Error cargando config:", err)
+        setArcaStatus({ ready: false, reason: "No pudimos verificar ARCA. Intenta de nuevo." })
+      }
+    },
+    [supabase],
+  )
+
   const syncOfflineSales = useCallback(async () => {
     if (typeof window === "undefined") return
     if (!window.navigator.onLine) return
@@ -233,6 +355,12 @@ export default function VentasPage() {
     window.addEventListener("online", onOnline)
     return () => window.removeEventListener("online", onOnline)
   }, [syncOfflineSales])
+
+  useEffect(() => {
+    if (kioskoId) {
+      loadArcaConfig(kioskoId)
+    }
+  }, [kioskoId, loadArcaConfig])
 
   useEffect(() => {
     syncOfflineSales()
@@ -325,7 +453,7 @@ export default function VentasPage() {
         setProducts((prev) => applyCartToProducts(prev, cart))
         toast.warning("Venta guardada offline", "Se sincronizará al reconectar")
 
-        setLastSale({ items: cart, total, method })
+        setLastSale({ items: cart, total, method, offline: true, saleNumber })
         setShowPayment(false)
         setShowReceipt(true)
         setCart([])
@@ -367,10 +495,16 @@ export default function VentasPage() {
           .eq("id", item.id)
       }
 
-      // Note: Telegram notification is sent by PaymentModal via /api/notifications/sale
-      // Do not duplicate here
+      // Send Telegram notification (async, don't wait)
+      sendSaleNotification(
+        kioskoId,
+        saleNumber,
+        total,
+        method,
+        cart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }))
+      )
 
-      setLastSale({ items: cart, total, method })
+      setLastSale({ items: cart, total, method, saleId: saleData.id, saleNumber })
       setShowPayment(false)
       setShowReceipt(true)
       setCart([])
@@ -407,7 +541,7 @@ export default function VentasPage() {
         setProducts((prev) => applyCartToProducts(prev, cart))
         toast.warning("Venta guardada offline", "Se sincronizará al reconectar")
 
-        setLastSale({ items: cart, total, method })
+        setLastSale({ items: cart, total, method, offline: true, saleNumber })
         setShowPayment(false)
         setShowReceipt(true)
         setCart([])
