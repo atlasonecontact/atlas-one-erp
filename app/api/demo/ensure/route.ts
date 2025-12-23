@@ -34,44 +34,61 @@ export async function POST(req: NextRequest) {
     const email = demoEmail(type)
     const password = "Demo123456!"
 
-    // Verificar que el usuario demo existe (fue creado por el script SQL)
     const { data: listData, error: listError } = await admin.auth.admin.listUsers()
     if (listError) {
+      console.error("[demo/ensure] Error listing users:", listError)
       return NextResponse.json({ error: listError.message }, { status: 400 })
     }
 
     const user = listData.users.find((u) => u.email === email)
     if (!user) {
+      console.error("[demo/ensure] Demo user not found:", email)
       return NextResponse.json(
         {
-          error: `❌ Usuario demo no encontrado.\n\n🔧 Solución:\n1. Ve a Supabase SQL Editor\n2. Ejecutá: scripts/202_fix_demo_complete.sql\n3. Reintentá iniciar la demo`,
+          error: `Usuario demo no encontrado. Ejecutá el script SQL: scripts/200_create_demo_users.sql`,
         },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
     const userId = user.id
+    console.log("[demo/ensure] Found demo user:", { email, userId })
 
-    // Verificar que tiene kiosko
-    const { data: kiosko } = await admin.from("kioscos").select("id").eq("owner_id", userId).limit(1).maybeSingle()
+    // Verificar que tiene kiosko con más debugging
+    const { data: kioscos, error: kioscoError } = await admin
+      .from("kioscos")
+      .select("id, name, owner_id")
+      .eq("owner_id", userId)
 
-    if (!kiosko) {
+    console.log("[demo/ensure] Kioscos query result:", { kioscos, error: kioscoError, userId })
+
+    if (kioscoError) {
+      console.error("[demo/ensure] Error querying kioscos:", kioscoError)
+      return NextResponse.json({ error: "Error al buscar kioscos: " + kioscoError.message }, { status: 500 })
+    }
+
+    if (!kioscos || kioscos.length === 0) {
+      console.error("[demo/ensure] No kioscos found for user:", { userId, email })
       return NextResponse.json(
         {
-          error: `❌ El usuario demo existe pero no tiene kiosko.\n\n🔧 Solución:\n1. Ve a Supabase SQL Editor\n2. Ejecutá: scripts/202_fix_demo_complete.sql\n3. El script va a crear el kiosko con productos, empleados y ventas\n4. Reintentá iniciar la demo\n\n📚 Ver guía: GUIA_RAPIDA_SOLUCION.md`,
+          error: `El usuario demo existe pero no tiene kioscos asociados. Verificá que el owner_id en la tabla kioscos coincida con el user_id: ${userId}`,
         },
-        { status: 500 }
+        { status: 500 },
       )
     }
+
+    const kiosko = kioscos[0]
+    console.log("[demo/ensure] Successfully found kiosko:", kiosko)
 
     return NextResponse.json({
       ok: true,
       email,
       password,
       kioskoId: kiosko.id,
+      kioskoName: kiosko.name,
     })
   } catch (error: any) {
-    console.error("[api/demo/ensure]", error)
+    console.error("[api/demo/ensure] Unexpected error:", error)
     return NextResponse.json({ error: error?.message || "Error interno" }, { status: 500 })
   }
 }
