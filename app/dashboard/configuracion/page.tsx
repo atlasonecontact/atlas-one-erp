@@ -348,6 +348,23 @@ export default function ConfiguracionPage() {
 
       console.log("[v0] Testing Telegram for user:", user.id, "chatId:", telegramConfig.chatId)
 
+      const { data: kioskoData, error: kioskoCheckError } = await supabase
+        .from("kioscos")
+        .select("id, name, owner_id")
+        .eq("id", selectedKiosko)
+        .single()
+
+      if (kioskoCheckError || !kioskoData) {
+        throw new Error("No se pudo verificar el kiosco")
+      }
+
+      console.log("[v0] Kiosko data:", kioskoData)
+
+      if (kioskoData.owner_id !== user.id) {
+        throw new Error("No tenés permisos para modificar este kiosco")
+      }
+
+      // Update profiles with telegram_chat_id
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -360,7 +377,15 @@ export default function ConfiguracionPage() {
         throw profileError
       }
 
-      console.log("[v0] Profile updated successfully")
+      console.log("[v0] Profile updated successfully with telegram_chat_id:", telegramConfig.chatId)
+
+      const { data: verifyProfile } = await supabase
+        .from("profiles")
+        .select("id, telegram_chat_id")
+        .eq("id", user.id)
+        .single()
+
+      console.log("[v0] Verified profile after update:", verifyProfile)
 
       // Now update notification_configs for the selected kiosko
       const config = notificationConfig || (await ensureNotificationConfig(selectedKiosko))
@@ -894,7 +919,7 @@ export default function ConfiguracionPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que funcione.
+                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que todo funcione.
                   </p>
                 </div>
 

@@ -46,30 +46,43 @@ export async function POST(request: NextRequest) {
     if (ownerProfile) {
       ownerId = ownerProfile.id
       console.log(`[v0][Telegram] Found owner by profile: ${ownerId} (${ownerProfile.full_name})`)
+
+      // Try to find kioscos by owner_id
+      const { data: allKioscos, error: kioscosError } = await supabase
+        .from("kioscos")
+        .select("id, name, owner_id")
+        .eq("owner_id", ownerId)
+
+      console.log(`[v0][Telegram] Kioscos query result for owner ${ownerId}:`, allKioscos, kioscosError)
+
+      ownerKioscos = allKioscos || []
+      console.log(`[v0][Telegram] Found ${ownerKioscos.length} kioscos for owner ${ownerId}`)
     } else {
       // FALLBACK: Buscar por notification_configs (legacy)
       console.log(`[v0][Telegram] No profile found, trying notification_configs...`)
-      const { data: configs } = await supabase
+      const { data: configs, error: configsError } = await supabase
         .from("notification_configs")
         .select("kiosko_id, kioscos(id, name, owner_id)")
         .eq("telegram_chat_id", chatId.toString())
 
-      console.log(`[v0][Telegram] Notification configs result:`, configs)
+      console.log(`[v0][Telegram] Notification configs result:`, configs, configsError)
 
       if (configs && configs.length > 0) {
-        ownerId = (configs[0].kioscos as any)?.owner_id
+        const firstConfig = configs[0]
+        const kioscoData = firstConfig.kioscos as any
+        ownerId = kioscoData?.owner_id
         console.log(`[v0][Telegram] Found owner by notification_config: ${ownerId}`)
+
+        if (ownerId) {
+          const { data: allKioscos } = await supabase
+            .from("kioscos")
+            .select("id, name, owner_id")
+            .eq("owner_id", ownerId)
+
+          ownerKioscos = allKioscos || []
+          console.log(`[v0][Telegram] Found ${ownerKioscos.length} kioscos via notification_config`)
+        }
       }
-    }
-
-    // Obtener todos los kioscos del owner
-    if (ownerId) {
-      const { data: allKioscos } = await supabase.from("kioscos").select("id, name").eq("owner_id", ownerId)
-
-      ownerKioscos = allKioscos || []
-      console.log(`[v0][Telegram] Found ${ownerKioscos.length} kioscos for owner ${ownerId}:`, ownerKioscos)
-    } else {
-      console.log(`[v0][Telegram] No owner found for chatId ${chatId}`)
     }
 
     // Handle /start command - Return the Chat ID (siempre funciona)
