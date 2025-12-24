@@ -18,6 +18,7 @@ import {
   LogOut,
   Plug,
   Bike,
+  TrendingUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
@@ -55,7 +56,12 @@ const menuSections = [
     items: [
       { href: "/dashboard", label: "General", icon: LayoutDashboard },
       { href: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3, permission: "can_view_reports" },
-      { href: "/dashboard/estadisticas/ventas", label: "Ventas Stats", icon: ShoppingCart, permission: "can_view_reports" },
+      {
+        href: "/dashboard/estadisticas/ventas",
+        label: "Ventas Stats",
+        icon: ShoppingCart,
+        permission: "can_view_reports",
+      },
       { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet, permission: "can_view_reports" },
     ],
   },
@@ -71,10 +77,27 @@ const menuSections = [
     ],
   },
   {
+    title: "Análisis de Datos",
+    items: [
+      {
+        href: "/dashboard/analisis-datos/estadistico-avanzado",
+        label: "Análisis Estadístico Avanzado",
+        icon: BarChart3,
+        permission: "can_view_reports",
+      },
+      {
+        href: "/dashboard/analisis-datos/predictivo",
+        label: "Análisis Predictivo",
+        icon: TrendingUp,
+        permission: "can_view_reports",
+      },
+    ],
+  },
+  {
     title: "Gestión",
     ownerOnly: true,
     items: [
-      { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2, ownerOnly: true },
+      { href: "/dashboard/kioscos", label: "SUCURSALES", icon: Building2, ownerOnly: true },
       { href: "/dashboard/empleados", label: "Empleados", icon: Users, permission: "can_manage_employees" },
       { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug, ownerOnly: true },
       { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, ownerOnly: true },
@@ -85,7 +108,7 @@ const menuSections = [
 export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePermissions }: MobileMenuDrawerProps) {
   const pathname = usePathname()
   const { config } = useTheme()
-  
+
   const isOwner = user?.role !== "employee"
 
   // Filter menu sections based on permissions
