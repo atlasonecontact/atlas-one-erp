@@ -102,8 +102,8 @@ const contabilidadItems = [
 
 // Sección de análisis de datos
 const analisisDatosItems = [
-  { href: "/dashboard/analisis-datos/estadistico-avanzado", label: "Análisis Estadístico Avanzado", icon: TrendingUp },
-  { href: "/dashboard/analisis-datos/predictivo", label: "Análisis Predictivo", icon: Brain },
+  { href: "/dashboard/analisis-datos/estadistico-avanzado", label: "Análisis Estadístico Avanzado", icon: BarChart3 },
+  { href: "/dashboard/analisis-datos/predictivo", label: "Análisis Predictivo", icon: TrendingUp },
 ]
 
 // All nav items with permission requirements
