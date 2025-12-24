@@ -94,10 +94,10 @@ export default function LandingPage() {
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
-                El ERP completo para
+                El sistema de gestión
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-500">
-                  cadenas de kioscos
+                  más inteligente y completo para tu negocio
                 </span>
               </h1>
 
