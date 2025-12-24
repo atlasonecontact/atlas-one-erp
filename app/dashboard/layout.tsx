@@ -41,7 +41,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { ThemeProvider, useTheme } from "@/lib/theme-context"
+import { useTheme } from "@/lib/theme-context"
 import { ThemeSelector } from "@/components/theme-selector"
 import { OnlineStatus } from "@/components/online-status"
 import { KioskoSelector } from "@/components/kiosko-selector"
@@ -51,6 +51,8 @@ import { BottomNavigation } from "@/components/mobile/bottom-navigation"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { MobileMenuDrawer } from "@/components/mobile/mobile-menu-drawer"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
+import { DarkModeToggle } from "@/components/dark-mode-toggle"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
 
 interface UserProfile {
   id: string
@@ -606,6 +608,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           )}
         </div>
 
+        {/* Dark mode toggle */}
+        <div
+          className={cn("px-4 pb-2 border-t", collapsed && "flex justify-center")}
+          style={{ borderColor: config.border }}
+        >
+          <DarkModeToggle collapsed={collapsed} />
+        </div>
+
         {/* Logout button */}
         <div className={cn("p-4 border-t", collapsed && "flex justify-center")} style={{ borderColor: config.border }}>
           <Button
@@ -736,10 +746,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
+    <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem>
       <ToastProvider>
         <DashboardLayoutContent>{children}</DashboardLayoutContent>
       </ToastProvider>
-    </ThemeProvider>
+    </NextThemesProvider>
   )
 }
