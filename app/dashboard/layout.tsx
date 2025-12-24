@@ -55,6 +55,7 @@ import { MobileMenuDrawer } from "@/components/mobile/mobile-menu-drawer"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { DarkModeToggle } from "@/components/dark-mode-toggle"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { ThemeProvider } from "@/lib/theme-context"
 
 interface UserProfile {
   id: string
@@ -833,10 +834,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem>
-      <ToastProvider>
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
-      </ToastProvider>
-    </NextThemesProvider>
+    <ThemeProvider>
+      <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ToastProvider>
+          <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </ToastProvider>
+      </NextThemesProvider>
+    </ThemeProvider>
   )
 }
