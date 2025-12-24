@@ -70,7 +70,23 @@ const menuSections = [
     items: [
       { href: "/dashboard/ventas", label: "Punto de Venta", icon: ShoppingCart, permission: "can_sell" },
       { href: "/dashboard/productos", label: "Productos", icon: Package, permission: "can_manage_inventory" },
-      { href: "/dashboard/stock", label: "Stock", icon: Warehouse, permission: "can_manage_inventory" },
+      {
+        title: "Stock",
+        items: [
+          {
+            href: "/dashboard/stock/inventario",
+            label: "Inventario",
+            icon: Warehouse,
+            permission: "can_manage_inventory",
+          },
+          {
+            href: "/dashboard/stock/movimientos",
+            label: "Movimientos",
+            icon: Plug,
+            permission: "can_manage_inventory",
+          },
+        ],
+      },
       { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
       { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
       { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
@@ -210,28 +226,68 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
                   {section.items.map((item) => {
                     const isActive = pathname === item.href
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={onClose}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-3 rounded-xl transition-all touch-target haptic-tap",
-                          isActive ? "bg-gradient-to-r text-white" : "text-gray-400 active:bg-white/5",
+                      <div key={item.href}>
+                        {Array.isArray(item.items) ? (
+                          <div className="space-y-1">
+                            {item.items.map((subItem) => {
+                              const subIsActive = pathname === subItem.href
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  onClick={onClose}
+                                  className={cn(
+                                    "flex items-center gap-3 px-3 py-3 rounded-xl transition-all touch-target haptic-tap",
+                                    subIsActive ? "bg-gradient-to-r text-white" : "text-gray-400 active:bg-white/5",
+                                  )}
+                                  style={
+                                    subIsActive
+                                      ? {
+                                          background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                                        }
+                                      : {}
+                                  }
+                                >
+                                  <subItem.icon
+                                    className="w-5 h-5 shrink-0"
+                                    style={subIsActive ? { color: config.primary } : {}}
+                                  />
+                                  <span className="flex-1 text-sm font-medium">{subItem.label}</span>
+                                  {subIsActive && (
+                                    <div
+                                      className="w-1.5 h-1.5 rounded-full"
+                                      style={{ backgroundColor: config.primary }}
+                                    />
+                                  )}
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onClose}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all touch-target haptic-tap",
+                              isActive ? "bg-gradient-to-r text-white" : "text-gray-400 active:bg-white/5",
+                            )}
+                            style={
+                              isActive
+                                ? {
+                                    background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                                  }
+                                : {}
+                            }
+                          >
+                            <item.icon className="w-5 h-5 shrink-0" style={isActive ? { color: config.primary } : {}} />
+                            <span className="flex-1 text-sm font-medium">{item.label}</span>
+                            {isActive && (
+                              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config.primary }} />
+                            )}
+                          </Link>
                         )}
-                        style={
-                          isActive
-                            ? {
-                                background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
-                              }
-                            : {}
-                        }
-                      >
-                        <item.icon className="w-5 h-5 shrink-0" style={isActive ? { color: config.primary } : {}} />
-                        <span className="flex-1 text-sm font-medium">{item.label}</span>
-                        {isActive && (
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config.primary }} />
-                        )}
-                      </Link>
+                      </div>
                     )
                   })}
                 </div>
