@@ -37,6 +37,8 @@ import {
   CreditCard,
   Receipt,
   PackageSearch,
+  TrendingUp,
+  Brain,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
@@ -98,6 +100,12 @@ const contabilidadItems = [
   { href: "/dashboard/contabilidad/balance", label: "Balance", icon: BarChart3 },
 ]
 
+// Sección de análisis de datos
+const analisisDatosItems = [
+  { href: "/dashboard/analisis-datos/estadistico-avanzado", label: "Análisis Estadístico Avanzado", icon: TrendingUp },
+  { href: "/dashboard/analisis-datos/predictivo", label: "Análisis Predictivo", icon: Brain },
+]
+
 // All nav items with permission requirements
 const allNavItems = [
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart, permission: "can_sell" },
@@ -125,6 +133,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [dashboardOpen, setDashboardOpen] = useState(true)
   const [finanzasOpen, setFinanzasOpen] = useState(false)
   const [contabilidadOpen, setContabilidadOpen] = useState(false)
+  const [analisisDatosOpen, setAnalisisDatosOpen] = useState(false)
   const [comprasOpen, setComprasOpen] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null)
@@ -246,10 +255,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const isDashboardActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/estadisticas")
   const isFinanzasActive = pathname.startsWith("/dashboard/estadisticas/finanzas")
   const isContabilidadActive = pathname.startsWith("/dashboard/contabilidad")
+  const isAnalisisDatosActive = pathname.startsWith("/dashboard/analisis-datos")
   const isComprasActive = pathname.startsWith("/dashboard/compras")
   const effectiveDashboardOpen = collapsed ? false : dashboardOpen
   const effectiveFinanzasOpen = collapsed ? false : finanzasOpen
-  const effectiveContabilidadOpen = collapsed ? false : contabilidadOpen
+  const effectiveContabilidadOpen = !collapsed && (contabilidadOpen || isContabilidadActive)
+  const effectiveAnalisisDatosOpen = !collapsed && (analisisDatosOpen || isAnalisisDatosActive)
   const effectiveComprasOpen = comprasOpen || isComprasActive
 
   // Filter navigation items based on user role and permissions
@@ -471,6 +482,82 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 {effectiveContabilidadOpen && (
                   <div className="mt-1 space-y-1">
                     {contabilidadItems.map((item) => {
+                      const isActive = pathname === item.href
+                      return (
+                        <Link key={item.href} href={item.href}>
+                          <div
+                            className={cn(
+                              "ml-4 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+                              isActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                            )}
+                            style={
+                              isActive
+                                ? {
+                                    backgroundColor: config.primaryMuted,
+                                    color: config.primary,
+                                    borderColor: config.border,
+                                  }
+                                : {}
+                            }
+                          >
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="text-sm">{item.label}</span>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+
+          {/* Análisis de Datos section */}
+          {isOwner &&
+            (collapsed ? (
+              <Link href="/dashboard/analisis-datos/estadistico-avanzado">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    isAnalisisDatosActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                    "justify-center px-3",
+                  )}
+                  style={
+                    isAnalisisDatosActive
+                      ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                      : {}
+                  }
+                >
+                  <Brain className="w-5 h-5 shrink-0" />
+                </div>
+              </Link>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setAnalisisDatosOpen((v) => !v)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    isAnalisisDatosActive ? "border" : "text-gray-400 hover:text-white hover:bg-white/5",
+                  )}
+                  style={
+                    isAnalisisDatosActive
+                      ? { backgroundColor: config.primaryMuted, color: config.primary, borderColor: config.border }
+                      : {}
+                  }
+                >
+                  <Brain className="w-5 h-5 shrink-0" />
+                  <span className="text-sm font-medium flex-1 text-left">Análisis de Datos</span>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform",
+                      effectiveAnalisisDatosOpen ? "rotate-0" : "-rotate-90",
+                    )}
+                  />
+                </button>
+
+                {effectiveAnalisisDatosOpen && (
+                  <div className="mt-1 space-y-1">
+                    {analisisDatosItems.map((item) => {
                       const isActive = pathname === item.href
                       return (
                         <Link key={item.href} href={item.href}>
