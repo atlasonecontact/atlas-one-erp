@@ -106,15 +106,15 @@ const allNavItems = [
   { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
   { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
   { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
-  { href: "/dashboard/kioscos", label: "Kioscos", icon: Building2, ownerOnly: true },
+  { href: "/dashboard/kioscos", label: "SUCURSALES", icon: Building2, ownerOnly: true },
   { href: "/dashboard/empleados", label: "Empleados", icon: Users, permission: "can_manage_employees" },
   { href: "/dashboard/integraciones", label: "Integraciones", icon: Plug, ownerOnly: true },
   { href: "/dashboard/configuracion", label: "Configuración", icon: Settings, ownerOnly: true },
 ]
 
 const comprasSubItems = [
-  { href: "/dashboard/compras", label: "Órdenes", icon: ShoppingBag },
-  { href: "/dashboard/compras/pedidos-internos", label: "Pedidos Internos", icon: PackageSearch },
+  { href: "/dashboard/compras/sub1", label: "Sub Item 1", icon: PackageSearch },
+  { href: "/dashboard/compras/sub2", label: "Sub Item 2", icon: PackageSearch },
 ]
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
