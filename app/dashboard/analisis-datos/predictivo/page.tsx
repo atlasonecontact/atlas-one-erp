@@ -7,6 +7,8 @@ import { Line } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from "recharts"
 
+export const dynamic = "force-dynamic"
+
 // Mock data de predicciones
 const prediccionesData = Array.from({ length: 30 }, (_, i) => ({
   dia: i + 1,
