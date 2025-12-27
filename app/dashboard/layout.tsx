@@ -1,6 +1,8 @@
 "use client"
 
-import type React from "react"
+import { useEffect } from "react"
+
+import type { ReactNode } from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -28,11 +30,25 @@ import {
   ClipboardList,
   DollarSign,
   FileCheck,
+  User,
+  LogOut,
+  Bell,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
 import { cn } from "@/lib/utils"
 import { AtlasLogo } from "@/components/atlas-logo"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { createBrowserClient } from "@supabase/ssr"
 
 function DashboardSidebar() {
   const pathname = usePathname()
@@ -330,12 +346,135 @@ function DashboardSidebar() {
   )
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardHeader() {
+  const { config } = useTheme()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      setLoading(false)
+    })
+  }, [])
+
+  const handleLogout = async () => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+    await supabase.auth.signOut()
+    window.location.href = "/"
+  }
+
+  if (loading) {
+    return (
+      <header className="h-16 border-b bg-[#0a0f1a] border-white/10 flex items-center justify-end px-6">
+        <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+      </header>
+    )
+  }
+
+  const userEmail = user?.email || "usuario@demo.com"
+  const userName = user?.user_metadata?.full_name || userEmail.split("@")[0]
+  const userInitials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+
+  return (
+    <header
+      className="h-16 border-b bg-gradient-to-r from-[#0a0f1a] to-[#0d1420] border-white/10 flex items-center justify-between px-6 shadow-lg"
+      style={{ borderColor: config.border }}
+    >
+      {/* Left side - Breadcrumb or title could go here */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+      </div>
+
+      {/* Right side - User menu and notifications */}
+      <div className="flex items-center gap-3">
+        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+        >
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: config.accent }} />
+        </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-3 hover:bg-white/5 px-3 py-2 h-auto transition-all duration-200"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-white">{userName}</p>
+                <p className="text-xs text-gray-400">{userEmail}</p>
+              </div>
+              <Avatar className="w-10 h-10 ring-2 transition-all duration-200" style={{ ringColor: config.primary }}>
+                <AvatarFallback
+                  className="font-semibold text-sm"
+                  style={{
+                    background: `linear-gradient(135deg, ${config.primary}, ${config.accent})`,
+                    color: "white",
+                  }}
+                >
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-[#0d1420] border-white/10">
+            <DropdownMenuLabel className="text-white">Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem asChild className="text-gray-300 hover:bg-white/5 hover:text-white cursor-pointer">
+              <Link href="/dashboard/configuracion" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Perfil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="text-gray-300 hover:bg-white/5 hover:text-white cursor-pointer">
+              <Link href="/dashboard/configuracion" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Configuración
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  )
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <div className="flex h-screen overflow-hidden">
         <DashboardSidebar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <DashboardHeader />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+        </div>
       </div>
     </ThemeProvider>
   )

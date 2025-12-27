@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import type { Metadata } from "next"
-import { StatCard, FeatureCard, StepCard, PricingCard, TestimonialCard } from "@/components/cards"
+import { StatCard, FeatureCard, StepCard, TestimonialCard } from "@/components/cards"
 
 export const metadata: Metadata = {
   title: "Atlas One - ERP Inteligente para Cadenas de Kioscos",
@@ -346,54 +346,87 @@ export default function LandingPage() {
           id="pricing"
           className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent"
         >
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                Planes que <span className="text-cyan-400">crecen contigo</span>
-              </h2>
-              <p className="text-lg text-gray-400">Comienza gratis. Escala cuando lo necesites. Sin sorpresas.</p>
-            </div>
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="relative">
+              {/* Decorative gradient orbs */}
+              <div
+                className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
+                style={{ background: "radial-gradient(circle, #00ffff 0%, transparent 70%)" }}
+              />
+              <div
+                className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
+                style={{ background: "radial-gradient(circle, #00ffff 0%, transparent 70%)" }}
+              />
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <PricingCard
-                name="Básico"
-                price="Gratis"
-                period="siempre"
-                description="Perfecto para empezar"
-                features={["1 kiosco", "2 empleados", "50 productos", "Reportes básicos", "Soporte por email"]}
-              />
-              <PricingCard
-                name="Profesional"
-                price="$29.99"
-                period="mes"
-                description="Para negocios en crecimiento"
-                features={[
-                  "Hasta 5 kioscos",
-                  "10 empleados por kiosko",
-                  "500 productos",
-                  "Reportes avanzados",
-                  "WhatsApp + Telegram",
-                  "Bots de mensajería",
-                  "Soporte prioritario",
-                ]}
-                popular
-              />
-              <PricingCard
-                name="Empresarial"
-                price="$99.99"
-                period="mes"
-                description="Para cadenas grandes"
-                features={[
-                  "Kioscos ilimitados",
-                  "50 empleados por kiosko",
-                  "5000 productos",
-                  "Reportes premium + IA",
-                  "Todas las integraciones",
-                  "API personalizada",
-                  "Soporte 24/7 dedicado",
-                  "Onboarding personalizado",
-                ]}
-              />
+              <div className="relative z-10 backdrop-blur-sm bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-3xl p-12 shadow-2xl">
+                <div className="mb-8">
+                  <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+                    ¿Listo para{" "}
+                    <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                      transformar
+                    </span>{" "}
+                    tu negocio?
+                  </h2>
+                  <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                    Cada negocio es único. Por eso ofrecemos planes personalizados que se adaptan exactamente a tus
+                    necesidades y presupuesto.
+                  </p>
+                </div>
+
+                <div className="space-y-6 mb-10">
+                  <div className="flex items-center justify-center gap-3 text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <span className="text-lg">Sin contratos a largo plazo</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <span className="text-lg">Implementación incluida</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <span className="text-lg">Soporte técnico dedicado</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <Button asChild size="lg" className="group relative overflow-hidden px-8 py-6 text-lg font-semibold">
+                    <a
+                      href="mailto:contacto@atlasone.com"
+                      className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
+                    >
+                      <span className="relative z-10">Contactanos y cotiza tu plan</span>
+                      <svg
+                        className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 7l5 5m0 0l-5 5m5-5H6"
+                        />
+                      </svg>
+                    </a>
+                  </Button>
+
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="px-8 py-6 text-lg border-white/20 hover:bg-white/5 text-white bg-transparent"
+                  >
+                    <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer">
+                      WhatsApp
+                    </a>
+                  </Button>
+                </div>
+
+                <p className="mt-8 text-sm text-gray-400">
+                  Respuesta en menos de 24 horas • Presupuesto sin compromiso
+                </p>
+              </div>
             </div>
           </div>
         </section>
