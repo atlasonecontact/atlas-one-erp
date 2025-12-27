@@ -477,13 +477,6 @@ function DashboardHeader() {
                 </div>
               </DropdownMenuItem>
             </div>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem
-              asChild
-              className="text-center justify-center text-blue-400 hover:bg-white/5 cursor-pointer"
-            >
-              <Link href="/dashboard/notificaciones">Ver todas las notificaciones</Link>
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
