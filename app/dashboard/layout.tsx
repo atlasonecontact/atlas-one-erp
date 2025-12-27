@@ -33,6 +33,8 @@ import {
   User,
   LogOut,
   Bell,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -49,25 +51,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@supabase/ssr"
+import { Badge } from "@/components/ui/badge"
 
 function DashboardSidebar() {
   const pathname = usePathname()
   const { config } = useTheme()
 
-  const [dashboardOpen, setDashboardOpen] = useState(true)
-  const [finanzasOpen, setFinanzasOpen] = useState(false)
-  const [contabilidadOpen, setContabilidadOpen] = useState(false)
-  const [stockOpen, setStockOpen] = useState(false)
-  const [comprasOpen, setComprasOpen] = useState(false)
-  const [analisisOpen, setAnalisisOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState<string | null>("DASHBOARD")
+
+  const toggleMenu = (menuLabel: string) => {
+    setOpenMenu(openMenu === menuLabel ? null : menuLabel)
+  }
 
   const menuItems = [
     {
       label: "DASHBOARD",
       icon: LayoutDashboard,
       isExpandable: true,
-      isOpen: dashboardOpen,
-      onToggle: () => setDashboardOpen(!dashboardOpen),
       items: [
         { href: "/dashboard/estadisticas/ventas", label: "Ventas", icon: ShoppingCart },
         { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
@@ -79,11 +79,13 @@ function DashboardSidebar() {
       label: "FINANZAS",
       icon: Wallet,
       isExpandable: true,
-      isOpen: finanzasOpen,
-      onToggle: () => setFinanzasOpen(!finanzasOpen),
       items: [
         { href: "/dashboard/estadisticas/finanzas", label: "Cash Flow", icon: TrendingDown },
-        { href: "/dashboard/estadisticas/finanzas/ingresos-tarjetas", label: "Ingresos por Tarjeta", icon: CreditCard },
+        {
+          href: "/dashboard/estadisticas/finanzas/ingresos-tarjetas",
+          label: "Ingresos por Tarjeta",
+          icon: CreditCard,
+        },
         { href: "/dashboard/estadisticas/finanzas/ingresos-wallets", label: "Ingresos por Wallets y QR", icon: QrCode },
       ],
     },
@@ -91,8 +93,6 @@ function DashboardSidebar() {
       label: "CONTABILIDAD",
       icon: Calculator,
       isExpandable: true,
-      isOpen: contabilidadOpen,
-      onToggle: () => setContabilidadOpen(!contabilidadOpen),
       items: [
         { href: "/dashboard/contabilidad/emitir-factura", label: "Emitir Factura", icon: FileText },
         { href: "/dashboard/contabilidad/facturas-emitidas", label: "Facturas Emitidas", icon: FileCheck },
@@ -116,8 +116,6 @@ function DashboardSidebar() {
       label: "STOCK",
       icon: Warehouse,
       isExpandable: true,
-      isOpen: stockOpen,
-      onToggle: () => setStockOpen(!stockOpen),
       items: [
         { href: "/dashboard/stock/central", label: "Stock Central", icon: Warehouse },
         { href: "/dashboard/stock/por-sucursal", label: "Stock por Sucursal", icon: Building2 },
@@ -127,8 +125,6 @@ function DashboardSidebar() {
       label: "COMPRAS",
       icon: ShoppingBag,
       isExpandable: true,
-      isOpen: comprasOpen,
-      onToggle: () => setComprasOpen(!comprasOpen),
       items: [
         { href: "/dashboard/compras/pedidos-internos", label: "Nota de Pedido Interna", icon: ClipboardList },
         { href: "/dashboard/compras", label: "Pedido a Proveedor", icon: ShoppingBasket },
@@ -148,8 +144,6 @@ function DashboardSidebar() {
       label: "ANÁLISIS DE DATOS",
       icon: BarChart3,
       isExpandable: true,
-      isOpen: analisisOpen,
-      onToggle: () => setAnalisisOpen(!analisisOpen),
       items: [
         {
           href: "/dashboard/analisis-datos/estadistico-avanzado",
@@ -171,7 +165,7 @@ function DashboardSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-gradient-to-br from-[#0a0f1a] to-[#0d1420] border-r sticky top-0 shadow-2xl">
       {/* Logo */}
-      <div className="p-4 border-b border-white/10 backdrop-blur-sm">
+      <div className="p-6 border-b border-white/10 backdrop-blur-sm">
         <AtlasLogo variant="horizontal" className="h-8" />
       </div>
 
@@ -180,14 +174,15 @@ function DashboardSidebar() {
         {menuItems.map((item) => {
           if (item.isExpandable && item.items) {
             const hasActiveChild = item.items.some((subItem) => pathname === subItem.href)
+            const isOpen = openMenu === item.label
 
             return (
-              <div key={item.label} className="mb-2">
+              <div key={item.label} className="mb-3">
                 <button
-                  onClick={item.onToggle}
+                  onClick={() => toggleMenu(item.label)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 w-full group relative overflow-hidden",
-                    hasActiveChild || item.isOpen
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 w-full group relative overflow-hidden",
+                    hasActiveChild || isOpen
                       ? "bg-gradient-to-r from-white/10 to-transparent text-white shadow-lg"
                       : "text-gray-400 hover:bg-white/5 hover:text-white",
                   )}
@@ -212,20 +207,17 @@ function DashboardSidebar() {
                   />
                   <span className="flex-1 text-sm font-semibold text-left z-10 tracking-wide">{item.label}</span>
                   <ChevronDown
-                    className={cn(
-                      "w-4 h-4 z-10 transition-transform duration-300",
-                      item.isOpen ? "rotate-180" : "rotate-0",
-                    )}
+                    className={cn("w-4 h-4 z-10 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")}
                   />
                 </button>
 
                 <div
                   className={cn(
                     "overflow-hidden transition-all duration-300 ease-in-out",
-                    item.isOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0",
+                    isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0",
                   )}
                 >
-                  <div className="ml-3 pl-3 border-l-2 border-white/10 space-y-1 py-1">
+                  <div className="ml-4 pl-4 border-l-2 border-white/10 space-y-1 py-2">
                     {item.items.map((subItem) => {
                       const isActive = pathname === subItem.href
                       return (
@@ -233,7 +225,7 @@ function DashboardSidebar() {
                           key={subItem.href}
                           href={subItem.href}
                           className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative overflow-hidden",
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
                             isActive
                               ? "bg-gradient-to-r text-white shadow-md"
                               : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
@@ -272,7 +264,7 @@ function DashboardSidebar() {
               key={item.label}
               href={item.href!}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden mb-1",
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative overflow-hidden mb-2",
                 isActive
                   ? "bg-gradient-to-r text-white shadow-lg"
                   : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
@@ -301,9 +293,9 @@ function DashboardSidebar() {
           )
         })}
 
-        <div className="pt-6 mt-4 border-t border-white/10">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-3">Gestión</h3>
-          <div className="space-y-1">
+        <div className="pt-8 mt-6 border-t border-white/10">
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-4">Gestión</h3>
+          <div className="space-y-2">
             {gestionItems.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -311,7 +303,7 @@ function DashboardSidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative overflow-hidden",
                     isActive
                       ? "bg-gradient-to-r text-white shadow-lg"
                       : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
@@ -350,25 +342,47 @@ function DashboardHeader() {
   const { config } = useTheme()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    setIsOnline(navigator.onLine)
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      )
+
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setUser(user)
+        setLoading(false)
+      })
+    } else {
+      // Si no hay variables de entorno, usar usuario demo
+      setUser({ email: "usuario@demo.com", user_metadata: { full_name: "Usuario Demo" } })
       setLoading(false)
-    })
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+    }
   }, [])
 
   const handleLogout = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
-    await supabase.auth.signOut()
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      )
+      await supabase.auth.signOut()
+    }
     window.location.href = "/"
   }
 
@@ -397,6 +411,18 @@ function DashboardHeader() {
       {/* Left side - Breadcrumb or title could go here */}
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+        <Badge
+          variant={isOnline ? "default" : "secondary"}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1",
+            isOnline
+              ? "bg-green-500/20 text-green-400 border-green-500/30"
+              : "bg-red-500/20 text-red-400 border-red-500/30",
+          )}
+        >
+          {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          <span className="text-xs font-medium">{isOnline ? "Online" : "Offline"}</span>
+        </Badge>
       </div>
 
       {/* Right side - User menu and notifications */}
@@ -453,9 +479,9 @@ function DashboardHeader() {
             <DropdownMenuSeparator className="bg-white/10" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
+              className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer flex items-center gap-2"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-4 h-4" />
               Cerrar Sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -473,7 +499,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <DashboardHeader />
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <main className="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-[#0a0f1a] to-[#0d1420]">{children}</main>
         </div>
       </div>
     </ThemeProvider>
