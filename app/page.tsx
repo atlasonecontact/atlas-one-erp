@@ -391,7 +391,7 @@ export default function LandingPage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <Button asChild size="lg" className="group relative overflow-hidden px-8 py-6 text-lg font-semibold">
                     <a
-                      href="mailto:contacto@atlasone.com"
+                      href="mailto:atlasonecontact@gmail.com"
                       className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
                     >
                       <span className="relative z-10">Contactanos y cotiza tu plan</span>
@@ -417,7 +417,7 @@ export default function LandingPage() {
                     variant="outline"
                     className="px-8 py-6 text-lg border-white/20 hover:bg-white/5 text-white bg-transparent"
                   >
-                    <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer">
+                    <a href="https://wa.me/5491123085611" target="_blank" rel="noopener noreferrer">
                       WhatsApp
                     </a>
                   </Button>
