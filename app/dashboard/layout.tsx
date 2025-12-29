@@ -16,7 +16,6 @@ import {
   BarChart3,
   Settings,
   Building2,
-  Plug,
   Bike,
   TrendingUp,
   ChevronDown,
@@ -34,6 +33,7 @@ import {
   Bell,
   Wifi,
   WifiOff,
+  Clock,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -57,9 +57,14 @@ function DashboardSidebar() {
   const { config } = useTheme()
 
   const [openMenu, setOpenMenu] = useState<string | null>("DASHBOARD")
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>("Ventas")
 
   const toggleMenu = (menuLabel: string) => {
     setOpenMenu(openMenu === menuLabel ? null : menuLabel)
+  }
+
+  const toggleSubMenu = (subMenuLabel: string) => {
+    setOpenSubMenu(openSubMenu === subMenuLabel ? null : subMenuLabel)
   }
 
   const menuItems = [
@@ -67,11 +72,38 @@ function DashboardSidebar() {
       label: "DASHBOARD",
       icon: LayoutDashboard,
       isExpandable: true,
-      items: [
-        { href: "/dashboard/estadisticas/ventas", label: "Ventas", icon: ShoppingCart },
-        { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet },
-        { href: "/dashboard/estadisticas", label: "Inventario", icon: Package },
-        { href: "/dashboard/empleados", label: "Recursos Humanos", icon: Users },
+      subModules: [
+        {
+          label: "Ventas",
+          icon: ShoppingCart,
+          isExpandable: true,
+          items: [
+            { href: "/dashboard/estadisticas/executive-overview", label: "Resumen Ejecutivo", icon: TrendingUp },
+            { href: "/dashboard/estadisticas/ventas/overview", label: "Análisis de Ventas", icon: BarChart3 },
+            { href: "/dashboard/estadisticas/ventas/productividad-horaria", label: "Productividad", icon: Clock },
+            {
+              href: "/dashboard/estadisticas/ventas/comportamiento-compra",
+              label: "Comportamiento y Patrones de Compra",
+              icon: ShoppingBag,
+            },
+            {
+              href: "/dashboard/estadisticas/ventas/desempeno-vendedor",
+              label: "Desempeño por Vendedor",
+              icon: Users,
+            },
+            { href: "/dashboard/estadisticas/ventas/tickets", label: "Tickets y Facturación", icon: FileText },
+          ],
+        },
+        {
+          label: "Finanzas",
+          icon: Wallet,
+          items: [{ href: "/dashboard/estadisticas/finanzas", label: "Dashboard Finanzas", icon: TrendingDown }],
+        },
+        {
+          label: "Stock",
+          icon: Package,
+          items: [{ href: "/dashboard/estadisticas", label: "Dashboard Inventario", icon: Package }],
+        },
       ],
     },
     {
@@ -154,13 +186,6 @@ function DashboardSidebar() {
     },
   ]
 
-  const gestionItems = [
-    { href: "/dashboard/kioscos", label: "SUCURSALES", icon: Building2 },
-    { href: "/dashboard/empleados", label: "EMPLEADOS", icon: Users },
-    { href: "/dashboard/integraciones", label: "INTEGRACIONES", icon: Plug },
-    { href: "/dashboard/configuracion", label: "CONFIGURACIÓN", icon: Settings },
-  ]
-
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-gradient-to-br from-[#0a0f1a] to-[#0d1420] border-r sticky top-0 shadow-2xl">
       {/* Logo */}
@@ -171,6 +196,182 @@ function DashboardSidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-white/10">
         {menuItems.map((item) => {
+          if (item.isExpandable && item.subModules) {
+            const hasActiveChild = item.subModules.some((subModule) =>
+              subModule.items?.some((subItem) => pathname === subItem.href),
+            )
+            const isOpen = openMenu === item.label
+
+            return (
+              <div key={item.label} className="mb-3">
+                {/* Nivel 1: DASHBOARD */}
+                <button
+                  onClick={() => toggleMenu(item.label)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 w-full group relative overflow-hidden",
+                    hasActiveChild || isOpen
+                      ? "bg-gradient-to-r from-white/10 to-transparent text-white shadow-lg"
+                      : "text-gray-400 hover:bg-white/5 hover:text-white",
+                  )}
+                  style={
+                    hasActiveChild
+                      ? {
+                          background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
+                          borderLeft: `3px solid ${config.primary}`,
+                        }
+                      : {}
+                  }
+                >
+                  <div
+                    className={cn(
+                      "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                      "bg-gradient-to-r from-white/5 to-transparent",
+                    )}
+                  />
+                  <item.icon
+                    className="w-5 h-5 shrink-0 z-10 transition-transform duration-300 group-hover:scale-110"
+                    style={hasActiveChild ? { color: config.primary } : {}}
+                  />
+                  <span className="flex-1 text-sm font-semibold text-left z-10 tracking-wide">{item.label}</span>
+                  <ChevronDown
+                    className={cn("w-4 h-4 z-10 transition-transform duration-300", isOpen ? "rotate-180" : "rotate-0")}
+                  />
+                </button>
+
+                {/* Nivel 2: Ventas, Finanzas, Stock */}
+                <div
+                  className={cn(
+                    "overflow-hidden transition-all duration-300 ease-in-out",
+                    isOpen ? "max-h-[600px] opacity-100 mt-2" : "max-h-0 opacity-0",
+                  )}
+                >
+                  <div className="ml-4 pl-4 border-l-2 border-white/10 space-y-2 py-2">
+                    {item.subModules.map((subModule) => {
+                      const hasActiveSubChild = subModule.items?.some((subItem) => pathname === subItem.href)
+                      const isSubOpen = openSubMenu === subModule.label
+
+                      if (subModule.isExpandable && subModule.items) {
+                        return (
+                          <div key={subModule.label}>
+                            <button
+                              onClick={() => toggleSubMenu(subModule.label)}
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full group relative overflow-hidden",
+                                hasActiveSubChild || isSubOpen
+                                  ? "bg-gradient-to-r text-white shadow-md"
+                                  : "text-gray-400 hover:bg-white/5 hover:text-white",
+                              )}
+                              style={
+                                hasActiveSubChild
+                                  ? {
+                                      background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
+                                    }
+                                  : {}
+                              }
+                            >
+                              <subModule.icon
+                                className="w-4 h-4 shrink-0 transition-all duration-200 group-hover:scale-110"
+                                style={hasActiveSubChild ? { color: config.primary } : {}}
+                              />
+                              <span className="flex-1 text-sm font-medium text-left">{subModule.label}</span>
+                              <ChevronDown
+                                className={cn(
+                                  "w-3 h-3 transition-transform duration-200",
+                                  isSubOpen ? "rotate-180" : "rotate-0",
+                                )}
+                              />
+                            </button>
+
+                            {/* Nivel 3: Dashboards específicos */}
+                            <div
+                              className={cn(
+                                "overflow-hidden transition-all duration-200 ease-in-out",
+                                isSubOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0",
+                              )}
+                            >
+                              <div className="ml-4 pl-3 border-l border-white/5 space-y-1 py-1">
+                                {subModule.items.map((subItem) => {
+                                  const isActive = pathname === subItem.href
+                                  return (
+                                    <Link
+                                      key={subItem.href}
+                                      href={subItem.href}
+                                      className={cn(
+                                        "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 group relative overflow-hidden text-sm",
+                                        isActive
+                                          ? "bg-gradient-to-r text-white shadow-sm"
+                                          : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                                      )}
+                                      style={
+                                        isActive
+                                          ? {
+                                              background: `linear-gradient(90deg, ${config.primary}25, transparent)`,
+                                            }
+                                          : {}
+                                      }
+                                    >
+                                      {isActive && (
+                                        <div
+                                          className="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                                          style={{ backgroundColor: config.primary }}
+                                        />
+                                      )}
+                                      <subItem.icon
+                                        className="w-3.5 h-3.5 shrink-0 transition-all duration-200 group-hover:scale-110"
+                                        style={isActive ? { color: config.primary } : {}}
+                                      />
+                                      <span className="text-xs font-medium">{subItem.label}</span>
+                                    </Link>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      // Submódulo sin items anidados
+                      return subModule.items?.map((subItem) => {
+                        const isActive = pathname === subItem.href
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
+                              isActive
+                                ? "bg-gradient-to-r text-white shadow-md"
+                                : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                            )}
+                            style={
+                              isActive
+                                ? {
+                                    background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                                  }
+                                : {}
+                            }
+                          >
+                            {isActive && (
+                              <div
+                                className="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                                style={{ backgroundColor: config.primary }}
+                              />
+                            )}
+                            <subItem.icon
+                              className="w-4 h-4 shrink-0 transition-all duration-200 group-hover:scale-110"
+                              style={isActive ? { color: config.primary } : {}}
+                            />
+                            <span className="text-sm font-medium">{subItem.label}</span>
+                          </Link>
+                        )
+                      })
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           if (item.isExpandable && item.items) {
             const hasActiveChild = item.items.some((subItem) => pathname === subItem.href)
             const isOpen = openMenu === item.label
@@ -291,47 +492,6 @@ function DashboardSidebar() {
             </Link>
           )
         })}
-
-        <div className="pt-8 mt-6 border-t border-white/10">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-4">Gestión</h3>
-          <div className="space-y-2">
-            {gestionItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative overflow-hidden",
-                    isActive
-                      ? "bg-gradient-to-r text-white shadow-lg"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
-                  )}
-                  style={
-                    isActive
-                      ? {
-                          background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
-                          borderLeft: `3px solid ${config.primary}`,
-                        }
-                      : {}
-                  }
-                >
-                  <div
-                    className={cn(
-                      "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                      "bg-gradient-to-r from-white/5 to-transparent",
-                    )}
-                  />
-                  <item.icon
-                    className="w-5 h-5 shrink-0 z-10 transition-transform duration-200 group-hover:scale-110"
-                    style={isActive ? { color: config.primary } : {}}
-                  />
-                  <span className="text-sm font-semibold z-10 tracking-wide">{item.label}</span>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
       </nav>
     </aside>
   )
