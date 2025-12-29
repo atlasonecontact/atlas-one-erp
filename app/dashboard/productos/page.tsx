@@ -6,7 +6,26 @@ import { Input } from "@/components/ui/input"
 import { ProductModal } from "@/components/products/product-modal"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
-import { Search, Plus, Edit2, Trash2, Package, AlertTriangle, Upload, RefreshCw, Percent, CheckSquare, Square, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  Package,
+  AlertTriangle,
+  Upload,
+  RefreshCw,
+  Percent,
+  CheckSquare,
+  Square,
+  ChevronLeft,
+  ChevronRight,
+  Coffee,
+  Candy,
+  Cigarette,
+  Droplet,
+  Beer,
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Product {
@@ -18,6 +37,7 @@ interface Product {
   presentation?: string
   category: string
   subcategory?: string
+  line?: string
   net_content?: number
   unit?: string
   cost: number
@@ -28,11 +48,13 @@ interface Product {
   barcode?: string
   status: string
   kiosko_id?: string
+  supplier?: string
 }
 
 export default function ProductosPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showCSVModal, setShowCSVModal] = useState(false)
   const [showPriceModal, setShowPriceModal] = useState(false)
@@ -91,12 +113,15 @@ export default function ProductosPage() {
       id: p.id,
       name: p.name,
       category: p.category || "Sin categoría",
+      subcategory: p.subcategory,
+      line: p.variant,
       cost: p.cost || 0,
       price: p.price || 0,
       stock: p.stock_quantity || 0,
       barcode: p.barcode,
       status: p.stock_quantity <= 0 ? "inactive" : p.stock_quantity <= 10 ? "low_stock" : "active",
       kiosko_id: p.kiosko_id,
+      supplier: p.supplier,
     }))
     setProducts(mappedProducts)
     setLoading(false)
@@ -140,23 +165,31 @@ export default function ProductosPage() {
 
   const categories = ["all", ...new Set(products.map((p) => p.category))]
 
+  const subcategories =
+    selectedCategory && selectedCategory !== "all"
+      ? Array.from(
+          new Set(products.filter((p) => p.category === selectedCategory && p.subcategory).map((p) => p.subcategory!)),
+        )
+      : []
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === "all" || p.category === selectedCategory
-    return matchesSearch && matchesCategory
+    const matchesSubcategory = !selectedSubcategory || p.subcategory === selectedSubcategory
+    return matchesSearch && matchesCategory && matchesSubcategory
   })
 
   // Pagination
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * PRODUCTS_PER_PAGE,
-    currentPage * PRODUCTS_PER_PAGE
+    currentPage * PRODUCTS_PER_PAGE,
   )
-  
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, selectedSubcategory])
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
@@ -186,6 +219,7 @@ export default function ProductosPage() {
           price: product.price,
           stock_quantity: product.stock,
           barcode: product.barcode,
+          supplier: product.supplier,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingProduct.id)
@@ -206,6 +240,7 @@ export default function ProductosPage() {
           price: product.price,
           stock_quantity: product.stock,
           barcode: product.barcode,
+          supplier: product.supplier,
           is_active: true,
         })
         .select()
@@ -215,13 +250,24 @@ export default function ProductosPage() {
         const mappedProduct: Product = {
           id: data.id,
           name: data.name,
+          sku: product.sku,
+          brand: product.brand,
+          variant: product.variant,
+          presentation: product.presentation,
           category: data.category || "Sin categoría",
+          subcategory: data.subcategory,
+          line: data.variant,
+          net_content: product.net_content,
+          unit: product.unit,
+          barcode: data.barcode,
           cost: data.cost || 0,
+          cost_ex_vat: product.cost_ex_vat,
+          cost_inc_vat: product.cost_inc_vat,
           price: data.price || 0,
           stock: data.stock_quantity || 0,
-          barcode: data.barcode,
           status: data.stock_quantity <= 10 ? "low_stock" : "active",
           kiosko_id: data.kiosko_id,
+          supplier: data.supplier,
         }
         setProducts((prev) => [...prev, mappedProduct])
       }
@@ -237,14 +283,14 @@ export default function ProductosPage() {
     }
 
     setSyncing(true)
-    
+
     // Process in batches for large imports
     const BATCH_SIZE = 100
     const allImported: Product[] = []
-    
+
     for (let i = 0; i < csvProducts.length; i += BATCH_SIZE) {
       const batch = csvProducts.slice(i, i + BATCH_SIZE)
-      
+
       const productsToUpsert = batch.map((p) => ({
         kiosko_id: kioskoId,
         sku: p.sku,
@@ -262,15 +308,16 @@ export default function ProductosPage() {
         cost_inc_vat: p.cost_inc_vat || null,
         price: p.sale_price,
         stock_quantity: p.stock || 0,
+        supplier: p.supplier || null,
         is_active: true,
       }))
 
       // Use upsert with SKU as the conflict key
       const { data, error } = await supabase
         .from("products")
-        .upsert(productsToUpsert, { 
-          onConflict: 'kiosko_id,sku',
-          ignoreDuplicates: false 
+        .upsert(productsToUpsert, {
+          onConflict: "kiosko_id,sku",
+          ignoreDuplicates: false,
         })
         .select()
 
@@ -284,6 +331,7 @@ export default function ProductosPage() {
           presentation: p.presentation,
           category: p.category || "Sin categoría",
           subcategory: p.subcategory,
+          line: p.variant,
           net_content: p.net_content,
           unit: p.unit,
           cost: p.cost || 0,
@@ -294,11 +342,12 @@ export default function ProductosPage() {
           barcode: p.barcode,
           status: p.stock_quantity <= 10 ? "low_stock" : "active",
           kiosko_id: p.kiosko_id,
+          supplier: p.supplier,
         }))
         allImported.push(...mappedProducts)
       }
     }
-    
+
     // Refresh full product list
     await fetchProducts()
     setSyncing(false)
@@ -307,39 +356,35 @@ export default function ProductosPage() {
   // Handle price adjustments
   const handlePriceAdjustment = async (productIds: string[], newPrices: Record<string, number>) => {
     setSyncing(true)
-    
+
     try {
       // Update prices in batches of 50 for better performance
       const BATCH_SIZE = 50
-      
+
       for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
         const batchIds = productIds.slice(i, i + BATCH_SIZE)
-        
+
         // Use Promise.all for parallel updates within each batch
         await Promise.all(
-          batchIds.map(id => 
+          batchIds.map((id) =>
             supabase
               .from("products")
-              .update({ 
-                price: newPrices[id], 
-                updated_at: new Date().toISOString() 
+              .update({
+                price: newPrices[id],
+                updated_at: new Date().toISOString(),
               })
-              .eq("id", id)
-          )
+              .eq("id", id),
+          ),
         )
       }
-      
+
       // Update local state
-      setProducts(prev => prev.map(p => 
-        productIds.includes(p.id) 
-          ? { ...p, price: newPrices[p.id] } 
-          : p
-      ))
-      
+      setProducts((prev) => prev.map((p) => (productIds.includes(p.id) ? { ...p, price: newPrices[p.id] } : p)))
+
       setSelectedProducts([])
     } catch (error) {
-      console.error('Error updating prices:', error)
-      alert('Error al actualizar precios')
+      console.error("Error updating prices:", error)
+      alert("Error al actualizar precios")
     } finally {
       setSyncing(false)
     }
@@ -347,11 +392,7 @@ export default function ProductosPage() {
 
   // Toggle product selection
   const toggleProductSelection = (id: string) => {
-    setSelectedProducts(prev => 
-      prev.includes(id) 
-        ? prev.filter(p => p !== id)
-        : [...prev, id]
-    )
+    setSelectedProducts((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
 
   // Select all filtered products
@@ -359,8 +400,32 @@ export default function ProductosPage() {
     if (selectedProducts.length === filteredProducts.length) {
       setSelectedProducts([])
     } else {
-      setSelectedProducts(filteredProducts.map(p => p.id))
+      setSelectedProducts(filteredProducts.map((p) => p.id))
     }
+  }
+
+  const getCategoryIcon = (category: string) => {
+    const lowerCategory = category.toLowerCase()
+    if (lowerCategory.includes("bebida") && lowerCategory.includes("sin")) return Droplet
+    if (lowerCategory.includes("alcohólica") || lowerCategory.includes("alcoholica")) return Beer
+    if (lowerCategory.includes("conveniencia")) return Coffee
+    if (lowerCategory.includes("golosina") || lowerCategory.includes("snack")) return Candy
+    if (lowerCategory.includes("tabaco")) return Cigarette
+    return Package
+  }
+
+  const getCategoryColor = (category: string) => {
+    const lowerCategory = category.toLowerCase()
+    if (lowerCategory.includes("bebida") && lowerCategory.includes("sin"))
+      return "from-blue-500/30 to-cyan-500/20 border-blue-500/50 text-blue-400"
+    if (lowerCategory.includes("alcohólica") || lowerCategory.includes("alcoholica"))
+      return "from-amber-500/30 to-orange-500/20 border-amber-500/50 text-amber-400"
+    if (lowerCategory.includes("conveniencia"))
+      return "from-purple-500/30 to-pink-500/20 border-purple-500/50 text-purple-400"
+    if (lowerCategory.includes("golosina") || lowerCategory.includes("snack"))
+      return "from-pink-500/30 to-rose-500/20 border-pink-500/50 text-pink-400"
+    if (lowerCategory.includes("tabaco")) return "from-gray-500/30 to-slate-500/20 border-gray-500/50 text-gray-400"
+    return "from-primary/30 to-primary/20 border-primary/50 text-primary"
   }
 
   return (
@@ -412,46 +477,152 @@ export default function ProductosPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Buscar productos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-card border-primary/10 text-foreground placeholder:text-muted-foreground"
-          />
-        </div>
-        {selectedProducts.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/30">
-            <CheckSquare className="w-4 h-4 text-primary" />
-            <span className="text-sm text-primary font-medium">
-              {selectedProducts.length} seleccionado{selectedProducts.length !== 1 ? 's' : ''}
-            </span>
-            <button 
-              onClick={() => setSelectedProducts([])}
-              className="ml-1 text-primary/70 hover:text-primary"
-            >
-              ×
-            </button>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Buscar productos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-card border-primary/10 text-foreground placeholder:text-muted-foreground"
+            />
           </div>
-        )}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map((cat) => (
+          {selectedProducts.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/30">
+              <CheckSquare className="w-4 h-4 text-primary" />
+              <span className="text-sm text-primary font-medium">
+                {selectedProducts.length} seleccionado{selectedProducts.length !== 1 ? "s" : ""}
+              </span>
+              <button onClick={() => setSelectedProducts([])} className="ml-1 text-primary/70 hover:text-primary">
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categorías</span>
+            {selectedCategory !== "all" && (
+              <button
+                onClick={() => {
+                  setSelectedCategory("all")
+                  setSelectedSubcategory(null)
+                }}
+                className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === cat
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-card text-muted-foreground border border-primary/10 hover:text-foreground"
+              onClick={() => {
+                setSelectedCategory("all")
+                setSelectedSubcategory(null)
+              }}
+              className={`group p-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2 ${
+                selectedCategory === "all"
+                  ? "bg-gradient-to-br from-primary/30 to-primary/20 text-primary border-2 border-primary/50 shadow-lg shadow-primary/20 scale-105"
+                  : "bg-card text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:scale-102 hover:shadow-md"
               }`}
             >
-              {cat === "all" ? "Todos" : cat}
+              <Package
+                className={`w-6 h-6 transition-transform group-hover:scale-110 ${selectedCategory === "all" ? "text-primary" : "text-muted-foreground"}`}
+              />
+              <span className="text-xs">Todas</span>
+              <span className="text-xs font-bold">{products.length}</span>
             </button>
-          ))}
+            {categories
+              .filter((cat) => cat !== "all")
+              .map((cat) => {
+                const Icon = getCategoryIcon(cat)
+                const count = products.filter((p) => p.category === cat).length
+                const isSelected = selectedCategory === cat
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat)
+                      setSelectedSubcategory(null)
+                    }}
+                    className={`group p-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2 ${
+                      isSelected
+                        ? `bg-gradient-to-br ${getCategoryColor(cat)} border-2 shadow-lg scale-105`
+                        : "bg-card text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:scale-102 hover:shadow-md"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 transition-transform group-hover:scale-110 ${isSelected ? "" : "text-muted-foreground group-hover:text-primary"}`}
+                    />
+                    <span className="text-xs text-center line-clamp-2 leading-tight">{cat}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${isSelected ? "bg-white/20" : "bg-primary/10"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+          </div>
         </div>
+
+        {subcategories.length > 0 && (
+          <div className="animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={`w-1 h-4 rounded-full bg-gradient-to-b ${getCategoryColor(selectedCategory)}`} />
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                Subcategorías de {selectedCategory}
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setSelectedSubcategory(null)}
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-2 ${
+                  !selectedSubcategory
+                    ? `bg-gradient-to-r ${getCategoryColor(selectedCategory)} border shadow-md`
+                    : "bg-card/50 text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:shadow-sm"
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                Todas las subcategorías
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${!selectedSubcategory ? "bg-white/20" : "bg-primary/10"}`}
+                >
+                  {products.filter((p) => p.category === selectedCategory).length}
+                </span>
+              </button>
+              {subcategories.map((subcat) => {
+                const count = products.filter((p) => p.category === selectedCategory && p.subcategory === subcat).length
+                const isSelected = selectedSubcategory === subcat
+
+                return (
+                  <button
+                    key={subcat}
+                    onClick={() => setSelectedSubcategory(subcat)}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-gradient-to-r from-cyan-500/30 to-teal-500/20 text-cyan-400 border border-cyan-500/50 shadow-md shadow-cyan-500/10"
+                        : "bg-card/50 text-muted-foreground border border-primary/10 hover:text-foreground hover:border-cyan-500/30 hover:shadow-sm"
+                    }`}
+                  >
+                    {subcat}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${isSelected ? "bg-cyan-500/20" : "bg-primary/10"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loading state */}
@@ -466,7 +637,7 @@ export default function ProductosPage() {
             <thead>
               <tr className="border-b border-primary/10">
                 <th className="text-left text-sm font-medium text-muted-foreground p-4 w-10">
-                  <button 
+                  <button
                     onClick={toggleSelectAll}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -478,7 +649,11 @@ export default function ProductosPage() {
                   </button>
                 </th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Precio</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
@@ -489,7 +664,7 @@ export default function ProductosPage() {
             <tbody>
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={12} className="p-8 text-center text-muted-foreground">
                     No hay productos. Agrega uno o importa desde CSV.
                   </td>
                 </tr>
@@ -497,7 +672,7 @@ export default function ProductosPage() {
                 paginatedProducts.map((product) => (
                   <tr key={product.id} className="border-b border-primary/5 hover:bg-muted/50 transition-colors">
                     <td className="p-4">
-                      <button 
+                      <button
                         onClick={() => toggleProductSelection(product.id)}
                         className="text-muted-foreground hover:text-foreground transition-colors"
                       >
@@ -520,9 +695,39 @@ export default function ProductosPage() {
                       </div>
                     </td>
                     <td className="p-4">
+                      {product.brand ? (
+                        <span className="text-sm text-foreground font-medium">{product.brand}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
                       <span className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground">
                         {product.category}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      {product.subcategory ? (
+                        <span className="px-2 py-1 rounded-full text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          {product.subcategory}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {product.line ? (
+                        <span className="text-sm text-muted-foreground">{product.line}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {product.supplier ? (
+                        <span className="text-sm text-muted-foreground">{product.supplier}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </td>
                     <td className="p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
                     <td className="p-4 text-primary font-medium">${product.price.toLocaleString()}</td>
@@ -570,18 +775,20 @@ export default function ProductosPage() {
               )}
             </tbody>
           </table>
-          
+
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between p-4 border-t border-primary/10">
               <div className="text-sm text-muted-foreground">
-                Mostrando {((currentPage - 1) * PRODUCTS_PER_PAGE) + 1} - {Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length} productos
+                Mostrando {(currentPage - 1) * PRODUCTS_PER_PAGE + 1} -{" "}
+                {Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length}{" "}
+                productos
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="border-primary/20"
                 >
@@ -605,7 +812,7 @@ export default function ProductosPage() {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : 'border-primary/20'}`}
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-primary text-primary-foreground" : "border-primary/20"}`}
                       >
                         {pageNum}
                       </Button>
@@ -615,7 +822,7 @@ export default function ProductosPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   className="border-primary/20"
                 >
@@ -647,7 +854,7 @@ export default function ProductosPage() {
         onClose={() => setShowPriceModal(false)}
         products={products}
         selectedProducts={selectedProducts}
-        categories={categories.filter(c => c !== 'all')}
+        categories={categories.filter((c) => c !== "all")}
         onApply={handlePriceAdjustment}
       />
     </div>

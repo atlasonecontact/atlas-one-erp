@@ -34,6 +34,7 @@ import {
   Wifi,
   WifiOff,
   Clock,
+  Plug,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -183,6 +184,29 @@ function DashboardSidebar() {
         },
         { href: "/dashboard/analisis-datos/predictivo", label: "Análisis Predictivo", icon: TrendingUp },
       ],
+    },
+  ]
+
+  const gestionItems = [
+    {
+      label: "SUCURSALES",
+      icon: Building2,
+      href: "/dashboard/kioscos",
+    },
+    {
+      label: "EMPLEADOS",
+      icon: Users,
+      href: "/dashboard/empleados",
+    },
+    {
+      label: "INTEGRACIONES",
+      icon: Plug,
+      href: "/dashboard/integraciones",
+    },
+    {
+      label: "CONFIGURACIÓN",
+      icon: Settings,
+      href: "/dashboard/configuracion",
     },
   ]
 
@@ -493,6 +517,33 @@ function DashboardSidebar() {
           )
         })}
       </nav>
+
+      <div className="mt-auto pt-6 border-t border-slate-800/50">
+        <div className="px-3 mb-3">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gestión</h3>
+        </div>
+        <nav className="space-y-1 px-2">
+          {gestionItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  isActive
+                    ? "bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-400 border border-cyan-500/30"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                )}
+              >
+                <Icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
     </aside>
   )
 }
