@@ -151,6 +151,7 @@ function DashboardSidebar() {
       items: [
         { href: "/dashboard/stock/central", label: "Stock Central", icon: Warehouse },
         { href: "/dashboard/stock/por-sucursal", label: "Stock por Sucursal", icon: Building2 },
+        { href: "/dashboard/stock/recepcion-mercaderia", label: "Recepción de Mercadería", icon: Package },
       ],
     },
     {
@@ -159,7 +160,8 @@ function DashboardSidebar() {
       isExpandable: true,
       items: [
         { href: "/dashboard/compras/pedidos-internos", label: "Nota de Pedido Interna", icon: ClipboardList },
-        { href: "/dashboard/compras", label: "Pedido a Proveedor", icon: ShoppingBasket },
+        { href: "/dashboard/compras/pedido-proveedor", label: "Pedido a Proveedor OC", icon: ShoppingBasket },
+        { href: "/dashboard/compras/pago-proveedores", label: "Pago a Proveedores", icon: DollarSign },
       ],
     },
     {
