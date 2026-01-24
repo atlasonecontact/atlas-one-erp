@@ -35,35 +35,86 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Verify the demo user exists in auth.users
-    const {
-      data: { users },
-      error: usersError,
-    } = await supabase.auth.admin.listUsers()
+    console.log("[v0] Demo API - Verificando usuario:", email)
 
-    if (usersError) {
-      return NextResponse.json(
-        { error: "Error al verificar usuario demo. Contacta al administrador." },
-        { status: 500 },
-      )
+    // Método 1: Intentar verificar el usuario directamente con getUserByEmail
+    try {
+      const { data: userData, error: getUserError } = await supabase.auth.admin.getUserByEmail(email)
+      
+      if (getUserError) {
+        console.log("[v0] Demo API - Error getUserByEmail:", getUserError.message)
+        // Si falla, intentar método alternativo
+      } else if (userData?.user) {
+        console.log("[v0] Demo API - Usuario encontrado con getUserByEmail")
+        return NextResponse.json({
+          ok: true,
+          email,
+          password,
+        })
+      }
+    } catch (err) {
+      console.log("[v0] Demo API - Excepción getUserByEmail:", err)
     }
 
-    const demoUser = users?.find((u) => u.email === email)
+    // Método 2: Verificar en la tabla de usuarios (profiles o similar)
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from("usuarios")
+        .select("id, email")
+        .eq("email", email)
+        .single()
 
-    if (!demoUser) {
-      return NextResponse.json(
-        { error: `No se encontro el usuario demo ${type}. Contacta al administrador.` },
-        { status: 404 },
-      )
+      if (profileError) {
+        console.log("[v0] Demo API - Error verificando en tabla usuarios:", profileError.message)
+      } else if (profileData) {
+        console.log("[v0] Demo API - Usuario encontrado en tabla usuarios")
+        return NextResponse.json({
+          ok: true,
+          email,
+          password,
+        })
+      }
+    } catch (err) {
+      console.log("[v0] Demo API - Excepción verificando tabla usuarios:", err)
     }
 
-    // Return credentials - the login flow will handle kiosco selection
-    return NextResponse.json({
-      ok: true,
-      email,
-      password,
-    })
+    // Método 3: Si ambos fallan, intentar login directo (si el usuario existe, el login funcionará)
+    console.log("[v0] Demo API - Intentando validación mediante signIn")
+    try {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (!signInError && signInData?.user) {
+        console.log("[v0] Demo API - Usuario validado mediante signIn")
+        // Cerrar sesión inmediatamente (solo estábamos probando credenciales)
+        await supabase.auth.signOut()
+        
+        return NextResponse.json({
+          ok: true,
+          email,
+          password,
+        })
+      }
+      
+      console.log("[v0] Demo API - Error en signIn:", signInError?.message)
+    } catch (err) {
+      console.log("[v0] Demo API - Excepción en signIn:", err)
+    }
+
+    // Si todos los métodos fallan, asumir que el usuario no existe
+    console.log("[v0] Demo API - Usuario no encontrado después de todos los intentos")
+    return NextResponse.json(
+      { 
+        error: `El usuario demo "${type}" no está configurado. Por favor usa el login normal o contacta al administrador.`,
+        email,
+        password, // Devolvemos las credenciales por si acaso el usuario quiere intentar manualmente
+      },
+      { status: 404 },
+    )
   } catch (error: unknown) {
+    console.error("[v0] Demo API - Error general:", error)
     const message = error instanceof Error ? error.message : "Error interno"
     return NextResponse.json({ error: message }, { status: 500 })
   }

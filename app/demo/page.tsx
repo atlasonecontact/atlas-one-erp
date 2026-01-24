@@ -69,17 +69,23 @@ export default function DemoPage() {
       })
 
       const ensureJson = await ensureRes.json().catch(() => ({}))
+      
+      // Siempre extraer email y password de la respuesta
+      const email = ensureJson.email as string
+      const password = (ensureJson.password as string) || "Demo123456!"
+      
+      setDemoEmail(email || `demo.${selectedType}@atlasone.com`)
+      setDemoPassword(password)
+
       if (!ensureRes.ok) {
-        throw new Error(ensureJson?.error || "No se pudo preparar la cuenta demo")
+        // Mostrar el error pero continuar intentando login
+        console.warn("Demo API warning:", ensureJson?.error)
+        setStatus("Intentando conectar con las credenciales demo...")
       }
 
-      const email = ensureJson.email as string
-      const password = (ensureJson.password as string) || null
       if (!email) {
-        throw new Error("Respuesta inválida al preparar la cuenta demo")
+        throw new Error("No se pudieron obtener las credenciales demo")
       }
-      setDemoEmail(email)
-      setDemoPassword(password)
 
       setStatus("Conectando con la cuenta demo...")
       const { error: signInError } = await supabase.auth.signInWithPassword({
