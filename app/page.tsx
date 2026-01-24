@@ -1,22 +1,25 @@
+import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
-  BarChart3,
-  ShoppingCart,
-  Package,
-  Users,
-  Shield,
-  TrendingUp,
   Check,
-  Store,
-  Bell,
+  ArrowRight,
   Sparkles,
   Lock,
+  Store,
+  Users,
+  Bell,
   MessageSquare,
+  Package,
+  BarChart3,
+  ShoppingCart,
+  TrendingUp,
+  Shield,
+  Star,
 } from "lucide-react"
 import Image from "next/image"
 import type { Metadata } from "next"
-import { StatCard, FeatureCard, StepCard, TestimonialCard } from "@/components/cards"
+import { TestimonialSection, PricingSection } from "@/components/landing/dynamic-sections"
 
 export const metadata: Metadata = {
   title: "Atlas One - ERP Inteligente para Cadenas de Kioscos",
@@ -60,10 +63,10 @@ export default function LandingPage() {
 
               <div className="hidden md:flex items-center gap-8 text-sm">
                 <Link href="#features" className="text-gray-300 hover:text-white transition-colors">
-                  Características
+                  Caracteristicas
                 </Link>
                 <Link href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">
-                  Cómo funciona
+                  Como funciona
                 </Link>
                 <Link href="#pricing" className="text-gray-300 hover:text-white transition-colors">
                   Precios
@@ -73,12 +76,12 @@ export default function LandingPage() {
               <div className="flex items-center gap-3">
                 <Link href="/login">
                   <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/5">
-                    Iniciar Sesión
+                    Iniciar Sesion
                   </Button>
                 </Link>
-                <Button disabled className="bg-gray-600 text-gray-300 font-medium cursor-not-allowed">
-                  Próximamente
-                </Button>
+                <Link href="/register">
+                  <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-medium">Comenzar Gratis</Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -94,26 +97,25 @@ export default function LandingPage() {
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
-                El sistema de gestión
+                El ERP completo para
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-500">
-                  más inteligente y completo para tu negocio
+                  cadenas de kioscos
                 </span>
               </h1>
 
               <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Gestiona múltiples sucursales, empleados con acceso seguro, inventario sincronizado y recibe
+                Gestiona multiples sucursales, empleados con acceso seguro, inventario sincronizado y recibe
                 notificaciones en WhatsApp y Telegram. Todo desde una sola plataforma.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                <Button
-                  size="lg"
-                  disabled
-                  className="bg-gray-600 hover:bg-gray-600 text-gray-300 font-semibold px-8 h-12 cursor-not-allowed"
-                >
-                  Próximamente
-                </Button>
+                <Link href="/register">
+                  <Button size="lg" className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-8 h-12 group">
+                    Empezar Gratis
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
                 <Link href="/login">
                   <Button
                     size="lg"
@@ -128,7 +130,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400" />
-                  Sin tarjeta de crédito
+                  Sin tarjeta de credito
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400" />
@@ -136,7 +138,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-cyan-400" />
-                  Soporte en español
+                  Soporte en espanol
                 </div>
               </div>
             </div>
@@ -157,7 +159,7 @@ export default function LandingPage() {
                 <div className="relative aspect-[16/9] overflow-hidden rounded-b-xl bg-[#0a0f1e]">
                   <Image
                     src="/images/3.jpg"
-                    alt="Atlas One Dashboard - Panel de control para gestión de kioscos"
+                    alt="Atlas One Dashboard - Panel de control para gestion de kioscos"
                     fill
                     className="object-cover object-top"
                     priority
@@ -172,10 +174,10 @@ export default function LandingPage() {
         {/* Stats Bar - CHANGE: Updated to realistic stats */}
         <section className="py-12 px-4 sm:px-6 lg:px-8 border-y border-white/5 bg-white/[0.02]">
           <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatCard number="Multi-kiosko" label="Gestión centralizada" />
-            <StatCard number="Tiempo real" label="Sincronización de datos" />
+            <StatCard number="Multi-kiosko" label="Gestion centralizada" />
+            <StatCard number="Tiempo real" label="Sincronizacion de datos" />
             <StatCard number="99.9%" label="Uptime garantizado" />
-            <StatCard number="24/7" label="Soporte técnico" />
+            <StatCard number="24/7" label="Soporte tecnico" />
           </div>
         </section>
 
@@ -190,7 +192,7 @@ export default function LandingPage() {
                 </span>
               </h2>
               <p className="text-lg text-gray-400">
-                Una plataforma completa diseñada específicamente para cadenas de kioscos y comercios minoristas
+                Una plataforma completa disenada especificamente para cadenas de kioscos y comercios minoristas
               </p>
             </div>
 
@@ -198,55 +200,55 @@ export default function LandingPage() {
               <FeatureCard
                 icon={<Store />}
                 title="Multi-Kiosko Centralizado"
-                description="Gestiona todas tus sucursales desde un único panel. Cada kiosko con su inventario, empleados y reportes independientes."
+                description="Gestiona todas tus sucursales desde un unico panel. Cada kiosko con su inventario, empleados y reportes independientes."
                 gradient="from-cyan-500/10 to-blue-500/10"
               />
               <FeatureCard
                 icon={<Users />}
-                title="Gestión de Empleados"
-                description="Credenciales auto-generadas por sucursal. Cada empleado registra ventas que se sincronizan en tiempo real con el dashboard del dueño."
+                title="Gestion de Empleados"
+                description="Credenciales auto-generadas por sucursal. Cada empleado registra ventas que se sincronizan en tiempo real con el dashboard del dueno."
                 gradient="from-blue-500/10 to-violet-500/10"
               />
               <FeatureCard
                 icon={<Bell />}
                 title="Notificaciones Inteligentes"
-                description="Recibe notificaciones por WhatsApp y Telegram con cada venta. Verificación de número incluida para seguridad total."
+                description="Recibe notificaciones por WhatsApp y Telegram con cada venta. Verificacion de numero incluida para seguridad total."
                 gradient="from-violet-500/10 to-purple-500/10"
               />
               <FeatureCard
                 icon={<MessageSquare />}
                 title="Bots de Telegram"
-                description="Consulta ventas del día, mes y productos con bajo stock directamente desde tu celular con comandos simples."
+                description="Consulta ventas del dia, mes y productos con bajo stock directamente desde tu celular con comandos simples."
                 gradient="from-purple-500/10 to-pink-500/10"
               />
               <FeatureCard
                 icon={<Package />}
                 title="Control de Inventario"
-                description="Importa productos masivamente por CSV. Monitorea stock por kiosko y recibe alertas automáticas de reposición."
+                description="Importa productos masivamente por CSV. Monitorea stock por kiosko y recibe alertas automaticas de reposicion."
                 gradient="from-pink-500/10 to-rose-500/10"
               />
               <FeatureCard
                 icon={<BarChart3 />}
                 title="Dashboards en Tiempo Real"
-                description="Métricas individuales por sucursal y reportes consolidados de toda la cadena con gráficos interactivos."
+                description="Metricas individuales por sucursal y reportes consolidados de toda la cadena con graficos interactivos."
                 gradient="from-rose-500/10 to-cyan-500/10"
               />
               <FeatureCard
                 icon={<ShoppingCart />}
-                title="Punto de Venta Rápido"
-                description="POS intuitivo optimizado para atención rápida. Las ventas de empleados aparecen al instante en tu dashboard."
+                title="Punto de Venta Rapido"
+                description="POS intuitivo optimizado para atencion rapida. Las ventas de empleados aparecen al instante en tu dashboard."
                 gradient="from-cyan-500/10 to-teal-500/10"
               />
               <FeatureCard
                 icon={<TrendingUp />}
                 title="Insights con IA"
-                description="Predicciones de demanda, recomendaciones de precios y análisis de tendencias para maximizar tus ganancias."
+                description="Predicciones de demanda, recomendaciones de precios y analisis de tendencias para maximizar tus ganancias."
                 gradient="from-teal-500/10 to-emerald-500/10"
               />
               <FeatureCard
                 icon={<Shield />}
                 title="Seguridad Total"
-                description="Row Level Security, credenciales únicas por empleado, verificación telefónica y encriptación end-to-end."
+                description="Row Level Security, credenciales unicas por empleado, verificacion telefonica y encriptacion end-to-end."
                 gradient="from-emerald-500/10 to-cyan-500/10"
               />
             </div>
@@ -270,19 +272,19 @@ export default function LandingPage() {
               <StepCard
                 number="01"
                 title="Crea tu cuenta"
-                description="Regístrate gratis y configura tu primer kiosko. Añade productos importando un CSV o manualmente."
+                description="Registrate gratis y configura tu primer kiosko. Anade productos importando un CSV o manualmente."
                 icon={<Lock />}
               />
               <StepCard
                 number="02"
-                title="Añade empleados"
-                description="Genera credenciales de acceso para cada empleado. Ellos podrán registrar ventas desde su sesión individual."
+                title="Anade empleados"
+                description="Genera credenciales de acceso para cada empleado. Ellos podran registrar ventas desde su sesion individual."
                 icon={<Users />}
               />
               <StepCard
                 number="03"
                 title="Recibe notificaciones"
-                description="Conecta WhatsApp y Telegram. Cada venta te llega al instante con todos los detalles de la transacción."
+                description="Conecta WhatsApp y Telegram. Cada venta te llega al instante con todos los detalles de la transaccion."
                 icon={<Bell />}
               />
             </div>
@@ -296,7 +298,7 @@ export default function LandingPage() {
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 text-sm mb-6">
                   <BarChart3 className="w-4 h-4" />
-                  Visualización en tiempo real
+                  Visualizacion en tiempo real
                 </div>
                 <h3 className="text-3xl sm:text-4xl font-bold mb-4">
                   Decisiones inteligentes con{" "}
@@ -305,14 +307,14 @@ export default function LandingPage() {
                   </span>
                 </h3>
                 <p className="text-lg text-gray-400 mb-8 leading-relaxed">
-                  Dashboards interactivos con gráficos de ventas, ranking de productos, heatmaps de horarios pico e
-                  insights automáticos generados por IA.
+                  Dashboards interactivos con graficos de ventas, ranking de productos, heatmaps de horarios pico e
+                  insights automaticos generados por IA.
                 </p>
                 <ul className="space-y-4">
                   {[
                     "Ventas en tiempo real por kiosko y empleado",
-                    "Gráficos de evolución de últimos 30 días",
-                    "Top 10 productos más vendidos por sucursal",
+                    "Graficos de evolucion de ultimos 30 dias",
+                    "Top 10 productos mas vendidos por sucursal",
                     "Mapas de calor de horarios de mayor actividad",
                     "Predicciones de demanda con machine learning",
                   ].map((item, i) => (
@@ -330,7 +332,7 @@ export default function LandingPage() {
                 <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                   <Image
                     src="/images/4.jpg"
-                    alt="Dashboard de Atlas One con gráficos de ventas en tiempo real"
+                    alt="Dashboard de Atlas One con graficos de ventas en tiempo real"
                     width={600}
                     height={400}
                     className="w-full"
@@ -342,127 +344,10 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing */}
-        <section
-          id="pricing"
-          className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent"
-        >
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="relative">
-              {/* Decorative gradient orbs */}
-              <div
-                className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
-                style={{ background: "radial-gradient(circle, #00ffff 0%, transparent 70%)" }}
-              />
-              <div
-                className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
-                style={{ background: "radial-gradient(circle, #00ffff 0%, transparent 70%)" }}
-              />
-
-              <div className="relative z-10 backdrop-blur-sm bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-3xl p-12 shadow-2xl">
-                <div className="mb-8">
-                  <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-                    ¿Listo para{" "}
-                    <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                      transformar
-                    </span>{" "}
-                    tu negocio?
-                  </h2>
-                  <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                    Cada negocio es único. Por eso ofrecemos planes personalizados que se adaptan exactamente a tus
-                    necesidades y presupuesto.
-                  </p>
-                </div>
-
-                <div className="space-y-6 mb-10">
-                  <div className="flex items-center justify-center gap-3 text-gray-300">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <span className="text-lg">Sin contratos a largo plazo</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-3 text-gray-300">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <span className="text-lg">Implementación incluida</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-3 text-gray-300">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <span className="text-lg">Soporte técnico dedicado</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                  <Button asChild size="lg" className="group relative overflow-hidden px-8 py-6 text-lg font-semibold">
-                    <a
-                      href="mailto:atlasonecontact@gmail.com"
-                      className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
-                    >
-                      <span className="relative z-10">Contactanos y cotiza tu plan</span>
-                      <svg
-                        className="w-5 h-5 transition-transform group-hover:translate-x-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7l5 5m0 0l-5 5m5-5H6"
-                        />
-                      </svg>
-                    </a>
-                  </Button>
-
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="px-8 py-6 text-lg border-white/20 hover:bg-white/5 text-white bg-transparent"
-                  >
-                    <a href="https://wa.me/5491123085611" target="_blank" rel="noopener noreferrer">
-                      WhatsApp
-                    </a>
-                  </Button>
-                </div>
-
-                <p className="mt-8 text-sm text-gray-400">
-                  Respuesta en menos de 24 horas • Presupuesto sin compromiso
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PricingSection />
 
         {/* Social Proof - CHANGE: Updated to generic testimonials */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                Diseñado para <span className="text-cyan-400">dueños como vos</span>
-              </h2>
-              <p className="text-lg text-gray-400">Funcionalidades pensadas para el día a día del comercio minorista</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <TestimonialCard
-                quote="Gestión centralizada de múltiples sucursales sin tener que estar físicamente en cada una. Todo sincronizado en tiempo real."
-                author="Control Total"
-                role="Multi-sucursal"
-                rating={5}
-              />
-              <TestimonialCard
-                quote="Las notificaciones de WhatsApp permiten saber exactamente qué vende cada empleado sin estar físicamente en la sucursal."
-                author="Visibilidad 24/7"
-                role="Notificaciones"
-                rating={5}
-              />
-              <TestimonialCard
-                quote="El bot de Telegram permite consultar ventas del día con un simple comando desde el celular. Súper práctico y rápido."
-                author="Acceso Móvil"
-                role="Bot Telegram"
-                rating={5}
-              />
-            </div>
-          </div>
-        </section>
+        <TestimonialSection />
 
         {/* Final CTA */}
         <section className="py-24 px-4 sm:px-6 lg:px-8">
@@ -473,17 +358,15 @@ export default function LandingPage() {
               <div className="relative z-10">
                 <h2 className="text-3xl sm:text-4xl font-bold mb-4">Transforma tu cadena hoy</h2>
                 <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
-                  Comienza a gestionar tus kioscos de forma inteligente con Atlas One. Configuración rápida y soporte en
-                  español.
+                  Comienza a gestionar tus kioscos de forma inteligente con Atlas One. Configuracion rapida y soporte en
+                  espanol.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Button
-                    size="lg"
-                    disabled
-                    className="bg-gray-600 hover:bg-gray-600 text-gray-300 font-semibold px-8 h-12 cursor-not-allowed"
-                  >
-                    Próximamente
-                  </Button>
+                  <Link href="/register">
+                    <Button size="lg" className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-8 h-12">
+                      Crear Cuenta Gratis
+                    </Button>
+                  </Link>
                   <Link href="/login">
                     <Button
                       size="lg"
@@ -509,13 +392,13 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-8 text-sm text-gray-400">
                 <Link href="#features" className="hover:text-white transition-colors">
-                  Características
+                  Caracteristicas
                 </Link>
                 <Link href="#pricing" className="hover:text-white transition-colors">
                   Precios
                 </Link>
                 <Link href="/login" className="hover:text-white transition-colors">
-                  Iniciar Sesión
+                  Iniciar Sesion
                 </Link>
               </div>
               <p className="text-sm text-gray-500">
@@ -524,6 +407,96 @@ export default function LandingPage() {
             </div>
           </div>
         </footer>
+      </div>
+    </div>
+  )
+}
+
+// Component definitions
+function StatCard({ number, label }: { number: string; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-1">
+        {number}
+      </div>
+      <div className="text-sm text-gray-400">{label}</div>
+    </div>
+  )
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+  gradient,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+  gradient: string
+}) {
+  return (
+    <div
+      className={`group relative rounded-2xl border border-white/5 bg-gradient-to-br ${gradient} p-6 hover:border-white/10 transition-all duration-300`}
+    >
+      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 text-cyan-400 group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-gray-400 leading-relaxed">{description}</p>
+    </div>
+  )
+}
+
+function StepCard({
+  number,
+  title,
+  description,
+  icon,
+}: {
+  number: string
+  title: string
+  description: string
+  icon: React.ReactNode
+}) {
+  return (
+    <div className="relative">
+      <div className="text-7xl font-bold text-white/5 absolute -top-4 -left-2">{number}</div>
+      <div className="relative pt-8">
+        <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-4 text-cyan-400">
+          {icon}
+        </div>
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-gray-400 leading-relaxed">{description}</p>
+      </div>
+    </div>
+  )
+}
+
+// PricingCard and TestimonialCard moved to separate components for better code splitting
+
+function TestimonialCard({
+  quote,
+  author,
+  role,
+  rating,
+}: {
+  quote: string
+  author: string
+  role: string
+  rating: number
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+      <div className="flex items-center gap-1 mb-4">
+        {Array.from({ length: rating }).map((_, i) => (
+          <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+        ))}
+      </div>
+      <p className="text-gray-300 mb-6 leading-relaxed">{`"${quote}"`}</p>
+      <div>
+        <p className="font-semibold">{author}</p>
+        <p className="text-sm text-gray-400">{role}</p>
       </div>
     </div>
   )

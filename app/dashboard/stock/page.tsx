@@ -5,27 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { StockHeatmap } from "@/components/stock/stock-heatmap"
 import { StockMovementModal } from "@/components/stock/stock-movement-modal"
-import {
-  InventoryRotationChart,
-  StockBreakdownChart,
+import { 
+  InventoryRotationChart, 
+  StockBreakdownChart, 
   InventoryKPICards,
-  OutOfStockList,
+  OutOfStockList 
 } from "@/components/stock/inventory-charts"
-import {
-  Search,
-  Download,
-  Package,
-  AlertTriangle,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
+import { 
+  Search, 
+  Download, 
+  Package, 
+  AlertTriangle, 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowDownRight, 
   Plus,
   RefreshCw,
   Filter,
-  Calendar,
-  Warehouse,
-  Building2,
-  Check,
+  Calendar
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -35,8 +32,6 @@ interface Product {
   category: string
   stock_quantity: number
   min_stock_level: number
-  stock_location?: string
-  kiosko_name?: string
 }
 
 interface StockMovement {
@@ -80,25 +75,23 @@ export default function StockPage() {
       return
     }
 
-    // Check if user is an employee
-    const { data: employeeData } = await supabase
-      .from("employees")
-      .select("id, kiosko_id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle()
+    // OPTIMIZACIÓN: Ejecutar queries en paralelo
+    const [employeeResult, kioscosResult] = await Promise.all([
+      supabase
+        .from("employees")
+        .select("id, kiosko_id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+    ])
 
     let targetKioskoId: string | null = null
 
-    if (employeeData) {
-      targetKioskoId = employeeData.kiosko_id
-    } else {
-      // User is owner
-      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
-
-      if (kioscos && kioscos.length > 0) {
-        targetKioskoId = kioscos[0].id
-      }
+    if (employeeResult.data) {
+      targetKioskoId = employeeResult.data.kiosko_id
+    } else if (kioscosResult.data && kioscosResult.data.length > 0) {
+      targetKioskoId = kioscosResult.data[0].id
     }
 
     if (targetKioskoId) {
@@ -118,14 +111,7 @@ export default function StockPage() {
     while (hasMore) {
       const { data, error } = await supabase
         .from("products")
-        .select(`
-          id, 
-          name, 
-          category, 
-          stock_quantity, 
-          min_stock_level,
-          kioscos(name)
-        `)
+        .select("id, name, category, stock_quantity, min_stock_level")
         .eq("kiosko_id", kiosko_id)
         .order("name")
         .range(from, from + pageSize - 1)
@@ -136,16 +122,7 @@ export default function StockPage() {
       }
 
       if (data && data.length > 0) {
-        const mappedProducts = data.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          stock_quantity: p.stock_quantity,
-          min_stock_level: p.min_stock_level,
-          kiosko_name: p.kioscos?.name || "Stock Central",
-          stock_location: p.kioscos?.name ? "Sucursal" : "Stock Central",
-        }))
-        allProducts = [...allProducts, ...mappedProducts]
+        allProducts = [...allProducts, ...data]
         from += pageSize
         hasMore = data.length === pageSize
       } else {
@@ -229,9 +206,15 @@ export default function StockPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Control de Stock</h1>
           <div className="flex items-center gap-4 mt-1">
-            <button className="text-sm text-cyan-400 border-b-2 border-cyan-400 pb-1">Inventario</button>
-            <button className="text-sm text-gray-400 hover:text-white pb-1">Movimientos</button>
-            <button className="text-sm text-gray-400 hover:text-white pb-1">Alertas</button>
+            <button className="text-sm text-cyan-400 border-b-2 border-cyan-400 pb-1">
+              Inventario
+            </button>
+            <button className="text-sm text-gray-400 hover:text-white pb-1">
+              Movimientos
+            </button>
+            <button className="text-sm text-gray-400 hover:text-white pb-1">
+              Alertas
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -240,12 +223,12 @@ export default function StockPage() {
             <Calendar className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-white">Últimos 30 días</span>
           </div>
-
+          
           <Button variant="outline" size="sm" className="border-cyan-500/20 text-gray-400 bg-[#0a0f1a]">
             <Filter className="w-4 h-4 mr-2" />
             Filtrar
           </Button>
-
+          
           <Button
             variant="ghost"
             size="icon"
@@ -260,7 +243,7 @@ export default function StockPage() {
             <Download className="w-4 h-4" />
             Exportar
           </Button>
-          <Button
+          <Button 
             onClick={() => setShowMovementModal(true)}
             className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
           >
@@ -323,13 +306,11 @@ export default function StockPage() {
             </div>
           </div>
           <p className="text-3xl font-bold text-white">
-            {
-              movements.filter((m) => {
-                const movDate = new Date(m.created_at).toDateString()
-                const today = new Date().toDateString()
-                return movDate === today
-              }).length
-            }
+            {movements.filter((m) => {
+              const movDate = new Date(m.created_at).toDateString()
+              const today = new Date().toDateString()
+              return movDate === today
+            }).length}
           </p>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-gray-500">Últimas 24 horas</span>
@@ -514,116 +495,6 @@ export default function StockPage() {
                   <td className="p-4 text-gray-400">{movement.reason || "-"}</td>
                 </tr>
               ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Inventory by Location Table */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
-          <h3 className="text-lg font-semibold text-white">Inventario por Ubicación</h3>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <Input
-              type="text"
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0d1424] border-cyan-500/10 text-white placeholder:text-gray-500"
-            />
-          </div>
-        </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Categoría</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Ubicación</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Stock</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Nivel Mín.</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  Cargando inventario...
-                </td>
-              </tr>
-            ) : products.filter(
-                (p) =>
-                  p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  (p.category || "").toLowerCase().includes(searchQuery.toLowerCase()),
-              ).length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
-                  No se encontraron productos
-                </td>
-              </tr>
-            ) : (
-              products
-                .filter(
-                  (p) =>
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (p.category || "").toLowerCase().includes(searchQuery.toLowerCase()),
-                )
-                .slice(0, 50)
-                .map((product) => {
-                  const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
-                  const isCritical = product.stock_quantity <= 5
-
-                  return (
-                    <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-white font-medium">{product.name}</td>
-                      <td className="p-4 text-gray-400">{product.category || "-"}</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {product.stock_location === "Stock Central" ? (
-                            <Warehouse className="w-4 h-4 text-cyan-400" />
-                          ) : (
-                            <Building2 className="w-4 h-4 text-purple-400" />
-                          )}
-                          <span className="text-gray-300 text-sm">{product.kiosko_name}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={
-                            isCritical
-                              ? "text-red-400 font-semibold"
-                              : isLowStock
-                                ? "text-yellow-400 font-semibold"
-                                : "text-white"
-                          }
-                        >
-                          {product.stock_quantity}
-                        </span>
-                      </td>
-                      <td className="p-4 text-gray-400">{product.min_stock_level || 10}</td>
-                      <td className="p-4">
-                        {isCritical ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-                            <AlertTriangle className="w-3 h-3" />
-                            Crítico
-                          </span>
-                        ) : isLowStock ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
-                            <AlertTriangle className="w-3 h-3" />
-                            Bajo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-                            <Check className="w-3 h-3" />
-                            Normal
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
             )}
           </tbody>
         </table>

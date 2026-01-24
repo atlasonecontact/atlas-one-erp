@@ -3,13 +3,49 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import dynamic from "next/dynamic"
 import { KPICardV2 } from "@/components/dashboard/kpi-card-v2"
-import { AnalyticsChart } from "@/components/dashboard/analytics-chart"
-import { CategoryMixChart } from "@/components/dashboard/category-mix-chart"
-import { FinancialKPIs, InventoryKPIs, PerformanceKPIs, ControlKPIs } from "@/components/dashboard/financial-kpis"
-import { SalesHistory } from "@/components/dashboard/sales-history"
-import { SmartInsights } from "@/components/dashboard/smart-insights"
-import { RecentActivity } from "@/components/dashboard/recent-activity"
+
+// Lazy load componentes pesados para mejorar el tiempo de carga inicial
+const AnalyticsChart = dynamic(() => import("@/components/dashboard/analytics-chart").then(mod => ({ default: mod.AnalyticsChart })), {
+  loading: () => <div className="h-[300px] rounded-xl border border-cyan-500/10 bg-[#0a0f1a] animate-pulse" />,
+  ssr: false
+})
+
+const CategoryMixChart = dynamic(() => import("@/components/dashboard/category-mix-chart").then(mod => ({ default: mod.CategoryMixChart })), {
+  loading: () => <div className="h-[300px] rounded-xl border border-cyan-500/10 bg-[#0a0f1a] animate-pulse" />,
+  ssr: false
+})
+
+const FinancialKPIs = dynamic(() => import("@/components/dashboard/financial-kpis").then(mod => ({ default: mod.FinancialKPIs })), {
+  ssr: false
+})
+
+const InventoryKPIs = dynamic(() => import("@/components/dashboard/financial-kpis").then(mod => ({ default: mod.InventoryKPIs })), {
+  ssr: false
+})
+
+const PerformanceKPIs = dynamic(() => import("@/components/dashboard/financial-kpis").then(mod => ({ default: mod.PerformanceKPIs })), {
+  ssr: false
+})
+
+const ControlKPIs = dynamic(() => import("@/components/dashboard/financial-kpis").then(mod => ({ default: mod.ControlKPIs })), {
+  ssr: false
+})
+
+const SalesHistory = dynamic(() => import("@/components/dashboard/sales-history").then(mod => ({ default: mod.SalesHistory })), {
+  loading: () => <div className="h-[400px] rounded-xl border border-cyan-500/10 bg-[#0a0f1a] animate-pulse" />,
+  ssr: false
+})
+
+const SmartInsights = dynamic(() => import("@/components/dashboard/smart-insights").then(mod => ({ default: mod.SmartInsights })), {
+  ssr: false
+})
+
+const RecentActivity = dynamic(() => import("@/components/dashboard/recent-activity").then(mod => ({ default: mod.RecentActivity })), {
+  loading: () => <div className="h-[300px] rounded-xl border border-cyan-500/10 bg-[#0a0f1a] animate-pulse" />,
+  ssr: false
+})
 import { Plus, Calendar, TrendingUp, Receipt, Package, DollarSign, RefreshCw, Filter } from "lucide-react"
 import Link from "next/link"
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data"

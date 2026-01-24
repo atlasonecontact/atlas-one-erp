@@ -13,12 +13,6 @@ const COMMANDS = {
   STOCK: "/stock",
   AYUDA: "/ayuda",
   HELP: "/help",
-  // Notification preference commands
-  CONFIG: "/config",
-  SILENCIAR: "/silenciar",
-  ACTIVAR: "/activar",
-  RESUMEN: "/resumen",
-  UMBRAL: "/umbral",
 } as const
 
 export async function POST(request: NextRequest) {
@@ -125,26 +119,6 @@ export async function POST(request: NextRequest) {
       case COMMANDS.AYUDA:
       case COMMANDS.HELP:
         await handleAyuda(botToken, chatId, ownerKioscos)
-        break
-
-      case COMMANDS.CONFIG:
-        await handleConfig(botToken, chatId, ownerId, supabase)
-        break
-
-      case COMMANDS.SILENCIAR:
-        await handleSilenciar(botToken, chatId, ownerId, argument, supabase)
-        break
-
-      case COMMANDS.ACTIVAR:
-        await handleActivar(botToken, chatId, ownerId, supabase)
-        break
-
-      case COMMANDS.RESUMEN:
-        await handleResumen(botToken, chatId, ownerId, argument, supabase)
-        break
-
-      case COMMANDS.UMBRAL:
-        await handleUmbral(botToken, chatId, ownerId, argument, supabase)
         break
 
       default:
@@ -456,28 +430,26 @@ async function handleAyuda(botToken: string, chatId: number, ownerKioscos: { id:
 
 <b>Vinculado a:</b> ${ownerKioscos.length} kiosco${ownerKioscos.length !== 1 ? "s" : ""}
 
-<b>📊 Consultas:</b>
-/kioscos - Ver lista de tus kioscos
-/ventas [nombre] - Ventas de hoy
-/mes [nombre] - Resumen del mes
-/stock [nombre] - Stock bajo
+<b>Comandos disponibles:</b>
 
-<b>🔔 Notificaciones:</b>
-/config - Ver y cambiar preferencias
-/silenciar [horas] - Silenciar (ej: 2)
-/activar - Reactivar notificaciones
-/resumen on|off - Resumen diario
-/umbral [monto] - Solo ventas > monto
+/kioscos - Ver lista de tus kioscos
+/ventas - Ventas de hoy (todos)
+/ventas [nombre] - Ventas de un kiosco
+/mes - Resumen del mes actual
+/mes [nombre] - Resumen de un kiosco
+/stock - Stock bajo (todos)
+/stock [nombre] - Stock de un kiosco
+/ayuda - Este mensaje
 
 <b>Ejemplos:</b>
-<code>/ventas Centro</code> - Ventas de "Kiosco Centro"
-<code>/silenciar 4</code> - Silenciar 4 horas
-<code>/umbral 5000</code> - Solo ventas > $5000
+- <code>/ventas</code> - Resumen de todos
+- <code>/ventas Centro</code> - Solo "Kiosco Centro"
+- <code>/mes</code> - Ventas del mes
+- <code>/stock Estacion</code> - Stock de "Kiosco Estacion"
 
 <b>Notificaciones automaticas:</b>
-✅ Cada venta
-✅ Alertas de stock bajo
-📊 Resumen diario (opcional)
+- Cada venta que hagas
+- Alertas de stock bajo
 
 <b>Problemas?</b>
 soporte@atlasone.app
@@ -500,20 +472,6 @@ async function handleCallbackQuery(botToken: string, query: any) {
 
   if (!chatId) return
 
-  // Get owner for config callbacks
-  const supabase = createAdminClient()
-  let ownerId: string | null = null
-
-  const { data: ownerProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("telegram_chat_id", chatId.toString())
-    .maybeSingle()
-
-  if (ownerProfile) {
-    ownerId = ownerProfile.id
-  }
-
   // Handle different callback data
   switch (data) {
     case "ventas_hoy":
@@ -525,69 +483,6 @@ async function handleCallbackQuery(botToken: string, query: any) {
     case "mis_kioscos":
       await sendMessage(botToken, chatId, "Usa /kioscos para ver tus kioscos.")
       break
-
-    // Config callbacks
-    case "config_mute_1h":
-      if (ownerId) {
-        const mutedUntil = new Date(Date.now() + 1 * 60 * 60 * 1000)
-        await supabase.from("notification_preferences").upsert({
-          profile_id: ownerId,
-          kiosko_id: null,
-          is_muted: true,
-          muted_until: mutedUntil.toISOString(),
-        }, { onConflict: "profile_id,kiosko_id" })
-        await sendMessage(botToken, chatId, `🔇 Silenciado por 1 hora.\nUsa /activar para reactivar.`)
-      }
-      break
-
-    case "config_mute_8h":
-      if (ownerId) {
-        const mutedUntil = new Date(Date.now() + 8 * 60 * 60 * 1000)
-        await supabase.from("notification_preferences").upsert({
-          profile_id: ownerId,
-          kiosko_id: null,
-          is_muted: true,
-          muted_until: mutedUntil.toISOString(),
-        }, { onConflict: "profile_id,kiosko_id" })
-        await sendMessage(botToken, chatId, `🔇 Silenciado por 8 horas.\nUsa /activar para reactivar.`)
-      }
-      break
-
-    case "config_unmute":
-      if (ownerId) {
-        await supabase.from("notification_preferences").upsert({
-          profile_id: ownerId,
-          kiosko_id: null,
-          is_muted: false,
-          muted_until: null,
-        }, { onConflict: "profile_id,kiosko_id" })
-        await sendMessage(botToken, chatId, `🔔 Notificaciones activadas.`)
-      }
-      break
-
-    case "config_toggle_summary":
-      if (ownerId) {
-        const { data: currentPrefs } = await supabase
-          .from("notification_preferences")
-          .select("notify_daily_summary")
-          .eq("profile_id", ownerId)
-          .is("kiosko_id", null)
-          .maybeSingle()
-
-        const newValue = !(currentPrefs?.notify_daily_summary ?? false)
-        await supabase.from("notification_preferences").upsert({
-          profile_id: ownerId,
-          kiosko_id: null,
-          notify_daily_summary: newValue,
-        }, { onConflict: "profile_id,kiosko_id" })
-
-        if (newValue) {
-          await sendMessage(botToken, chatId, `📊 Resumen diario <b>activado</b>.\nRecibiras un resumen a las 20:00hs.`)
-        } else {
-          await sendMessage(botToken, chatId, `📊 Resumen diario <b>desactivado</b>.`)
-        }
-      }
-      break
   }
 }
 
@@ -597,178 +492,6 @@ async function sendNotLinkedMessage(botToken: string, chatId: number) {
     chatId,
     `No encontre ningun kiosco vinculado a este chat.\n\n<b>Tu Chat ID:</b> <code>${chatId}</code>\n\n<b>Pasos para vincular:</b>\n1. Abri Atlas ONE\n2. Anda a Configuracion - Notificaciones\n3. Pega el Chat ID\n4. Presiona "Probar Telegram"\n5. Guarda los cambios\n\nDespues de eso, usa /start para verificar.`,
   )
-}
-
-// ============================================================================
-// Notification Preference Commands
-// ============================================================================
-
-async function handleConfig(botToken: string, chatId: number, ownerId: string | null, supabase: any) {
-  if (!ownerId) {
-    await sendNotLinkedMessage(botToken, chatId)
-    return
-  }
-
-  // Get current preferences
-  const { data: prefs } = await supabase
-    .from("notification_preferences")
-    .select("*")
-    .eq("profile_id", ownerId)
-    .is("kiosko_id", null)
-    .maybeSingle()
-
-  const notifySales = prefs?.notify_sales ?? true
-  const notifyLowStock = prefs?.notify_low_stock ?? true
-  const notifyDailySummary = prefs?.notify_daily_summary ?? false
-  const minSaleAmount = prefs?.min_sale_amount ?? 0
-  const isMuted = prefs?.is_muted ?? false
-  const summaryTime = prefs?.summary_time ?? "20:00"
-
-  const message = `
-<b>Configuracion de Notificaciones</b>
-
-<b>Estado:</b> ${isMuted ? "🔇 Silenciado" : "🔔 Activo"}
-
-<b>Notificaciones activas:</b>
-${notifySales ? "✅" : "❌"} Ventas ${minSaleAmount > 0 ? `(> $${minSaleAmount})` : "(todas)"}
-${notifyLowStock ? "✅" : "❌"} Stock bajo
-${notifyDailySummary ? "✅" : "❌"} Resumen diario ${notifyDailySummary ? `(${summaryTime}hs)` : ""}
-
-<b>Comandos disponibles:</b>
-/silenciar [horas] - Silenciar (ej: /silenciar 2)
-/activar - Reactivar notificaciones
-/resumen on|off - Resumen diario
-/umbral [monto] - Solo ventas > monto
-
-<b>Ejemplos:</b>
-<code>/silenciar 4</code> - Silenciar 4 horas
-<code>/umbral 5000</code> - Solo ventas > $5000
-<code>/umbral 0</code> - Todas las ventas
-<code>/resumen on</code> - Activar resumen diario
-  `.trim()
-
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: isMuted ? "🔔 Activar" : "🔇 Silenciar 1h", callback_data: isMuted ? "config_unmute" : "config_mute_1h" },
-        { text: "🔇 Silenciar 8h", callback_data: "config_mute_8h" },
-      ],
-      [
-        { text: notifyDailySummary ? "📊 Desactivar Resumen" : "📊 Activar Resumen", callback_data: "config_toggle_summary" },
-      ],
-    ],
-  }
-
-  await sendMessage(botToken, chatId, message, keyboard)
-}
-
-async function handleSilenciar(botToken: string, chatId: number, ownerId: string | null, hours: string, supabase: any) {
-  if (!ownerId) {
-    await sendNotLinkedMessage(botToken, chatId)
-    return
-  }
-
-  const hoursNum = parseInt(hours) || 1
-  const mutedUntil = new Date(Date.now() + hoursNum * 60 * 60 * 1000)
-
-  // Upsert preference
-  await supabase
-    .from("notification_preferences")
-    .upsert({
-      profile_id: ownerId,
-      kiosko_id: null,
-      is_muted: true,
-      muted_until: mutedUntil.toISOString(),
-    }, {
-      onConflict: "profile_id,kiosko_id",
-    })
-
-  await sendMessage(
-    botToken,
-    chatId,
-    `🔇 <b>Notificaciones silenciadas</b>\n\nNo recibiras notificaciones hasta las ${mutedUntil.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}.\n\nUsa /activar para reactivar antes.`
-  )
-}
-
-async function handleActivar(botToken: string, chatId: number, ownerId: string | null, supabase: any) {
-  if (!ownerId) {
-    await sendNotLinkedMessage(botToken, chatId)
-    return
-  }
-
-  await supabase
-    .from("notification_preferences")
-    .upsert({
-      profile_id: ownerId,
-      kiosko_id: null,
-      is_muted: false,
-      muted_until: null,
-    }, {
-      onConflict: "profile_id,kiosko_id",
-    })
-
-  await sendMessage(botToken, chatId, `🔔 <b>Notificaciones activadas</b>\n\nVolveras a recibir todas las notificaciones.`)
-}
-
-async function handleResumen(botToken: string, chatId: number, ownerId: string | null, onOff: string, supabase: any) {
-  if (!ownerId) {
-    await sendNotLinkedMessage(botToken, chatId)
-    return
-  }
-
-  const enable = onOff.toLowerCase() === "on" || onOff.toLowerCase() === "si" || onOff === "1"
-  const disable = onOff.toLowerCase() === "off" || onOff.toLowerCase() === "no" || onOff === "0"
-
-  if (!enable && !disable) {
-    await sendMessage(botToken, chatId, `Uso: <code>/resumen on</code> o <code>/resumen off</code>`)
-    return
-  }
-
-  await supabase
-    .from("notification_preferences")
-    .upsert({
-      profile_id: ownerId,
-      kiosko_id: null,
-      notify_daily_summary: enable,
-    }, {
-      onConflict: "profile_id,kiosko_id",
-    })
-
-  if (enable) {
-    await sendMessage(botToken, chatId, `📊 <b>Resumen diario activado</b>\n\nRecibiras un resumen de ventas todos los dias a las 20:00hs.`)
-  } else {
-    await sendMessage(botToken, chatId, `📊 <b>Resumen diario desactivado</b>\n\nYa no recibiras el resumen diario.`)
-  }
-}
-
-async function handleUmbral(botToken: string, chatId: number, ownerId: string | null, amount: string, supabase: any) {
-  if (!ownerId) {
-    await sendNotLinkedMessage(botToken, chatId)
-    return
-  }
-
-  const amountNum = parseFloat(amount.replace(/[^0-9.]/g, "")) || 0
-
-  await supabase
-    .from("notification_preferences")
-    .upsert({
-      profile_id: ownerId,
-      kiosko_id: null,
-      min_sale_amount: amountNum,
-      notify_large_sales: amountNum > 0,
-    }, {
-      onConflict: "profile_id,kiosko_id",
-    })
-
-  if (amountNum > 0) {
-    await sendMessage(
-      botToken,
-      chatId,
-      `💰 <b>Umbral configurado</b>\n\nSolo recibiras notificaciones de ventas mayores a $${amountNum.toLocaleString("es-AR")}.\n\nUsa <code>/umbral 0</code> para recibir todas.`
-    )
-  } else {
-    await sendMessage(botToken, chatId, `💰 <b>Umbral eliminado</b>\n\nRecibiras notificaciones de todas las ventas.`)
-  }
 }
 
 async function sendMessage(botToken: string, chatId: number, text: string, replyMarkup?: any) {

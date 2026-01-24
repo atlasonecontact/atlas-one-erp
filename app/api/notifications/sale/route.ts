@@ -22,24 +22,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kiosko not found" }, { status: 404 })
     }
 
-    // Check user notification preferences
-    const { data: prefs } = await supabase
-      .from("notification_preferences")
-      .select("*")
-      .eq("profile_id", kiosko.owner_id)
-      .or(`kiosko_id.eq.${kioskoId},kiosko_id.is.null`)
-      .order("kiosko_id", { nullsFirst: false })
-      .limit(1)
-      .maybeSingle()
-
-    // Check if notifications should be sent based on preferences
-    const shouldNotify = checkNotificationPreferences(prefs, total, paymentMethod)
-    
-    if (!shouldNotify) {
-      console.log("[v0] Sale notification skipped due to preferences:", { saleId, kioskoId })
-      return NextResponse.json({ success: true, notifications: [], skipped: true, reason: "preferences" })
-    }
-
     // Get notification config for kiosko
     const { data: notif, error: notifError } = await supabase
       .from("notification_configs")
@@ -65,15 +47,15 @@ export async function POST(request: NextRequest) {
     }).format(new Date())
 
     const message = `
-🛒 <b>Nueva Venta - ${kiosko.name}</b>
+  🛒 <b>Nueva Venta - ${kiosko.name}</b>
 
-💰 Total: <b>$${total.toLocaleString()}</b>
-📦 Items: ${items} (${itemsSummary})
-💳 Método: ${paymentMethod}
-${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
-🕐 ${formattedTimestamp}
+  💰 Total: <b>$${total.toLocaleString()}</b>
+  📦 Items: ${items} (${itemsSummary})
+  💳 Método: ${paymentMethod}
+  ${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
+  🕐 ${formattedTimestamp}
 
-#${saleId}
+  #${saleId}
     `.trim()
 
     const notifications = []
@@ -159,75 +141,4 @@ ${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
     console.error("[v0] Sale notification error:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-}
-/**
- * Check if notification should be sent based on user preferences
- */
-function checkNotificationPreferences(
-  prefs: any,
-  saleAmount: number,
-  paymentMethod: string
-): boolean {
-  // No preferences = send all notifications (default behavior)
-  if (!prefs) return true
-
-  // Check if muted
-  if (prefs.is_muted) {
-    // Check if mute has expired
-    if (prefs.muted_until) {
-      const mutedUntil = new Date(prefs.muted_until)
-      if (mutedUntil > new Date()) {
-        return false // Still muted
-      }
-    } else {
-      return false // Permanently muted
-    }
-  }
-
-  // Check quiet hours
-  if (prefs.quiet_hours_start && prefs.quiet_hours_end) {
-    const now = new Date()
-    const currentHour = now.getHours()
-    const currentMinutes = now.getMinutes()
-    const currentTimeMinutes = currentHour * 60 + currentMinutes
-
-    const [startHour, startMin] = prefs.quiet_hours_start.split(":").map(Number)
-    const [endHour, endMin] = prefs.quiet_hours_end.split(":").map(Number)
-    const startMinutes = startHour * 60 + startMin
-    const endMinutes = endHour * 60 + endMin
-
-    if (startMinutes < endMinutes) {
-      // Normal range (e.g., 09:00 to 18:00)
-      if (currentTimeMinutes >= startMinutes && currentTimeMinutes <= endMinutes) {
-        return false
-      }
-    } else {
-      // Wrapping range (e.g., 22:00 to 08:00)
-      if (currentTimeMinutes >= startMinutes || currentTimeMinutes <= endMinutes) {
-        return false
-      }
-    }
-  }
-
-  // Check if sales notifications are enabled
-  if (!prefs.notify_sales) {
-    return false
-  }
-
-  // Check sale amount threshold
-  if (prefs.notify_large_sales && prefs.min_sale_amount > 0) {
-    if (saleAmount < prefs.min_sale_amount) {
-      return false
-    }
-  }
-
-  // Check payment type filter
-  if (prefs.notify_payment_type && prefs.payment_types && prefs.payment_types.length > 0) {
-    const normalizedPaymentMethod = paymentMethod?.toLowerCase() || ""
-    if (!prefs.payment_types.some((pt: string) => normalizedPaymentMethod.includes(pt.toLowerCase()))) {
-      return false
-    }
-  }
-
-  return true
 }
