@@ -251,9 +251,9 @@ export default function LoginPage() {
             <div className="mt-6 sm:mt-8 pt-6 border-t border-cyan-500/10 text-center">
               <p className="text-sm sm:text-base text-gray-400">
                 ¿No tienes cuenta?{" "}
-                <Link href="/register" className="text-cyan-400 hover:text-cyan-300 font-medium">
-                  Regístrate gratis
-                </Link>
+                <span className="text-gray-500 font-medium cursor-not-allowed">
+                  Próximamente
+                </span>
               </p>
             </div>
           </div>
