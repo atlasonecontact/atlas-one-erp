@@ -22,8 +22,9 @@ export async function POST(req: Request) {
     const rejectUrl = `${baseUrl}/api/webhooks/approve-user?userId=${userId}&action=reject&secret=${process.env.CRON_SECRET || 'default-secret'}`;
 
     const { data, error } = await resend.emails.send({
-      from: 'Atlas One <onboarding@resend.dev>', // Update this if you have a custom domain
-      to: ['atlasonecontact@gmail.com'],
+      from: 'Atlas One <onboarding@resend.dev>',
+      to: ['lic.germancardenas@gmail.com'],
+      replyTo: 'atlasonecontact@gmail.com',
       subject: `Nuevo Usuario Registrado: ${businessName} (${name})`,
       html: `
         <h1>Nuevo Registro en Atlas One</h1>
