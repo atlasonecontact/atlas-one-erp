@@ -37,10 +37,35 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    return NextResponse.redirect(url)
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+     if (!user) {
+        const url = request.nextUrl.clone()
+        url.pathname = "/login"
+        return NextResponse.redirect(url)
+     }
+
+     // Check profile status
+     const { data: profile } = await supabase
+       .from('profiles')
+       .select('access_status')
+       .eq('id', user.id)
+       .single()
+
+     const isAdmin = user.email === 'atlasonecontact@gmail.com';
+
+     if (profile?.access_status === 'pending' && !isAdmin) {
+       const url = request.nextUrl.clone()
+       url.pathname = "/pending-approval"
+       return NextResponse.redirect(url)
+     }
+
+     if (profile?.access_status === 'rejected' && !isAdmin) {
+        // For rejected users, we might want to sign them out or show error
+        const url = request.nextUrl.clone()
+        url.pathname = "/login"
+        url.searchParams.set('error', 'account_rejected')
+        return NextResponse.redirect(url)
+     }
   }
 
   // Redirect logged-in users away from auth pages
