@@ -242,9 +242,9 @@ function DashboardSidebar() {
                   style={
                     hasActiveChild
                       ? {
-                          background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
-                          borderLeft: `3px solid ${config.primary}`,
-                        }
+                        background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
+                        borderLeft: `3px solid ${config.primary}`,
+                      }
                       : {}
                   }
                 >
@@ -290,8 +290,8 @@ function DashboardSidebar() {
                               style={
                                 hasActiveSubChild
                                   ? {
-                                      background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
-                                    }
+                                    background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
+                                  }
                                   : {}
                               }
                             >
@@ -331,8 +331,8 @@ function DashboardSidebar() {
                                       style={
                                         isActive
                                           ? {
-                                              background: `linear-gradient(90deg, ${config.primary}25, transparent)`,
-                                            }
+                                            background: `linear-gradient(90deg, ${config.primary}25, transparent)`,
+                                          }
                                           : {}
                                       }
                                     >
@@ -372,8 +372,8 @@ function DashboardSidebar() {
                             style={
                               isActive
                                 ? {
-                                    background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
-                                  }
+                                  background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                                }
                                 : {}
                             }
                           >
@@ -415,9 +415,9 @@ function DashboardSidebar() {
                   style={
                     hasActiveChild
                       ? {
-                          background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
-                          borderLeft: `3px solid ${config.primary}`,
-                        }
+                        background: `linear-gradient(90deg, ${config.primary}15, transparent)`,
+                        borderLeft: `3px solid ${config.primary}`,
+                      }
                       : {}
                   }
                 >
@@ -459,8 +459,8 @@ function DashboardSidebar() {
                           style={
                             isActive
                               ? {
-                                  background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
-                                }
+                                background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                              }
                               : {}
                           }
                         >
@@ -498,9 +498,9 @@ function DashboardSidebar() {
               style={
                 isActive
                   ? {
-                      background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
-                      borderLeft: `3px solid ${config.primary}`,
-                    }
+                    background: `linear-gradient(90deg, ${config.primary}20, transparent)`,
+                    borderLeft: `3px solid ${config.primary}`,
+                  }
                   : {}
               }
             >
@@ -572,10 +572,37 @@ function DashboardHeader() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       )
 
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      const checkUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          // Check profile status
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('access_status')
+            .eq('id', user.id)
+            .single()
+
+          // Admin bypass
+          const isAdmin = user.email === 'atlasonecontact@gmail.com';
+
+          if (profile?.access_status === 'pending' && !isAdmin) {
+            window.location.href = '/pending-approval';
+            return;
+          }
+
+          if (profile?.access_status === 'rejected' && !isAdmin) {
+            await supabase.auth.signOut();
+            window.location.href = '/login?error=account_rejected';
+            return;
+          }
+        }
+
         setUser(user)
         setLoading(false)
-      })
+      }
+
+      checkUser()
     } else {
       // Si no hay variables de entorno, usar usuario demo
       setUser({ email: "usuario@demo.com", user_metadata: { full_name: "Usuario Demo" } })
@@ -650,8 +677,7 @@ function DashboardHeader() {
             >
               <Bell className="w-5 h-5" />
               <span
-                className="absolute top-1 right-1 w-2 h-2 rounded-full"
-                style={{ backgroundColor: config.accent }}
+                className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500"
               />
             </Button>
           </DropdownMenuTrigger>
@@ -704,11 +730,11 @@ function DashboardHeader() {
                 <p className="text-sm font-medium text-white">{userName}</p>
                 <p className="text-xs text-gray-400">{userEmail}</p>
               </div>
-              <Avatar className="w-10 h-10 ring-2 transition-all duration-200" style={{ ringColor: config.primary }}>
+              <Avatar className="w-10 h-10 ring-2 ring-[var(--primary)] transition-all duration-200">
                 <AvatarFallback
                   className="font-semibold text-sm"
                   style={{
-                    background: `linear-gradient(135deg, ${config.primary}, ${config.accent})`,
+                    background: `linear-gradient(135deg, ${config.primary}, ${config.primaryHover})`,
                     color: "white",
                   }}
                 >

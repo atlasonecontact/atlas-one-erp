@@ -95,10 +95,27 @@ export default function RegisterPage() {
           full_name: formData.name,
           business_name: formData.businessName,
           role: "owner",
+          access_status: "pending", // Force pending status
         })
 
         if (profileError) {
           console.error("[v0] Profile creation error:", profileError)
+        } else {
+          // Notify admin
+          try {
+            await fetch('/api/notify-admin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: formData.email,
+                name: formData.name,
+                businessName: formData.businessName,
+                userId: authData.user.id
+              })
+            });
+          } catch (notifyError) {
+            console.error("Failed to notify admin:", notifyError);
+          }
         }
       }
 
