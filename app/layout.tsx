@@ -8,11 +8,11 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: {
-    default: "Atlas One - ERP para Cadenas de Kioscos",
+    default: "Atlas One - ERP para Cadenas de Sucursales",
     template: "%s | Atlas One",
   },
   description:
-    "Sistema de gestión integral para cadenas de kioscos y minimarkets. Controla ventas, inventario, empleados y múltiples sucursales con notificaciones en WhatsApp y Telegram.",
+    "Sistema de gestión integral para cadenas de sucursales y minimarkets. Controla ventas, inventario, empleados y múltiples sucursales con notificaciones en WhatsApp y Telegram.",
   keywords: [
     "ERP kioscos",
     "sistema punto de venta",
