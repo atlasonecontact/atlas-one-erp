@@ -48,78 +48,21 @@ export function removeQueuedSale(id: string) {
   setQueuedSales(queue)
 }
 
-function createSaleInsertPayload(sale: QueuedSale) {
+function buildSalePayload(sale: QueuedSale) {
   return {
     kiosko_id: sale.kioskoId,
     employee_id: sale.employeeId,
     sale_number: sale.saleNumber,
     total_amount: sale.totalAmount,
     payment_method: sale.paymentMethod,
+    // Timestamp original de la venta (offline), no el de sincronización
+    created_at: new Date(sale.createdAt).toISOString(),
+    items: sale.items.map((item) => ({
+      product_id: item.productId,
+      quantity: item.quantity,
+      unit_price: item.unitPrice, // Precio histórico al momento de la venta
+    })),
   }
-}
-
-async function ensureSaleId(supabase: any, sale: QueuedSale): Promise<string> {
-  // Try find existing sale by stable sale_number for idempotency
-  const { data: existing, error: existingError } = await supabase
-    .from("sales")
-    .select("id")
-    .eq("sale_number", sale.saleNumber)
-    .maybeSingle()
-
-  if (existingError) throw existingError
-  if (existing?.id) return existing.id
-
-  const { data: created, error: createError } = await supabase
-    .from("sales")
-    .insert(createSaleInsertPayload(sale))
-    .select("id")
-    .single()
-
-  if (createError) throw createError
-  return created.id
-}
-
-async function ensureSaleItems(supabase: any, saleId: string, sale: QueuedSale) {
-  // Avoid duplicating items if a previous flush partially succeeded
-  const { data: existingItems, error: existingError } = await supabase
-    .from("sale_items")
-    .select("id")
-    .eq("sale_id", saleId)
-    .limit(1)
-
-  if (existingError) throw existingError
-  if (existingItems && existingItems.length > 0) return
-
-  const saleItems = sale.items.map((item) => ({
-    sale_id: saleId,
-    product_id: item.productId,
-    quantity: item.quantity,
-    unit_price: item.unitPrice,
-    subtotal: item.unitPrice * item.quantity,
-  }))
-
-  const { error: itemsError } = await supabase.from("sale_items").insert(saleItems)
-  if (itemsError) throw itemsError
-}
-
-async function decrementStockSafely(supabase: any, item: QueuedSaleItem) {
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .select("stock_quantity")
-    .eq("id", item.productId)
-    .single()
-
-  if (productError) throw productError
-
-  const current = Number(product?.stock_quantity ?? 0)
-  const next = Math.max(0, current - item.quantity)
-
-  const { error: stockError } = await supabase
-    .from("products")
-    .update({ stock_quantity: next, updated_at: new Date().toISOString() })
-    .eq("id", item.productId)
-
-  if (stockError) throw stockError
 }
 
 export async function flushQueuedSales(supabase: any): Promise<{ flushed: number; failed: number } | null> {
@@ -132,11 +75,10 @@ export async function flushQueuedSales(supabase: any): Promise<{ flushed: number
 
   for (const sale of queue) {
     try {
-      const saleId = await ensureSaleId(supabase, sale)
-      await ensureSaleItems(supabase, saleId, sale)
-      for (const item of sale.items) {
-        await decrementStockSafely(supabase, item)
-      }
+      // Registro atómico e idempotente en el servidor: cabecera + items +
+      // descuento de stock en una sola transacción. Reintentar es seguro.
+      const { error } = await supabase.rpc("register_sale", { p_sale: buildSalePayload(sale) })
+      if (error) throw error
 
       removeQueuedSale(sale.id)
       flushed += 1

@@ -86,8 +86,17 @@ export async function syncToServer(supabase: any): Promise<SyncResult> {
 }
 
 /**
- * Sync pending sales to server
- * IMPORTANT: Uses price at time of sale, not current price
+ * Sync pending sales to server.
+ *
+ * Cada venta se registra con la RPC transaccional `register_sale`: una sola
+ * llamada que en el servidor inserta cabecera + items, descuenta stock de forma
+ * atómica y registra el movimiento de inventario, todo en una transacción
+ * (all-or-nothing). Es idempotente por (kiosko_id, sale_number), así que un
+ * re-sync nunca duplica la venta ni vuelve a descontar stock.
+ *
+ * IMPORTANTE: los precios (unit_price/cost_price) viajan en el payload y son los
+ * del MOMENTO DE LA VENTA. El servidor nunca re-lee el precio actual.
+ * Ver scripts/128_atomic_sale_sync.sql.
  */
 async function syncSales(supabase: any): Promise<{ synced: number; failed: number; errors: string[] }> {
   const result = { synced: 0, failed: 0, errors: [] as string[] }
@@ -95,64 +104,26 @@ async function syncSales(supabase: any): Promise<{ synced: number; failed: numbe
 
   for (const sale of pendingSales) {
     try {
-      // Check if sale already exists (idempotency by sale_number)
-      const { data: existing } = await supabase
-        .from("sales")
-        .select("id")
-        .eq("sale_number", sale.saleNumber)
-        .maybeSingle()
+      const { error } = await supabase.rpc("register_sale", {
+        p_sale: {
+          kiosko_id: sale.kioskoId,
+          employee_id: sale.employeeId,
+          sale_number: sale.saleNumber,
+          total_amount: sale.totalAmount,
+          payment_method: sale.paymentMethod,
+          // Timestamp ORIGINAL de la venta, no el de sincronización
+          created_at: new Date(sale.createdAt).toISOString(),
+          items: sale.items.map(item => ({
+            product_id: item.productId,
+            product_name: item.productName, // Nombre denormalizado al momento de la venta
+            quantity: item.quantity,
+            unit_price: item.unitPrice,     // Precio histórico
+            cost_price: item.costPrice,     // Costo histórico (para margen)
+          })),
+        },
+      })
 
-      let saleId = existing?.id
-
-      if (!saleId) {
-        // Create sale with ORIGINAL timestamp
-        const { data: newSale, error: saleError } = await supabase
-          .from("sales")
-          .insert({
-            kiosko_id: sale.kioskoId,
-            employee_id: sale.employeeId,
-            sale_number: sale.saleNumber,
-            total_amount: sale.totalAmount,
-            payment_method: sale.paymentMethod,
-            // Use the ORIGINAL sale time, not current time
-            created_at: new Date(sale.createdAt).toISOString(),
-          })
-          .select("id")
-          .single()
-
-        if (saleError) throw saleError
-        saleId = newSale.id
-      }
-
-      // Check if items already exist
-      const { data: existingItems } = await supabase
-        .from("sale_items")
-        .select("id")
-        .eq("sale_id", saleId)
-        .limit(1)
-
-      if (!existingItems || existingItems.length === 0) {
-        // Insert sale items with ORIGINAL prices
-        const saleItems = sale.items.map(item => ({
-          sale_id: saleId,
-          product_id: item.productId,
-          product_name: item.productName, // Denormalized name at time of sale
-          quantity: item.quantity,
-          unit_price: item.unitPrice,      // Price at time of sale
-          subtotal: item.unitPrice * item.quantity,
-        }))
-
-        const { error: itemsError } = await supabase
-          .from("sale_items")
-          .insert(saleItems)
-
-        if (itemsError) throw itemsError
-      }
-
-      // Decrement stock for each item
-      for (const item of sale.items) {
-        await decrementServerStock(supabase, item.productId, item.quantity)
-      }
+      if (error) throw error
 
       await markSaleSynced(sale.id)
       result.synced++
@@ -172,37 +143,6 @@ async function syncSales(supabase: any): Promise<{ synced: number; failed: numbe
 }
 
 /**
- * Decrement stock on server safely
- */
-async function decrementServerStock(supabase: any, productId: string, quantity: number): Promise<void> {
-  const { data: product, error: fetchError } = await supabase
-    .from("products")
-    .select("stock_quantity")
-    .eq("id", productId)
-    .single()
-
-  if (fetchError) {
-    console.warn(`[Sync] Could not fetch product ${productId}:`, fetchError)
-    return
-  }
-
-  const currentStock = Number(product?.stock_quantity ?? 0)
-  const newStock = Math.max(0, currentStock - quantity)
-
-  const { error: updateError } = await supabase
-    .from("products")
-    .update({
-      stock_quantity: newStock,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", productId)
-
-  if (updateError) {
-    console.warn(`[Sync] Could not update stock for ${productId}:`, updateError)
-  }
-}
-
-/**
  * Sync stock movements
  */
 async function syncStockMovements(supabase: any): Promise<{ synced: number; errors: string[] }> {
@@ -211,7 +151,7 @@ async function syncStockMovements(supabase: any): Promise<{ synced: number; erro
 
   for (const movement of pendingMovements) {
     try {
-      const { error } = await supabase.from("inventory_movements").insert({
+      const { error } = await supabase.from("stock_movements").insert({
         kiosko_id: movement.kioskoId,
         product_id: movement.productId,
         movement_type: movement.movementType,

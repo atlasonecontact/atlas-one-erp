@@ -461,39 +461,26 @@ export default function VentasPage() {
         return
       }
 
-      const { data: saleData, error: saleError } = await supabase
-        .from("sales")
-        .insert({
+      // Registro atómico e idempotente en el servidor: cabecera + items +
+      // descuento de stock en una sola transacción (ver register_sale).
+      const { data: rpcData, error: saleError } = await supabase.rpc("register_sale", {
+        p_sale: {
           kiosko_id: kioskoId,
           employee_id: employeeId,
           sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
-          payment_status: "completed",
-        })
-        .select()
-        .single()
+          items: cart.map((item) => ({
+            product_id: item.id,
+            product_name: item.name,
+            quantity: item.quantity,
+            unit_price: item.price, // Precio histórico al momento de la venta
+          })),
+        },
+      })
 
       if (saleError) throw saleError
-
-      const saleItems = cart.map((item) => ({
-        sale_id: saleData.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        subtotal: item.price * item.quantity,
-      }))
-
-      const { error: itemsError } = await supabase.from("sale_items").insert(saleItems)
-      if (itemsError) throw itemsError
-
-      for (const item of cart) {
-        const newStock = item.stock - item.quantity
-        await supabase
-          .from("products")
-          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
-          .eq("id", item.id)
-      }
+      const saleData = { id: rpcData?.sale_id as string }
 
       // Send Telegram notification (async, don't wait)
       sendSaleNotification(
