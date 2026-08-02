@@ -57,6 +57,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Asegurar que la cuenta demo tenga SIEMPRE la contraseña conocida y el email
+    // confirmado. Los emails demo (demo.*@atlasone.com) no son buzones reales, así
+    // que no se puede usar el flujo de recuperación por email: se fija con el
+    // service-role. Esto hace que el login/botón demo funcione de forma confiable.
+    const { error: updateError } = await supabase.auth.admin.updateUserById(demoUser.id, {
+      password,
+      email_confirm: true,
+    })
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: "No se pudo preparar la cuenta demo. Contacta al administrador." },
+        { status: 500 },
+      )
+    }
+
     // Return credentials - the login flow will handle kiosco selection
     return NextResponse.json({
       ok: true,
