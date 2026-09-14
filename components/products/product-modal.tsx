@@ -28,6 +28,28 @@ interface ProductModalProps {
   onClose: () => void
   product: Product | null
   onSave: (product: Product) => void
+  products?: Product[]
+  onProductMatched?: (product: Product) => void
+}
+
+const categoryKeywords: Array<{ category: string; keywords: string[] }> = [
+  { category: "Lácteos", keywords: ["dairies", "dairy", "milk", "cheese", "yogurt", "dulce-de-leche"] },
+  { category: "Bebidas Alcohólicas", keywords: ["beer", "wine", "alcoholic", "cerveza", "vino"] },
+  { category: "Energizantes", keywords: ["energy-drink", "energy-drinks"] },
+  { category: "Bebidas", keywords: ["beverages", "drinks", "waters", "sodas", "juices", "bebida"] },
+  { category: "Golosinas", keywords: ["candies", "chocolates", "sweets", "golosina"] },
+  { category: "Snacks", keywords: ["snacks", "chips", "crackers"] },
+  { category: "Panadería", keywords: ["breads", "bakery", "pastries", "pan"] },
+]
+
+function guessCategory(tags: string[]): string | null {
+  const lowerTags = tags.map((t) => t.toLowerCase())
+  for (const { category, keywords } of categoryKeywords) {
+    if (keywords.some((kw) => lowerTags.some((tag) => tag.includes(kw)))) {
+      return category
+    }
+  }
+  return null
 }
 
 const categories = [
@@ -41,7 +63,7 @@ const categories = [
   "Panadería",
 ]
 
-export function ProductModal({ open, onClose, product, onSave }: ProductModalProps) {
+export function ProductModal({ open, onClose, product, onSave, products = [], onProductMatched }: ProductModalProps) {
   const toast = useToast()
   const [formData, setFormData] = useState<Product>({
     id: "",
@@ -78,18 +100,28 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
     onSave(formData)
   }
 
-  const lookupBarcode = async (code: string) => {
+  const lookupExternal = async (code: string) => {
     setIsLookingUp(true)
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`)
       const data = await res.json()
 
       if (data.status === 1 && data.product) {
-        const foundName = data.product.product_name_es || data.product.product_name || ""
+        const p = data.product
+        const baseName = p.product_name_es || p.product_name || ""
+        const brand = (p.brands || "").split(",")[0].trim()
+        const quantity = p.quantity || ""
 
-        if (foundName) {
-          setFormData((prev) => ({ ...prev, name: foundName }))
-          toast.success("Producto encontrado", foundName)
+        if (baseName) {
+          const fullName = [brand, baseName, quantity].filter(Boolean).join(" ")
+          const guessedCategory = guessCategory(p.categories_tags || [])
+
+          setFormData((prev) => ({
+            ...prev,
+            name: fullName,
+            category: guessedCategory || prev.category,
+          }))
+          toast.success("Producto encontrado", fullName)
         } else {
           toast.info("Código escaneado", "No encontramos el nombre, completalo manualmente")
         }
@@ -104,9 +136,18 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
   }
 
   const handleBarcodeScanned = (code: string) => {
-    setFormData((prev) => ({ ...prev, barcode: code }))
     setShowScanner(false)
-    lookupBarcode(code)
+
+    const existing = products.find((p) => p.barcode && p.barcode === code)
+    if (existing) {
+      setFormData(existing)
+      onProductMatched?.(existing)
+      toast.info("Ya tenés este producto cargado", `${existing.name} · Stock actual: ${existing.stock}`)
+      return
+    }
+
+    setFormData((prev) => ({ ...prev, barcode: code }))
+    lookupExternal(code)
   }
 
   return (

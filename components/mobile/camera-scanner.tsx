@@ -23,6 +23,7 @@ export function CameraScanner({ isOpen, onClose, onScan }: CameraScannerProps) {
   const [isScanning, setIsScanning] = useState(false)
   const [lastScanned, setLastScanned] = useState<string | null>(null)
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastScannedRef = useRef<string | null>(null)
   const [barcodeSupported, setBarcodeSupported] = useState(true)
 
   const stopCamera = useCallback(() => {
@@ -34,6 +35,7 @@ export function CameraScanner({ isOpen, onClose, onScan }: CameraScannerProps) {
       clearInterval(scanIntervalRef.current)
       scanIntervalRef.current = null
     }
+    lastScannedRef.current = null
     setIsScanning(false)
   }, [])
 
@@ -67,25 +69,20 @@ export function CameraScanner({ isOpen, onClose, onScan }: CameraScannerProps) {
   }, [facingMode, stopCamera])
 
   const startBarcodeDetection = useCallback(() => {
-    if (!window.BarcodeDetector) {
-      // Fallback: Manual input or use external library
-      setBarcodeSupported(false)
-      return
-    }
-
     try {
       const barcodeDetector = new BarcodeDetector({
         formats: ["ean_13", "ean_8", "code_128", "code_39", "qr_code", "upc_a", "upc_e"],
       })
 
       scanIntervalRef.current = setInterval(async () => {
-        if (!videoRef.current || !isScanning) return
+        if (!videoRef.current) return
 
         try {
           const barcodes = await barcodeDetector.detect(videoRef.current)
           if (barcodes.length > 0) {
             const barcode = barcodes[0].rawValue
-            if (barcode && barcode !== lastScanned) {
+            if (barcode && barcode !== lastScannedRef.current) {
+              lastScannedRef.current = barcode
               setLastScanned(barcode)
 
               // Haptic feedback if available
@@ -96,7 +93,10 @@ export function CameraScanner({ isOpen, onClose, onScan }: CameraScannerProps) {
               onScan(barcode)
 
               // Reset after 2 seconds to allow rescanning
-              setTimeout(() => setLastScanned(null), 2000)
+              setTimeout(() => {
+                lastScannedRef.current = null
+                setLastScanned(null)
+              }, 2000)
             }
           }
         } catch {
@@ -106,7 +106,7 @@ export function CameraScanner({ isOpen, onClose, onScan }: CameraScannerProps) {
     } catch {
       setBarcodeSupported(false)
     }
-  }, [isScanning, lastScanned, onScan])
+  }, [onScan])
 
   const toggleFlash = useCallback(async () => {
     if (!streamRef.current) return

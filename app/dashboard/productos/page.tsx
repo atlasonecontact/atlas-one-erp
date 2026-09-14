@@ -843,6 +843,8 @@ export default function ProductosPage() {
         }}
         product={editingProduct}
         onSave={handleSave}
+        products={products}
+        onProductMatched={setEditingProduct}
       />
 
       {/* CSV Import Modal */}
