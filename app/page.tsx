@@ -76,9 +76,9 @@ export default function LandingPage() {
                     Iniciar Sesión
                   </Button>
                 </Link>
-                <Button disabled className="bg-gray-600 text-gray-300 font-medium cursor-not-allowed">
-                  Próximamente
-                </Button>
+                <Link href="/register">
+                  <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-medium">Crear Cuenta</Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -107,13 +107,14 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                <Button
-                  size="lg"
-                  disabled
-                  className="bg-gray-600 hover:bg-gray-600 text-gray-300 font-semibold px-8 h-12 cursor-not-allowed"
-                >
-                  Próximamente
-                </Button>
+                <Link href="/register">
+                  <Button
+                    size="lg"
+                    className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-8 h-12"
+                  >
+                    Crear Cuenta
+                  </Button>
+                </Link>
                 <Link href="/login">
                   <Button
                     size="lg"
@@ -477,13 +478,14 @@ export default function LandingPage() {
                   español.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Button
-                    size="lg"
-                    disabled
-                    className="bg-gray-600 hover:bg-gray-600 text-gray-300 font-semibold px-8 h-12 cursor-not-allowed"
-                  >
-                    Próximamente
-                  </Button>
+                  <Link href="/register">
+                    <Button
+                      size="lg"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-8 h-12"
+                    >
+                      Crear Cuenta
+                    </Button>
+                  </Link>
                   <Link href="/login">
                     <Button
                       size="lg"
