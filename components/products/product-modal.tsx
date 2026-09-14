@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScanLine, Loader2 } from "lucide-react"
+import { CameraScanner } from "@/components/mobile/camera-scanner"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Product {
   id: string
@@ -39,6 +42,7 @@ const categories = [
 ]
 
 export function ProductModal({ open, onClose, product, onSave }: ProductModalProps) {
+  const toast = useToast()
   const [formData, setFormData] = useState<Product>({
     id: "",
     name: "",
@@ -49,6 +53,8 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
     barcode: "",
     status: "active",
   })
+  const [showScanner, setShowScanner] = useState(false)
+  const [isLookingUp, setIsLookingUp] = useState(false)
 
   useEffect(() => {
     if (product) {
@@ -72,7 +78,39 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
     onSave(formData)
   }
 
+  const lookupBarcode = async (code: string) => {
+    setIsLookingUp(true)
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`)
+      const data = await res.json()
+
+      if (data.status === 1 && data.product) {
+        const foundName = data.product.product_name_es || data.product.product_name || ""
+
+        if (foundName) {
+          setFormData((prev) => ({ ...prev, name: foundName }))
+          toast.success("Producto encontrado", foundName)
+        } else {
+          toast.info("Código escaneado", "No encontramos el nombre, completalo manualmente")
+        }
+      } else {
+        toast.info("Código escaneado", "Producto no encontrado en la base de datos, completá el nombre manualmente")
+      }
+    } catch {
+      toast.warning("No se pudo buscar el producto", "Revisá tu conexión e ingresá el nombre manualmente")
+    } finally {
+      setIsLookingUp(false)
+    }
+  }
+
+  const handleBarcodeScanned = (code: string) => {
+    setFormData((prev) => ({ ...prev, barcode: code }))
+    setShowScanner(false)
+    lookupBarcode(code)
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
         <DialogHeader>
@@ -139,12 +177,24 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
 
           <div className="space-y-2">
             <Label className="text-gray-300">Código de barras (opcional)</Label>
-            <Input
-              value={formData.barcode || ""}
-              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-              placeholder="Ej: 7790001234567"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={formData.barcode || ""}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                placeholder="Ej: 7790001234567"
+                className="bg-[#0d1424] border-cyan-500/20 text-white"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowScanner(true)}
+                disabled={isLookingUp}
+                className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent shrink-0 px-3"
+              >
+                {isLookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanLine className="w-4 h-4" />}
+              </Button>
+            </div>
+            {isLookingUp && <p className="text-xs text-cyan-400">Buscando producto...</p>}
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -163,5 +213,8 @@ export function ProductModal({ open, onClose, product, onSave }: ProductModalPro
         </form>
       </DialogContent>
     </Dialog>
+
+    <CameraScanner isOpen={showScanner} onClose={() => setShowScanner(false)} onScan={handleBarcodeScanned} />
+    </>
   )
 }
