@@ -23,6 +23,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { compressImage } from "@/lib/utils/compress-image"
 
 interface Product {
   id: string
@@ -301,15 +302,16 @@ export default function RecepcionMercaderiaPage() {
     setItems(items.filter((_, i) => i !== index))
   }
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
-      setReceiptPhoto(file)
+      const compressed = await compressImage(file)
+      setReceiptPhoto(compressed)
       const reader = new FileReader()
       reader.onloadend = () => {
         setReceiptPhotoPreview(reader.result as string)
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(compressed)
     }
   }
 
