@@ -123,13 +123,16 @@ export function ProductModal({ open, onClose, product, onSave, products = [], on
           }))
           toast.success("Producto encontrado", fullName)
         } else {
-          toast.info("Código escaneado", "No encontramos el nombre, completalo manualmente")
+          setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
+          toast.info("Código escaneado", "No encontramos el nombre, editá el que pusimos por defecto")
         }
       } else {
-        toast.info("Código escaneado", "Producto no encontrado en la base de datos, completá el nombre manualmente")
+        setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
+        toast.info("Código escaneado", "Producto no encontrado en la base de datos, editá el nombre por defecto")
       }
     } catch {
-      toast.warning("No se pudo buscar el producto", "Revisá tu conexión e ingresá el nombre manualmente")
+      setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
+      toast.warning("No se pudo buscar el producto", "Revisá tu conexión y editá el nombre por defecto")
     } finally {
       setIsLookingUp(false)
     }
