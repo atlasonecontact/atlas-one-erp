@@ -7,20 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { MapPin, Phone, Building2, AlertCircle } from "lucide-react"
 import { useFormValidation, validateCuit, FieldError } from "@/lib/hooks/use-form-validation"
 import { useToast } from "@/components/ui/toast-provider"
-
-type Plan = {
-  id: string
-  plan_name: string
-  display_name: string
-  price: number
-  max_employees: number | null
-  max_products: number | null
-}
 
 type Kiosko = {
   id: string
@@ -31,7 +21,6 @@ type Kiosko = {
   whatsapp_phone: string | null
   background_color: string
   accent_color: string
-  subscription_plan_id: string | null
 }
 
 type KioskoModalProps = {
@@ -49,11 +38,9 @@ type FormDataType = {
   whatsapp_phone: string
   background_color: string
   accent_color: string
-  subscription_plan_id: string
 }
 
 export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalProps) {
-  const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<FormDataType>({
     name: "",
@@ -63,7 +50,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
     whatsapp_phone: "",
     background_color: "#030712",
     accent_color: "#00d9ff",
-    subscription_plan_id: "",
   })
 
   const supabase = createClient()
@@ -93,7 +79,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
 
   useEffect(() => {
     if (isOpen) {
-      loadPlans()
       clearErrors()
       if (kiosko) {
         setFormData({
@@ -104,7 +89,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
           whatsapp_phone: kiosko.whatsapp_phone || "",
           background_color: kiosko.background_color,
           accent_color: kiosko.accent_color,
-          subscription_plan_id: kiosko.subscription_plan_id || "",
         })
       } else {
         setFormData({
@@ -115,25 +99,10 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
           whatsapp_phone: "",
           background_color: "#030712",
           accent_color: "#00d9ff",
-          subscription_plan_id: "",
         })
       }
     }
   }, [isOpen, kiosko])
-
-  const loadPlans = async () => {
-    const { data, error } = await supabase
-      .from("subscription_plans")
-      .select("id, plan_name, display_name, price, max_employees, max_products")
-      .order("price")
-
-    if (error) {
-      console.error("[v0] Error loading subscription plans:", error)
-      return
-    }
-
-    setPlans(data || [])
-  }
 
   const handleFieldChange = (field: keyof FormDataType, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -175,7 +144,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
         whatsapp_phone: formData.whatsapp_phone.trim() || formData.phone.trim(),
         background_color: formData.background_color,
         accent_color: formData.accent_color,
-        subscription_plan_id: formData.subscription_plan_id || null,
       }
 
       if (kiosko) {
@@ -287,27 +255,6 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
             <p className="text-xs text-gray-500">
               Este número se usará para WhatsApp y Telegram. Formato: +5491112345678
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="plan" className="text-gray-300">
-              Plan de Suscripción
-            </Label>
-            <Select
-              value={formData.subscription_plan_id}
-              onValueChange={(v) => setFormData({ ...formData, subscription_plan_id: v })}
-            >
-              <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
-                <SelectValue placeholder="Seleccionar plan" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#0d1424] border-cyan-500/20">
-                {plans.map((plan) => (
-                  <SelectItem key={plan.id} value={plan.id} className="text-white">
-                    {plan.display_name || plan.plan_name} - ${plan.price}/mes ({plan.max_employees ?? "-"} empleados, {plan.max_products ?? "-"} productos)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
