@@ -588,7 +588,7 @@ export default function ConfiguracionPage() {
         <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
           <p className="text-gray-400">Primero debes crear un kiosco para configurar notificaciones.</p>
           <Button asChild className="mt-4">
-            <a href="/dashboard/kioscos/new">Crear Kiosco</a>
+            <a href="/dashboard/kioscos">Crear Kiosco</a>
           </Button>
         </div>
       </div>
