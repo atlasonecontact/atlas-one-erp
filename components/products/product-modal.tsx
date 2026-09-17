@@ -123,7 +123,7 @@ export function ProductModal({ open, onClose, product, onSave, products = [], on
   }
 
   const lookupUpcItemDb = async (code: string): Promise<{ name: string } | null> => {
-    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`)
+    const res = await fetch(`/api/barcode-lookup?upc=${code}`)
     const data = await res.json()
     const item = data.items?.[0]
     if (!item?.title) return null
