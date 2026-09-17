@@ -203,11 +203,24 @@ export default function ProductosPage() {
     }
   }
 
+  const contributeToBarcodeCatalog = async (product: Omit<Product, "id"> & { id?: string }) => {
+    if (!product.barcode || /^Producto \d+$/.test(product.name)) return
+
+    await supabase
+      .from("barcode_catalog")
+      .upsert(
+        { barcode: product.barcode, name: product.name, category: product.category },
+        { onConflict: "barcode", ignoreDuplicates: true },
+      )
+  }
+
   const handleSave = async (product: Omit<Product, "id"> & { id?: string }) => {
     if (!kioskoId) {
       alert("No hay kiosko seleccionado")
       return
     }
+
+    contributeToBarcodeCatalog(product)
 
     if (editingProduct) {
       const { error } = await supabase

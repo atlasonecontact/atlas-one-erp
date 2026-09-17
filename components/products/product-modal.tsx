@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScanLine, Loader2 } from "lucide-react"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { useToast } from "@/components/ui/toast-provider"
+import { createClient } from "@/lib/supabase/client"
 
 interface Product {
   id: string
@@ -100,35 +101,57 @@ export function ProductModal({ open, onClose, product, onSave, products = [], on
     onSave(formData)
   }
 
+  const lookupSharedCatalog = async (code: string): Promise<{ name: string; category?: string } | null> => {
+    const supabase = createClient()
+    const { data } = await supabase.from("barcode_catalog").select("name, category").eq("barcode", code).maybeSingle()
+    return data?.name ? { name: data.name, category: data.category ?? undefined } : null
+  }
+
+  const lookupOpenFoodFacts = async (code: string): Promise<{ name: string; category?: string } | null> => {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`)
+    const data = await res.json()
+    if (data.status !== 1 || !data.product) return null
+
+    const p = data.product
+    const baseName = p.product_name_es || p.product_name || ""
+    if (!baseName) return null
+
+    const brand = (p.brands || "").split(",")[0].trim()
+    const quantity = p.quantity || ""
+    const fullName = [brand, baseName, quantity].filter(Boolean).join(" ")
+    return { name: fullName, category: guessCategory(p.categories_tags || []) ?? undefined }
+  }
+
+  const lookupUpcItemDb = async (code: string): Promise<{ name: string } | null> => {
+    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`)
+    const data = await res.json()
+    const item = data.items?.[0]
+    if (!item?.title) return null
+
+    const brand = (item.brand || "").trim()
+    const name =
+      brand && !item.title.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${item.title}` : item.title
+    return { name }
+  }
+
   const lookupExternal = async (code: string) => {
     setIsLookingUp(true)
     try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`)
-      const data = await res.json()
+      const found =
+        (await lookupSharedCatalog(code).catch(() => null)) ??
+        (await lookupOpenFoodFacts(code).catch(() => null)) ??
+        (await lookupUpcItemDb(code).catch(() => null))
 
-      if (data.status === 1 && data.product) {
-        const p = data.product
-        const baseName = p.product_name_es || p.product_name || ""
-        const brand = (p.brands || "").split(",")[0].trim()
-        const quantity = p.quantity || ""
-
-        if (baseName) {
-          const fullName = [brand, baseName, quantity].filter(Boolean).join(" ")
-          const guessedCategory = guessCategory(p.categories_tags || [])
-
-          setFormData((prev) => ({
-            ...prev,
-            name: fullName,
-            category: guessedCategory || prev.category,
-          }))
-          toast.success("Producto encontrado", fullName)
-        } else {
-          setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
-          toast.info("Código escaneado", "No encontramos el nombre, editá el que pusimos por defecto")
-        }
+      if (found) {
+        setFormData((prev) => ({
+          ...prev,
+          name: found.name,
+          category: found.category || prev.category,
+        }))
+        toast.success("Producto encontrado", found.name)
       } else {
         setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
-        toast.info("Código escaneado", "Producto no encontrado en la base de datos, editá el nombre por defecto")
+        toast.info("Código escaneado", "No lo encontramos en ninguna base, editá el nombre por defecto")
       }
     } catch {
       setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
