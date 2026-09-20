@@ -21,7 +21,7 @@ import { StatCard, FeatureCard, StepCard, TestimonialCard } from "@/components/c
 export const metadata: Metadata = {
   title: "Atlas One - ERP Inteligente para Cadenas de Kioscos",
   description:
-    "Sistema completo para gestionar múltiples sucursales, empleados, inventario y recibir notificaciones de ventas en WhatsApp y Telegram. Comienza gratis.",
+    "Sistema completo para gestionar múltiples sucursales, empleados, inventario y recibir notificaciones de ventas en Telegram. Comienza gratis.",
 }
 
 export default function LandingPage() {
@@ -103,7 +103,7 @@ export default function LandingPage() {
 
               <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
                 Gestiona múltiples sucursales, empleados con acceso seguro, inventario sincronizado y recibe
-                notificaciones en WhatsApp y Telegram. Todo desde una sola plataforma.
+                notificaciones en Telegram. Todo desde una sola plataforma.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
@@ -211,7 +211,7 @@ export default function LandingPage() {
               <FeatureCard
                 icon={<Bell />}
                 title="Notificaciones Inteligentes"
-                description="Recibe notificaciones por WhatsApp y Telegram con cada venta. Verificación de número incluida para seguridad total."
+                description="Recibe notificaciones por Telegram con cada venta, directo en tu celular."
                 gradient="from-violet-500/10 to-purple-500/10"
               />
               <FeatureCard
@@ -247,7 +247,7 @@ export default function LandingPage() {
               <FeatureCard
                 icon={<Shield />}
                 title="Seguridad Total"
-                description="Row Level Security, credenciales únicas por empleado, verificación telefónica y encriptación end-to-end."
+                description="Row Level Security, credenciales únicas por empleado y encriptación end-to-end."
                 gradient="from-emerald-500/10 to-cyan-500/10"
               />
             </div>
@@ -283,7 +283,7 @@ export default function LandingPage() {
               <StepCard
                 number="03"
                 title="Recibe notificaciones"
-                description="Conecta WhatsApp y Telegram. Cada venta te llega al instante con todos los detalles de la transacción."
+                description="Conecta Telegram. Cada venta te llega al instante con todos los detalles de la transacción."
                 icon={<Bell />}
               />
             </div>
@@ -450,9 +450,9 @@ export default function LandingPage() {
                 rating={5}
               />
               <TestimonialCard
-                quote="Las notificaciones de WhatsApp permiten saber exactamente qué vende cada empleado sin estar físicamente en la sucursal."
+                quote="Veo en tiempo real qué vende cada empleado en cada sucursal, sin estar físicamente ahí."
                 author="Visibilidad 24/7"
-                role="Notificaciones"
+                role="Dashboard en vivo"
                 rating={5}
               />
               <TestimonialCard

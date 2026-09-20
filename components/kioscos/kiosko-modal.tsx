@@ -233,7 +233,7 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
 
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-gray-300">
-              Teléfono para Notificaciones <span className="text-red-400">*</span>
+              Teléfono de Contacto <span className="text-red-400">*</span>
             </Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -252,9 +252,7 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
               />
             </div>
             <FieldError error={getFieldError("phone")} />
-            <p className="text-xs text-gray-500">
-              Este número se usará para WhatsApp y Telegram. Formato: +5491112345678
-            </p>
+            <p className="text-xs text-gray-500">Formato: +5491112345678</p>
           </div>
 
           <div className="space-y-2">

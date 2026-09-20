@@ -27,6 +27,7 @@ import {
   Beer,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Product {
   id: string
@@ -68,6 +69,7 @@ export default function ProductosPage() {
   const PRODUCTS_PER_PAGE = 20
 
   const supabase = createClient()
+  const toast = useToast()
 
   const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
@@ -291,7 +293,7 @@ export default function ProductosPage() {
 
   const handleCSVImport = async (csvProducts: CSVProduct[]) => {
     if (!kioskoId) {
-      alert("No hay kiosko seleccionado")
+      toast.error("Error", "No hay kiosko seleccionado")
       return
     }
 
@@ -299,7 +301,8 @@ export default function ProductosPage() {
 
     // Process in batches for large imports
     const BATCH_SIZE = 100
-    const allImported: Product[] = []
+    let importedCount = 0
+    let lastError: string | null = null
 
     for (let i = 0; i < csvProducts.length; i += BATCH_SIZE) {
       const batch = csvProducts.slice(i, i + BATCH_SIZE)
@@ -321,7 +324,6 @@ export default function ProductosPage() {
         cost_inc_vat: p.cost_inc_vat || null,
         price: p.sale_price,
         stock_quantity: p.stock || 0,
-        supplier: p.supplier || null,
         is_active: true,
       }))
 
@@ -334,36 +336,25 @@ export default function ProductosPage() {
         })
         .select()
 
-      if (!error && data) {
-        const mappedProducts = data.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          sku: p.sku,
-          brand: p.brand,
-          variant: p.variant,
-          presentation: p.presentation,
-          category: p.category || "Sin categoría",
-          subcategory: p.subcategory,
-          line: p.variant,
-          net_content: p.net_content,
-          unit: p.unit,
-          cost: p.cost || 0,
-          cost_ex_vat: p.cost_ex_vat,
-          cost_inc_vat: p.cost_inc_vat,
-          price: p.price || 0,
-          stock: p.stock_quantity || 0,
-          barcode: p.barcode,
-          status: p.stock_quantity <= 10 ? "low_stock" : "active",
-          kiosko_id: p.kiosko_id,
-          supplier: p.supplier,
-        }))
-        allImported.push(...mappedProducts)
+      if (error) {
+        console.error("[v0] CSV import batch error:", error)
+        lastError = error.message
+      } else if (data) {
+        importedCount += data.length
       }
     }
 
     // Refresh full product list
     await fetchProducts()
     setSyncing(false)
+
+    if (importedCount > 0 && !lastError) {
+      toast.success("Productos importados", `Se cargaron ${importedCount} productos correctamente`)
+    } else if (importedCount > 0 && lastError) {
+      toast.warning("Importación parcial", `Se cargaron ${importedCount} productos, pero hubo errores: ${lastError}`)
+    } else {
+      toast.error("Error al importar", lastError || "No se pudo importar ningún producto")
+    }
   }
 
   // Handle price adjustments

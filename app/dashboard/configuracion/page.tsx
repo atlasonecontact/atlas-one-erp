@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +27,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/toast-provider"
-import { PhoneVerificationModal } from "@/components/ui/phone-verification-modal"
 
 interface KioskoData {
   id: string
@@ -80,13 +79,9 @@ export default function ConfiguracionPage() {
   const [selectedKiosko, setSelectedKiosko] = useState<string>("")
   const [kioscos, setKioscos] = useState<any[]>([])
   const [notificationConfig, setNotificationConfig] = useState<any | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
   const [isTestingTelegram, setIsTestingTelegram] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
-  const [pendingPhone, setPendingPhone] = useState("")
-  const originalPhoneRef = useRef("")
   const [telegramStatus, setTelegramStatus] = useState<any>(null)
   const [isCheckingTelegram, setIsCheckingTelegram] = useState(false)
 
@@ -137,8 +132,6 @@ export default function ConfiguracionPage() {
         phone: data.phone || "",
         cuit: data.cuit || "",
       })
-      // Guardar el teléfono original para detectar cambios
-      originalPhoneRef.current = data.phone || ""
     }
   }
 
@@ -277,49 +270,6 @@ export default function ConfiguracionPage() {
       toast.error("Error al guardar", "No se pudo guardar la configuración")
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const handleVerifyPhone = async () => {
-    if (!whatsappConfig.phoneNumber) {
-      toast.warning("Falta información", "Ingresá un número de teléfono")
-      return
-    }
-
-    setIsVerifying(true)
-
-    try {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
-
-      await supabase.from("phone_verifications").insert({
-        kiosko_id: selectedKiosko,
-        phone_number: whatsappConfig.phoneNumber,
-        verification_code: verificationCode,
-        expires_at: expiresAt,
-      })
-
-      // In production, you would send this code via WhatsApp API
-      toast.success("Verificación iniciada", `Código: ${verificationCode} (en producción se enviaría por WhatsApp)`)
-
-      // For now, we'll just mark it as verified on successful initiation for demo purposes
-      // In a real app, this would happen after the user inputs the code
-      await supabase
-        .from("notification_configs")
-        .update({
-          whatsapp_verified: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("kiosko_id", selectedKiosko)
-
-      setWhatsappConfig({ ...whatsappConfig, verified: true })
-      await loadKioskoConfig() // Reload to reflect the verified status
-    } catch (error) {
-      console.error("Error verifying phone:", error)
-      toast.error("Error de verificación", "No se pudo verificar el teléfono")
-    } finally {
-      setIsVerifying(false)
     }
   }
 
@@ -478,72 +428,8 @@ export default function ConfiguracionPage() {
     }
   }
 
-  // Manejar el cambio de teléfono - requiere verificación
   const handlePhoneChange = (newPhone: string) => {
     setKioskoData({ ...kioskoData, phone: newPhone })
-    // When phone number changes, mark WhatsApp as unverified if it was previously verified
-    if (
-      whatsappConfig.verified &&
-      originalPhoneRef.current &&
-      originalPhoneRef.current.replace(/\D/g, "") !== newPhone.replace(/\D/g, "")
-    ) {
-      setWhatsappConfig((prev) => ({ ...prev, verified: false }))
-    }
-  }
-
-  // Al hacer blur del campo teléfono, verificar si cambió
-  const handlePhoneBlur = () => {
-    const cleanedOriginal = originalPhoneRef.current.replace(/\D/g, "")
-    const cleanedNew = kioskoData.phone.replace(/\D/g, "")
-
-    // If the phone number has changed and is not empty, and it wasn't verified before
-    if (cleanedNew && cleanedOriginal !== cleanedNew && !whatsappConfig.verified) {
-      setPendingPhone(kioskoData.phone)
-      setShowPhoneVerification(true)
-      // Temporarily revert to original phone number until verified, to avoid saving an unverified number
-      setKioskoData({ ...kioskoData, phone: originalPhoneRef.current })
-    } else if (cleanedNew && cleanedOriginal !== cleanedNew && whatsappConfig.verified) {
-      // If it changed and was verified, we need to re-verify
-      setPendingPhone(kioskoData.phone)
-      setShowPhoneVerification(true)
-      setKioskoData({ ...kioskoData, phone: originalPhoneRef.current }) // Revert to old number until verified
-    }
-  }
-
-  // Cuando se verifica el teléfono exitosamente
-  const handlePhoneVerified = async (verifiedPhone: string) => {
-    setShowPhoneVerification(false)
-    setKioskoData({ ...kioskoData, phone: verifiedPhone })
-    originalPhoneRef.current = verifiedPhone // Update the ref to the newly verified number
-
-    // Save the verified phone number to the database
-    try {
-      await supabase
-        .from("kioscos")
-        .update({
-          phone: verifiedPhone,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", selectedKiosko)
-
-      // Mark WhatsApp as verified and update the config
-      await supabase
-        .from("notification_configs")
-        .update({
-          whatsapp_verified: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("kiosko_id", selectedKiosko)
-
-      setWhatsappConfig({ ...whatsappConfig, phoneNumber: verifiedPhone, verified: true })
-      toast.success("Teléfono actualizado", "El nuevo número fue verificado y guardado correctamente")
-      await loadKioskoConfig() // Reload to ensure all states are consistent
-    } catch (error) {
-      console.error("Error saving verified phone:", error)
-      toast.error("Error", "No se pudo guardar el teléfono verificado")
-    } finally {
-      setPendingPhone("")
-    }
   }
 
   const handleDeleteAccount = async () => {
@@ -700,14 +586,11 @@ export default function ConfiguracionPage() {
                   <Input
                     value={kioskoData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    onBlur={handlePhoneBlur}
                     placeholder="+54 11 1234-5678"
                     className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
                   />
                 </div>
-                <p className="text-xs text-gray-500">
-                  📱 Este teléfono se usa para WhatsApp/Telegram. Cambios requieren verificación.
-                </p>
+                <p className="text-xs text-gray-500">📱 Datos de contacto del kiosco (aparece en tickets y reportes).</p>
               </div>
             </div>
 
@@ -1125,19 +1008,6 @@ export default function ConfiguracionPage() {
         <Save className="w-4 h-4" />
         {isSaving ? "Guardando..." : "Guardar Cambios"}
       </Button>
-
-      {/* Phone Verification Modal */}
-      <PhoneVerificationModal
-        open={showPhoneVerification}
-        onClose={() => {
-          setShowPhoneVerification(false)
-          setPendingPhone("")
-        }}
-        onVerified={handlePhoneVerified}
-        currentPhone={originalPhoneRef.current}
-        newPhone={pendingPhone}
-        kioskoName={kioskoData.name}
-      />
     </div>
   )
 }
