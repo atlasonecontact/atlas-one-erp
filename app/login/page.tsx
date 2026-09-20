@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { AtlasLogo } from "@/components/atlas-logo"
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Store } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { getSingleOrNull } from "@/lib/supabase/utils"
 
 type DemoBusinessType =
   | "maxi-kiosco"
@@ -43,13 +42,18 @@ export default function LoginPage() {
 
       // If identifier doesn't contain @, it might be a username
       if (!identifier.includes("@")) {
-        const employee = await getSingleOrNull(
-          supabase.from("employees").select("user_id").eq("username", identifier).single(),
-        )
+        const resolveRes = await fetch("/api/auth/resolve-username", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: identifier }),
+        })
+        const resolveJson = await resolveRes.json().catch(() => ({}))
 
-        if (employee?.user_id) {
-          // Use the employee's internal email format
-          emailToUse = `${identifier}@atlasone.internal`
+        if (resolveRes.ok && resolveJson.email) {
+          emailToUse = resolveJson.email
+        } else if (resolveRes.status === 403) {
+          setError(resolveJson.error || "Este usuario no tiene acceso habilitado")
+          return
         }
       }
 

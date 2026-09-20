@@ -57,9 +57,93 @@ type Employee = {
   notes?: string
   permissions: EmployeePermissions
   status: string
+  role_preset?: string | null
 }
 
 const DEFAULT_PERMISSIONS = DEFAULT_EMPLOYEE_PERMISSIONS
+
+const ROLE_PRESETS: Record<string, { label: string; emoji: string; permissions: EmployeePermissions }> = {
+  cajero: {
+    label: "Cajero",
+    emoji: "🛒",
+    permissions: {
+      ...DEFAULT_PERMISSIONS,
+      can_sell: true,
+      can_open_register: true,
+      can_close_register: true,
+      can_collect_payments: true,
+      can_view_stock: true,
+      can_view_products: true,
+      can_process_returns: false,
+      can_manage_inventory: false,
+      can_receive_merchandise: false,
+      can_stock_entry: false,
+      can_create_internal_order: false,
+      can_view_internal_orders: false,
+      can_view_reports: false,
+      can_manage_employees: false,
+    },
+  },
+  stock: {
+    label: "Operador de Stock",
+    emoji: "📦",
+    permissions: {
+      ...DEFAULT_PERMISSIONS,
+      can_sell: false,
+      can_open_register: false,
+      can_close_register: false,
+      can_collect_payments: false,
+      can_view_stock: true,
+      can_view_products: true,
+      can_manage_inventory: true,
+      can_receive_merchandise: true,
+      can_stock_entry: true,
+      can_create_internal_order: true,
+      can_view_internal_orders: true,
+      can_process_returns: false,
+      can_view_reports: false,
+      can_manage_employees: false,
+    },
+  },
+  encargado: {
+    label: "Encargado",
+    emoji: "👔",
+    permissions: {
+      ...DEFAULT_PERMISSIONS,
+      can_sell: true,
+      can_open_register: true,
+      can_close_register: true,
+      can_collect_payments: true,
+      can_process_returns: true,
+      can_view_stock: true,
+      can_manage_inventory: true,
+      can_receive_merchandise: true,
+      can_stock_entry: true,
+      can_create_internal_order: true,
+      can_view_internal_orders: true,
+      can_view_products: true,
+      can_view_reports: true,
+      can_manage_employees: true,
+    },
+  },
+  administrador: {
+    label: "Administrador",
+    emoji: "⚙️",
+    permissions: Object.fromEntries(
+      Object.keys(DEFAULT_PERMISSIONS).map((key) => [key, true]),
+    ) as EmployeePermissions,
+  },
+}
+
+const PERMISSION_GROUPS: { label: string; keys: (keyof EmployeePermissions)[] }[] = [
+  { label: "Ventas", keys: ["can_sell", "can_collect_payments", "can_process_returns"] },
+  { label: "Caja", keys: ["can_open_register", "can_close_register"] },
+  { label: "Productos", keys: ["can_view_products", "can_manage_inventory"] },
+  { label: "Stock", keys: ["can_view_stock", "can_receive_merchandise", "can_stock_entry"] },
+  { label: "Pedidos internos", keys: ["can_create_internal_order", "can_view_internal_orders"] },
+  { label: "Reportes", keys: ["can_view_reports"] },
+  { label: "Empleados", keys: ["can_manage_employees"] },
+]
 
 type EmployeeModalProps = {
   open: boolean
@@ -85,6 +169,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   const [showCredentials, setShowCredentials] = useState(false)
   const [copied, setCopied] = useState(false)
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
   const [generatedCredentials, setGeneratedCredentials] = useState<{
     username: string
     email: string
@@ -207,9 +292,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         permissions: { ...DEFAULT_PERMISSIONS, ...(employee.permissions || {}) },
         status: employee.status || "active",
       })
+      setSelectedPreset(employee.role_preset || null)
       loadShifts(employee.id)
     } else {
       resetForm()
+      setSelectedPreset(null)
     }
     setGeneratedCredentials(null)
     setShowCredentials(false)
@@ -291,6 +378,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             notes: formData.notes || null,
             permissions: formData.permissions,
             status: formData.status,
+            role_preset: selectedPreset,
             updated_at: new Date().toISOString(),
           })
           .eq("id", employee.id)
@@ -362,6 +450,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             notes: formData.notes || null,
             permissions: formData.permissions,
             status: formData.status,
+            role_preset: selectedPreset,
+            must_change_password: true,
           })
           .select()
           .single()
@@ -515,6 +605,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
                   />
                 </div>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-200">
+                ⚠️ Guardá estas credenciales, no se van a volver a mostrar. En su primer ingreso, {formData.name || "el empleado"}{" "}
+                va a tener que crear su propia contraseña.
               </div>
             </div>
 
@@ -923,6 +1018,45 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {activeTab === "permissions" && (
             <div className="space-y-4 py-4">
               <div className="space-y-3">
+                <Label className="text-gray-300">¿Qué puede hacer este empleado?</Label>
+                <p className="text-xs text-gray-500">
+                  Elegí un rol para autocompletar los permisos. Después podés ajustarlos a mano.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {Object.entries(ROLE_PRESETS).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPreset(key)
+                        setFormData({ ...formData, permissions: { ...preset.permissions } })
+                      }}
+                      className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
+                        selectedPreset === key
+                          ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+                          : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="block text-base mb-1">{preset.emoji}</span>
+                      {preset.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPreset("personalizado")}
+                    className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
+                      selectedPreset === "personalizado"
+                        ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+                        : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                    }`}
+                  >
+                    <span className="block text-base mb-1">🛠️</span>
+                    Personalizado
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
                 <Label className="text-gray-300">Permisos del empleado</Label>
 
                 <div className="space-y-2">
@@ -1208,21 +1342,48 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 </div>
               </div>
 
-              <div className="pt-4">
-                <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5">
-                  <Checkbox
-                    id="status"
-                    checked={formData.status === "active"}
-                    onCheckedChange={(checked) => setFormData({ ...formData, status: checked ? "active" : "inactive" })}
-                    className="border-cyan-500/30 data-[state=checked]:bg-green-500"
-                  />
-                  <div>
-                    <label htmlFor="status" className="text-sm text-white cursor-pointer block">
-                      Empleado activo
-                    </label>
-                    <p className="text-xs text-gray-500">Desactiva para bloquear acceso sin eliminar</p>
-                  </div>
+              <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10 space-y-2">
+                <Label className="text-gray-300 text-xs uppercase tracking-wide">Resumen de acceso</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
+                  {PERMISSION_GROUPS.map((group) => {
+                    const hasAccess = group.keys.some((key) => formData.permissions[key])
+                    return (
+                      <div key={group.label} className="flex items-center gap-1.5 text-xs">
+                        <span>{hasAccess ? "🟢" : "🔴"}</span>
+                        <span className={hasAccess ? "text-gray-300" : "text-gray-600"}>{group.label}</span>
+                      </div>
+                    )
+                  })}
                 </div>
+              </div>
+
+              <div className="pt-4 space-y-2">
+                <Label className="text-gray-300">Estado del empleado</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "active", label: "Activo", emoji: "🟢" },
+                    { value: "suspended", label: "Suspendido", emoji: "🟡" },
+                    { value: "inactive", label: "Desactivado", emoji: "🔴" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: option.value })}
+                      className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
+                        formData.status === option.value
+                          ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+                          : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="block text-base mb-1">{option.emoji}</span>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Suspendido y Desactivado bloquean el acceso sin borrar su historial. Usá Suspendido para pausas
+                  temporales.
+                </p>
               </div>
             </div>
           )}

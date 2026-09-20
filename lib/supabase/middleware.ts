@@ -66,6 +66,39 @@ export async function updateSession(request: NextRequest) {
         url.searchParams.set('error', 'account_rejected')
         return NextResponse.redirect(url)
      }
+
+     // Check employee-specific status and forced password change
+     const { data: employee } = await supabase
+       .from('employees')
+       .select('status, must_change_password')
+       .eq('user_id', user.id)
+       .maybeSingle()
+
+     if (employee && employee.status && employee.status !== 'active') {
+       await supabase.auth.signOut()
+       const url = request.nextUrl.clone()
+       url.pathname = "/login"
+       url.searchParams.set('error', 'account_disabled')
+       return NextResponse.redirect(url)
+     }
+
+     if (
+       employee?.must_change_password &&
+       request.nextUrl.pathname !== "/primer-acceso/cambiar-password"
+     ) {
+       const url = request.nextUrl.clone()
+       url.pathname = "/primer-acceso/cambiar-password"
+       return NextResponse.redirect(url)
+     }
+  }
+
+  // Allow the forced first-login password change page only for employees who actually need it
+  if (request.nextUrl.pathname === "/primer-acceso/cambiar-password") {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      return NextResponse.redirect(url)
+    }
   }
 
   // Redirect logged-in users away from auth pages

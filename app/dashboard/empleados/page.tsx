@@ -325,11 +325,23 @@ export default function EmpleadosPage() {
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                    employee.status === "active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
+                    employee.status === "active"
+                      ? "bg-green-500/20 text-green-400"
+                      : employee.status === "suspended"
+                        ? "bg-yellow-500/20 text-yellow-400"
+                        : "bg-red-500/20 text-red-400"
                   }`}
                 >
-                  <Circle className={`w-2 h-2 ${employee.status === "active" ? "fill-green-400" : "fill-gray-400"}`} />
-                  {employee.status === "active" ? "Activo" : "Inactivo"}
+                  <Circle
+                    className={`w-2 h-2 ${
+                      employee.status === "active"
+                        ? "fill-green-400"
+                        : employee.status === "suspended"
+                          ? "fill-yellow-400"
+                          : "fill-red-400"
+                    }`}
+                  />
+                  {employee.status === "active" ? "Activo" : employee.status === "suspended" ? "Suspendido" : "Desactivado"}
                 </span>
               </div>
 
