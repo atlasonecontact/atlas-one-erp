@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Search, Download, AlertTriangle, TrendingUp, Plus, RefreshCw, Calendar, Warehouse, Check } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { StockMovementModal } from "@/components/stock/stock-movement-modal"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { AccessDenied } from "@/components/ui/access-denied"
 
 interface Product {
   id: string
@@ -25,6 +27,7 @@ export default function StockCentralPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showMovementModal, setShowMovementModal] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const { permissions, loading: permsLoading } = useEmployeePermissions()
 
   useEffect(() => {
     loadData()
@@ -84,6 +87,17 @@ export default function StockCentralPage() {
   const totalStock = products.reduce((sum, p) => sum + p.stock_quantity, 0)
   const lowStockCount = products.filter((p) => p.stock_quantity <= (p.min_stock_level || 10)).length
   const criticalStockCount = products.filter((p) => p.stock_quantity <= 5).length
+
+  if (!permsLoading && !permissions.can_view_stock) {
+    return (
+      <div className="space-y-6">
+        <AccessDenied
+          title="No tenés permiso para ver el stock"
+          message="Pedile a tu dueño de kiosco que te habilite 'Consultar stock' desde Empleados."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

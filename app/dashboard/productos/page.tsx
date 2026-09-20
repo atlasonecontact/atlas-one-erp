@@ -28,6 +28,8 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { AccessDenied } from "@/components/ui/access-denied"
 
 interface Product {
   id: string
@@ -70,6 +72,7 @@ export default function ProductosPage() {
 
   const supabase = createClient()
   const toast = useToast()
+  const { permissions, loading: permsLoading } = useEmployeePermissions()
 
   const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
@@ -432,6 +435,17 @@ export default function ProductosPage() {
     return "from-primary/30 to-primary/20 border-primary/50 text-primary"
   }
 
+  if (!permsLoading && !permissions.can_view_products) {
+    return (
+      <div className="space-y-6">
+        <AccessDenied
+          title="No tenés permiso para ver productos"
+          message="Pedile a tu dueño de kiosco que te habilite 'Consultar productos' desde Empleados."
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -450,33 +464,37 @@ export default function ProductosPage() {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Sincronizar
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowCSVModal(true)}
-            className="border-primary/30 text-muted-foreground hover:text-foreground"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Importar CSV
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowPriceModal(true)}
-            disabled={products.length === 0}
-            className="border-primary/30 text-muted-foreground hover:text-foreground"
-          >
-            <Percent className="w-4 h-4 mr-2" />
-            Ajustar Precios
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingProduct(null)
-              setShowModal(true)
-            }}
-            className="bg-primary hover:bg-primary/80 text-primary-foreground font-semibold gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar Producto
-          </Button>
+          {permissions.can_manage_inventory && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowCSVModal(true)}
+                className="border-primary/30 text-muted-foreground hover:text-foreground"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importar CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowPriceModal(true)}
+                disabled={products.length === 0}
+                className="border-primary/30 text-muted-foreground hover:text-foreground"
+              >
+                <Percent className="w-4 h-4 mr-2" />
+                Ajustar Precios
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditingProduct(null)
+                  setShowModal(true)
+                }}
+                className="bg-primary hover:bg-primary/80 text-primary-foreground font-semibold gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar Producto
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -756,22 +774,26 @@ export default function ProductosPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(product)}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-muted-foreground hover:text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {permissions.can_manage_inventory && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(product)}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                              className="text-muted-foreground hover:text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

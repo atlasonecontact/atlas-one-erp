@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Wallet, Banknote, CreditCard, QrCode, TrendingUp, TrendingDown, DollarSign, Plus, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 
 interface CashRegister {
   id: string
@@ -48,6 +49,7 @@ export default function CajaPage() {
   const [currentRegister, setCurrentRegister] = useState<CashRegister | null>(null)
   const [loading, setLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const { permissions } = useEmployeePermissions()
 
   const supabase = createClient()
 
@@ -301,6 +303,12 @@ export default function CajaPage() {
           )}
           <Button
             onClick={() => isOpen ? handleCloseCash() : setShowOpenModal(true)}
+            disabled={isOpen ? !permissions.can_close_register : !permissions.can_open_register}
+            title={
+              (isOpen ? !permissions.can_close_register : !permissions.can_open_register)
+                ? "No tenés permiso para esta acción"
+                : undefined
+            }
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}

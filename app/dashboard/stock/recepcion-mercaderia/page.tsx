@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { compressImage } from "@/lib/utils/compress-image"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { AccessDenied } from "@/components/ui/access-denied"
 
 interface Product {
   id: string
@@ -58,6 +60,7 @@ export default function RecepcionMercaderiaPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const { permissions, loading: permsLoading } = useEmployeePermissions()
   const [kioskoId, setKioskoId] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [receipts, setReceipts] = useState<MerchandiseReceipt[]>([])
@@ -445,6 +448,19 @@ export default function RecepcionMercaderiaPage() {
       r.receipt_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.supplier_name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
+
+  if (!permsLoading && !(permissions.can_receive_merchandise && permissions.can_stock_entry)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+        <div className="max-w-3xl mx-auto">
+          <AccessDenied
+            title="No tenés permiso para recibir mercadería"
+            message="Necesitás los permisos 'Recibir mercadería' e 'Ingresar mercadería a stock' habilitados. Pedile a tu dueño de kiosco que te los active desde Empleados."
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">

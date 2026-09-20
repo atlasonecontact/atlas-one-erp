@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { EmployeeModal } from "@/components/employees/employee-modal"
 import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import type { EmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 
 type Shift = {
   day_of_week: number
@@ -25,12 +26,7 @@ type Employee = {
   custom_role: string | null
   salary?: number
   hire_date?: string
-  permissions: {
-    can_sell: boolean
-    can_view_reports: boolean
-    can_manage_inventory: boolean
-    can_manage_employees: boolean
-  }
+  permissions: EmployeePermissions
   status: string
   created_at: string
   shifts?: Shift[]

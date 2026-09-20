@@ -18,6 +18,8 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { NuevoPedidoInternoModal } from "@/components/compras/nuevo-pedido-interno-modal"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { AccessDenied } from "@/components/ui/access-denied"
 
 interface PedidoInterno {
   id: string
@@ -41,6 +43,7 @@ export default function PedidosInternosPage() {
   const [kioskoId, setKioskoId] = useState<string | null>(null)
   const [selectedPedido, setSelectedPedido] = useState<string | null>(null)
   const [pedidoItems, setPedidoItems] = useState<any[]>([])
+  const { permissions, loading: permsLoading } = useEmployeePermissions()
 
   const supabase = createClient()
 
@@ -219,6 +222,17 @@ export default function PedidosInternosPage() {
     recibidos: pedidos.filter((p) => p.estado === "recibido").length,
   }
 
+  if (!permsLoading && !permissions.can_view_internal_orders) {
+    return (
+      <div className="space-y-6">
+        <AccessDenied
+          title="No tenés permiso para ver pedidos internos"
+          message="Pedile a tu dueño de kiosco que te habilite 'Consultar pedidos internos' desde Empleados."
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -227,13 +241,15 @@ export default function PedidosInternosPage() {
           <h1 className="text-2xl font-bold text-white">Pedidos Internos</h1>
           <p className="text-gray-400 text-sm">Gestiona pedidos de mercadería entre sucursales y stock central</p>
         </div>
-        <Button
-          onClick={() => setShowModal(true)}
-          className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Pedido
-        </Button>
+        {permissions.can_create_internal_order && (
+          <Button
+            onClick={() => setShowModal(true)}
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Pedido
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

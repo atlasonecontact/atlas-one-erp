@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { useFormValidation, FieldError } from "@/lib/hooks/use-form-validation"
 import { useToast } from "@/components/ui/toast-provider"
+import { DEFAULT_EMPLOYEE_PERMISSIONS, type EmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 
 // Types
 type Shift = {
@@ -54,14 +55,11 @@ type Employee = {
   hourly_rate?: number
   hire_date?: string
   notes?: string
-  permissions: {
-    can_sell: boolean
-    can_view_reports: boolean
-    can_manage_inventory: boolean
-    can_manage_employees: boolean
-  }
+  permissions: EmployeePermissions
   status: string
 }
+
+const DEFAULT_PERMISSIONS = DEFAULT_EMPLOYEE_PERMISSIONS
 
 type EmployeeModalProps = {
   open: boolean
@@ -184,12 +182,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
     hourly_rate: "",
     hire_date: "",
     notes: "",
-    permissions: {
-      can_sell: true,
-      can_view_reports: false,
-      can_manage_inventory: false,
-      can_manage_employees: false,
-    },
+    permissions: { ...DEFAULT_PERMISSIONS },
     status: "active",
   })
 
@@ -211,12 +204,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
         hourly_rate: employee.hourly_rate?.toString() || "",
         hire_date: employee.hire_date || "",
         notes: employee.notes || "",
-        permissions: employee.permissions || {
-          can_sell: true,
-          can_view_reports: false,
-          can_manage_inventory: false,
-          can_manage_employees: false,
-        },
+        permissions: { ...DEFAULT_PERMISSIONS, ...(employee.permissions || {}) },
         status: employee.status || "active",
       })
       loadShifts(employee.id)
@@ -244,12 +232,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
       hourly_rate: "",
       hire_date: "",
       notes: "",
-      permissions: {
-        can_sell: true,
-        can_view_reports: false,
-        can_manage_inventory: false,
-        can_manage_employees: false,
-      },
+      permissions: { ...DEFAULT_PERMISSIONS },
       status: "active",
     })
     setShifts([])
@@ -965,6 +948,86 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
                   <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                     <Checkbox
+                      id="can_open_register"
+                      checked={formData.permissions.can_open_register}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_open_register: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_open_register" className="text-sm text-white cursor-pointer block">
+                        💵 Abrir caja
+                      </label>
+                      <p className="text-xs text-gray-500">Abrir una caja/turno asignado</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_close_register"
+                      checked={formData.permissions.can_close_register}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_close_register: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_close_register" className="text-sm text-white cursor-pointer block">
+                        💰 Cerrar caja
+                      </label>
+                      <p className="text-xs text-gray-500">Realizar el cierre de su caja</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_collect_payments"
+                      checked={formData.permissions.can_collect_payments}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_collect_payments: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_collect_payments" className="text-sm text-white cursor-pointer block">
+                        💳 Cobrar
+                      </label>
+                      <p className="text-xs text-gray-500">Efectivo, tarjetas, QR, wallets, etc.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_process_returns"
+                      checked={formData.permissions.can_process_returns}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_process_returns: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_process_returns" className="text-sm text-white cursor-pointer block">
+                        ↩️ Devoluciones
+                      </label>
+                      <p className="text-xs text-gray-500">Según límites configurados</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
                       id="can_view_reports"
                       checked={formData.permissions.can_view_reports}
                       onCheckedChange={(checked) =>
@@ -985,6 +1048,26 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
                   <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                     <Checkbox
+                      id="can_view_stock"
+                      checked={formData.permissions.can_view_stock}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_view_stock: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_view_stock" className="text-sm text-white cursor-pointer block">
+                        📦 Consultar stock
+                      </label>
+                      <p className="text-xs text-gray-500">Ver disponibilidad</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
                       id="can_manage_inventory"
                       checked={formData.permissions.can_manage_inventory}
                       onCheckedChange={(checked) =>
@@ -1000,6 +1083,106 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         Puede gestionar inventario
                       </label>
                       <p className="text-xs text-gray-500">Agregar/editar productos y stock</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_receive_merchandise"
+                      checked={formData.permissions.can_receive_merchandise}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_receive_merchandise: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_receive_merchandise" className="text-sm text-white cursor-pointer block">
+                        📥 Recibir mercadería
+                      </label>
+                      <p className="text-xs text-gray-500">Registrar que llegó mercadería</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_stock_entry"
+                      checked={formData.permissions.can_stock_entry}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_stock_entry: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_stock_entry" className="text-sm text-white cursor-pointer block">
+                        📦 Ingresar mercadería a stock
+                      </label>
+                      <p className="text-xs text-gray-500">Confirmar recepción y aumentar stock</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_create_internal_order"
+                      checked={formData.permissions.can_create_internal_order}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_create_internal_order: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_create_internal_order" className="text-sm text-white cursor-pointer block">
+                        📝 Crear pedido interno
+                      </label>
+                      <p className="text-xs text-gray-500">Solicitar productos que faltan</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_view_internal_orders"
+                      checked={formData.permissions.can_view_internal_orders}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_view_internal_orders: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_view_internal_orders" className="text-sm text-white cursor-pointer block">
+                        🔄 Consultar pedidos internos
+                      </label>
+                      <p className="text-xs text-gray-500">Ver estado de sus solicitudes</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_view_products"
+                      checked={formData.permissions.can_view_products}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_view_products: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_view_products" className="text-sm text-white cursor-pointer block">
+                        🏷️ Consultar productos
+                      </label>
+                      <p className="text-xs text-gray-500">Ver catálogo, precios de venta y stock</p>
                     </div>
                   </div>
 

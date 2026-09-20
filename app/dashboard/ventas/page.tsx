@@ -16,6 +16,8 @@ import { useToast } from "@/components/ui/toast-provider"
 import { enqueueSale, flushQueuedSales } from "@/lib/offline/sales-queue"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
+import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { AccessDenied } from "@/components/ui/access-denied"
 
 // Function to send Telegram notification after sale
 async function sendSaleNotification(
@@ -103,6 +105,7 @@ export interface CartItem {
 export default function VentasPage() {
   const searchParams = useSearchParams()
   const { config } = useTheme()
+  const { permissions, loading: permsLoading } = useEmployeePermissions()
   const [searchQuery, setSearchQuery] = useState("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState("all")
@@ -544,6 +547,19 @@ export default function VentasPage() {
     return (
       <div className="h-[calc(100vh-120px)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!permsLoading && !permissions.can_sell) {
+    return (
+      <div className="h-[calc(100vh-120px)] flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <AccessDenied
+            title="No tenés permiso para vender"
+            message="Pedile a tu dueño de kiosco que te habilite 'Realizar ventas' desde Empleados."
+          />
+        </div>
       </div>
     )
   }
