@@ -122,7 +122,17 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    // Revisa si hay una versión nueva del Service Worker cada vez que
+                    // la pestaña vuelve a estar visible, para no depender de que el
+                    // usuario cierre y abra el navegador.
+                    document.addEventListener('visibilitychange', function() {
+                      if (document.visibilityState === 'visible') {
+                        registration.update();
+                      }
+                    });
+                    setInterval(function() { registration.update(); }, 60 * 1000);
+                  });
                 });
               }
             `,

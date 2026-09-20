@@ -1,7 +1,7 @@
 // Service Worker para ATLAS ONE ERP
 // Proporciona funcionalidad offline básica
 
-const CACHE_NAME = "atlas-one-v1"
+const CACHE_NAME = "atlas-one-v2"
 const OFFLINE_URL = "/offline.html"
 
 // Recursos esenciales para cachear
@@ -46,12 +46,18 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
+  const isNavigation = request.mode === "navigate"
+  // Nunca cachear el documento HTML, los chunks de Next.js ni las respuestas RSC:
+  // deben venir siempre de red mientras haya conexión, para no servir una build vieja.
+  const isNextInternal = url.pathname.startsWith("/_next/")
+  const skipCache = isNavigation || isNextInternal
+
   // Estrategia: Network First, fallback to Cache
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: skipCache ? "no-store" : "default" })
       .then((response) => {
-        // Si la respuesta es válida, clona y guarda en cache (solo GET)
-        if (response && response.status === 200 && response.type === "basic") {
+        // Si la respuesta es válida, clona y guarda en cache (solo recursos estáticos)
+        if (!skipCache && response && response.status === 200 && response.type === "basic") {
           const responseToCache = response.clone()
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseToCache)
@@ -60,14 +66,14 @@ self.addEventListener("fetch", (event) => {
         return response
       })
       .catch(() => {
-        // Si falla la red, intenta servir desde cache
+        // Si falla la red, intenta servir desde cache (solo como respaldo offline)
         return caches.match(request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse
           }
 
           // Si es navegación y no hay cache, muestra página offline
-          if (request.mode === "navigate") {
+          if (isNavigation) {
             return caches.match(OFFLINE_URL)
           }
 
