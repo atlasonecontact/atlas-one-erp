@@ -22,10 +22,11 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { compressImage } from "@/lib/utils/compress-image"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Product {
   id: string
@@ -58,6 +59,8 @@ interface MerchandiseReceipt {
 
 export default function RecepcionMercaderiaPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const toast = useToast()
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const { permissions, loading: permsLoading } = useEmployeePermissions()
@@ -108,6 +111,18 @@ export default function RecepcionMercaderiaPage() {
       loadSuppliers()
     }
   }, [kioskoId])
+
+  // Auto-select product when arriving from Productos → "Iniciar Recepción"
+  useEffect(() => {
+    const productId = searchParams.get("product_id")
+    if (!productId || products.length === 0 || selectedProduct) return
+
+    const product = products.find((p) => p.id === productId)
+    if (product) {
+      selectProduct(product)
+      toast.info("Producto seleccionado", product.name)
+    }
+  }, [products, searchParams])
 
   // Filter products when search query changes
   useEffect(() => {
@@ -229,7 +244,11 @@ export default function RecepcionMercaderiaPage() {
     const product = products.find((p) => p.barcode === barcode)
 
     if (!product) {
-      alert(`Producto con código de barras ${barcode} no encontrado`)
+      toast.warning(
+        "Producto no encontrado",
+        `Código ${barcode} no está cargado. Creálo desde Productos con este código.`,
+      )
+      router.push(`/dashboard/productos?new_barcode=${barcode}`)
       return
     }
 
@@ -243,7 +262,7 @@ export default function RecepcionMercaderiaPage() {
       updatedItems[existingIndex].subtotal =
         updatedItems[existingIndex].quantity * updatedItems[existingIndex].unit_cost
       setItems(updatedItems)
-      console.log("[v0] Product quantity incremented:", product.name)
+      toast.success("Cantidad incrementada", `${product.name}: ${updatedItems[existingIndex].quantity} unidades`)
     } else {
       // Add new product with quantity 1
       setItems([
@@ -256,7 +275,7 @@ export default function RecepcionMercaderiaPage() {
           subtotal: product.cost,
         },
       ])
-      console.log("[v0] Product added:", product.name)
+      toast.success("Producto identificado", `${product.name} · Costo: $${product.cost.toLocaleString()}`)
     }
   }
 

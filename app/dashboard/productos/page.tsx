@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ProductModal } from "@/components/products/product-modal"
+import { ProductModal, type ProductLot } from "@/components/products/product-modal"
+import { useRouter, useSearchParams } from "next/navigation"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
 import {
@@ -46,12 +47,18 @@ interface Product {
   cost: number
   cost_ex_vat?: number
   cost_inc_vat?: number
+  vat_rate?: number
   price: number
   stock: number
+  min_stock?: number
+  max_stock?: number
   barcode?: string
   status: string
   kiosko_id?: string
   supplier?: string
+  track_expiration?: boolean
+  expiration_date?: string | null
+  lots?: ProductLot[]
 }
 
 export default function ProductosPage() {
@@ -72,6 +79,9 @@ export default function ProductosPage() {
 
   const supabase = createClient()
   const toast = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [initialBarcode, setInitialBarcode] = useState<string | undefined>(undefined)
   const { permissions, loading: permsLoading } = useEmployeePermissions()
 
   const fetchProducts = async (kiosko_id?: string) => {
@@ -117,16 +127,29 @@ export default function ProductosPage() {
     const mappedProducts = data.map((p: any) => ({
       id: p.id,
       name: p.name,
+      sku: p.sku,
+      brand: p.brand,
+      variant: p.variant,
+      presentation: p.presentation,
       category: p.category || "Sin categoría",
       subcategory: p.subcategory,
       line: p.variant,
+      net_content: p.net_content,
+      unit: p.unit,
       cost: p.cost || 0,
+      cost_ex_vat: p.cost_ex_vat,
+      cost_inc_vat: p.cost_inc_vat,
+      vat_rate: p.vat_rate,
       price: p.price || 0,
       stock: p.stock_quantity || 0,
+      min_stock: p.min_stock_level,
+      max_stock: p.max_stock_level,
       barcode: p.barcode,
       status: p.stock_quantity <= 0 ? "inactive" : p.stock_quantity <= 10 ? "low_stock" : "active",
       kiosko_id: p.kiosko_id,
       supplier: p.supplier,
+      track_expiration: p.track_expiration,
+      expiration_date: p.expiration_date,
     }))
     setProducts(mappedProducts)
     setLoading(false)
@@ -196,8 +219,24 @@ export default function ProductosPage() {
     setCurrentPage(1)
   }, [searchQuery, selectedCategory, selectedSubcategory])
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product)
+  // Auto-open creation form when arriving with an unrecognized scanned barcode
+  useEffect(() => {
+    const newBarcode = searchParams.get("new_barcode")
+    if (newBarcode) {
+      setInitialBarcode(newBarcode)
+      setEditingProduct(null)
+      setShowModal(true)
+    }
+  }, [searchParams])
+
+  const handleEdit = async (product: Product) => {
+    const { data: lotsData } = await supabase
+      .from("product_lots")
+      .select("id, lot_number, quantity, expiration_date")
+      .eq("product_id", product.id)
+      .order("expiration_date")
+
+    setEditingProduct({ ...product, lots: lotsData || [] })
     setShowModal(true)
   }
 
@@ -219,79 +258,137 @@ export default function ProductosPage() {
       )
   }
 
-  const handleSave = async (product: Omit<Product, "id"> & { id?: string }) => {
+  const saveLots = async (productId: string, lots: ProductLot[]) => {
+    await supabase.from("product_lots").delete().eq("product_id", productId)
+    if (lots.length === 0) return
+    await supabase.from("product_lots").insert(
+      lots
+        .filter((l) => l.lot_number || l.quantity)
+        .map((l) => ({
+          product_id: productId,
+          kiosko_id: kioskoId,
+          lot_number: l.lot_number || null,
+          quantity: l.quantity || 0,
+          expiration_date: l.expiration_date || null,
+        })),
+    )
+  }
+
+  const handleSave = async (product: Omit<Product, "id"> & { id?: string }, lots: ProductLot[] = []) => {
     if (!kioskoId) {
-      alert("No hay kiosko seleccionado")
+      toast.error("Error", "No hay kiosko seleccionado")
       return
     }
 
     contributeToBarcodeCatalog(product)
 
+    const lotsTotal = lots.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0)
+    const finalStock = lots.length > 0 ? lotsTotal : product.stock
+
+    const payload = {
+      name: product.name,
+      sku: product.sku || null,
+      brand: product.brand || null,
+      variant: product.variant || null,
+      presentation: product.presentation || null,
+      category: product.category,
+      subcategory: product.subcategory || null,
+      supplier: product.supplier || null,
+      net_content: product.net_content || null,
+      unit: product.unit || null,
+      cost: product.cost,
+      cost_ex_vat: product.cost_ex_vat || null,
+      cost_inc_vat: product.cost_inc_vat || null,
+      vat_rate: product.vat_rate ?? null,
+      price: product.price,
+      stock_quantity: finalStock,
+      min_stock_level: product.min_stock ?? null,
+      max_stock_level: product.max_stock ?? null,
+      barcode: product.barcode || null,
+      track_expiration: product.track_expiration || false,
+      expiration_date: product.expiration_date || null,
+    }
+
     if (editingProduct) {
       const { error } = await supabase
         .from("products")
-        .update({
-          name: product.name,
-          category: product.category,
-          cost: product.cost,
-          price: product.price,
-          stock_quantity: product.stock,
-          barcode: product.barcode,
-          supplier: product.supplier,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", editingProduct.id)
 
       if (!error) {
+        await saveLots(editingProduct.id, lots)
         setProducts((prev) =>
-          prev.map((p) => (p.id === editingProduct.id ? ({ ...product, id: editingProduct.id } as Product) : p)),
+          prev.map((p) =>
+            p.id === editingProduct.id ? ({ ...product, id: editingProduct.id, stock: finalStock } as Product) : p,
+          ),
         )
+        toast.success("Producto actualizado", `"${product.name}" fue actualizado correctamente`)
+      } else {
+        toast.error("Error al guardar", error.message)
       }
     } else {
       const { data, error } = await supabase
         .from("products")
-        .insert({
-          kiosko_id: kioskoId,
-          name: product.name,
-          category: product.category,
-          cost: product.cost,
-          price: product.price,
-          stock_quantity: product.stock,
-          barcode: product.barcode,
-          supplier: product.supplier,
-          is_active: true,
-        })
+        .insert({ ...payload, kiosko_id: kioskoId, is_active: true })
         .select()
         .single()
 
       if (!error && data) {
+        await saveLots(data.id, lots)
         const mappedProduct: Product = {
           id: data.id,
           name: data.name,
-          sku: product.sku,
-          brand: product.brand,
-          variant: product.variant,
-          presentation: product.presentation,
+          sku: data.sku,
+          brand: data.brand,
+          variant: data.variant,
+          presentation: data.presentation,
           category: data.category || "Sin categoría",
           subcategory: data.subcategory,
           line: data.variant,
-          net_content: product.net_content,
-          unit: product.unit,
+          net_content: data.net_content,
+          unit: data.unit,
           barcode: data.barcode,
           cost: data.cost || 0,
-          cost_ex_vat: product.cost_ex_vat,
-          cost_inc_vat: product.cost_inc_vat,
+          cost_ex_vat: data.cost_ex_vat,
+          cost_inc_vat: data.cost_inc_vat,
+          vat_rate: data.vat_rate,
           price: data.price || 0,
           stock: data.stock_quantity || 0,
+          min_stock: data.min_stock_level,
+          max_stock: data.max_stock_level,
           status: data.stock_quantity <= 10 ? "low_stock" : "active",
           kiosko_id: data.kiosko_id,
           supplier: data.supplier,
+          track_expiration: data.track_expiration,
+          expiration_date: data.expiration_date,
         }
         setProducts((prev) => [...prev, mappedProduct])
+        toast.success("Producto creado", `"${product.name}" fue creado correctamente`)
+      } else if (error) {
+        toast.error("Error al guardar", error.message)
       }
     }
     setShowModal(false)
     setEditingProduct(null)
+  }
+
+  const handleQuickAddStock = async (product: Product, quantity: number) => {
+    const newStock = product.stock + quantity
+    const { error } = await supabase
+      .from("products")
+      .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
+      .eq("id", product.id)
+
+    if (!error) {
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, stock: newStock } : p)))
+      toast.success("Stock actualizado", `${product.name}: ${product.stock} → ${newStock} unidades`)
+    } else {
+      toast.error("Error al actualizar stock", error.message)
+    }
+  }
+
+  const handleStartReception = (product: Product) => {
+    router.push(`/dashboard/stock/recepcion-mercaderia?product_id=${product.id}`)
   }
 
   const handleCSVImport = async (csvProducts: CSVProduct[]) => {
@@ -870,7 +967,9 @@ export default function ProductosPage() {
         product={editingProduct}
         onSave={handleSave}
         products={products}
-        onProductMatched={setEditingProduct}
+        onQuickAddStock={handleQuickAddStock}
+        onStartReception={handleStartReception}
+        initialBarcode={initialBarcode}
       />
 
       {/* CSV Import Modal */}
