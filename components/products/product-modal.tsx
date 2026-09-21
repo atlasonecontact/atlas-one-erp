@@ -167,8 +167,9 @@ export function ProductModal({
 
   const lookupSharedCatalog = async (code: string): Promise<{ name: string; category?: string } | null> => {
     const supabase = createClient()
-    const { data } = await supabase.from("barcode_catalog").select("name, category").eq("barcode", code).maybeSingle()
-    return data?.name ? { name: data.name, category: data.category ?? undefined } : null
+    const { data } = await supabase.from("barcode_catalog").select("name, category").eq("barcode", code).limit(1)
+    const row = data?.[0]
+    return row?.name ? { name: row.name, category: row.category ?? undefined } : null
   }
 
   const lookupOpenFoodFacts = async (code: string): Promise<{ name: string; category?: string } | null> => {
