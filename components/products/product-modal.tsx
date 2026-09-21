@@ -128,6 +128,7 @@ export function ProductModal({
   const [quickStockQty, setQuickStockQty] = useState("")
 
   useEffect(() => {
+    console.error("[DEBUG] reset effect fired, open=", open, "product=", product, "initialBarcode=", initialBarcode)
     if (open) {
       setMatchedProduct(null)
       setQuickStockQty("")
@@ -136,6 +137,7 @@ export function ProductModal({
         setLots(product.lots || [])
         setShowLots(!!(product.lots && product.lots.length > 0))
       } else {
+        console.error("[DEBUG] reset effect resetting formData to EMPTY/initialBarcode")
         setFormData(initialBarcode ? { ...EMPTY_PRODUCT, barcode: initialBarcode } : EMPTY_PRODUCT)
         setLots([])
         setShowLots(false)
