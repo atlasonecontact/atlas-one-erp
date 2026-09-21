@@ -145,6 +145,10 @@ export function ProductModal({
     }
   }, [product, open, initialBarcode])
 
+  useEffect(() => {
+    console.error("[DEBUG] formData.name changed to:", JSON.stringify(formData.name))
+  }, [formData.name])
+
   const margin = formData.price > 0 ? ((formData.price - formData.cost) / formData.price) * 100 : 0
 
   const handleSubmit = (e: React.FormEvent) => {
