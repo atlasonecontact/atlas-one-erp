@@ -111,7 +111,6 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
                 placeholder="$0"
                 value={cashReceived}
                 onChange={(e) => setCashReceived(e.target.value)}
-                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 className="bg-[#0d1424] border-cyan-500/20 text-white text-2xl text-center py-6"
               />
               {cashAmount >= total ? (
