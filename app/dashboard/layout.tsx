@@ -35,6 +35,8 @@ import {
   WifiOff,
   Clock,
   Plug,
+  Menu,
+  X,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -53,7 +55,13 @@ import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@supabase/ssr"
 import { Badge } from "@/components/ui/badge"
 
-function DashboardSidebar() {
+function DashboardSidebar({
+  mobileOpen,
+  onMobileClose,
+}: {
+  mobileOpen: boolean
+  onMobileClose: () => void
+}) {
   const pathname = usePathname()
   const { config } = useTheme()
 
@@ -213,10 +221,28 @@ function DashboardSidebar() {
   ]
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 h-screen bg-gradient-to-br from-[#0a0f1a] to-[#0d1420] border-r sticky top-0 shadow-2xl">
+    <>
+      {/* Backdrop - solo en mobile/tablet cuando el drawer está abierto */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onMobileClose} />
+      )}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col w-64 h-screen bg-gradient-to-br from-[#0a0f1a] to-[#0d1420] border-r shadow-2xl transition-transform duration-300 ease-in-out",
+          "lg:sticky lg:top-0 lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
       {/* Logo */}
-      <div className="p-6 border-b border-white/10 backdrop-blur-sm">
+      <div className="p-6 border-b border-white/10 backdrop-blur-sm flex items-center justify-between">
         <AtlasLogo variant="horizontal" className="h-8" />
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden text-gray-400 hover:text-white transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -546,11 +572,12 @@ function DashboardSidebar() {
           })}
         </nav>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
 
-function DashboardHeader() {
+function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { config } = useTheme()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -650,7 +677,14 @@ function DashboardHeader() {
     >
       {/* Left side - Breadcrumb or title could go here */}
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden text-gray-400 hover:text-white transition-colors p-1 -ml-1"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold text-white/90 hidden sm:block">Dashboard</h1>
         <Badge
           variant={isOnline ? "default" : "secondary"}
           className={cn(
@@ -774,13 +808,22 @@ function DashboardHeader() {
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const pathname = usePathname()
+
+  // Cierra el drawer automáticamente al navegar, sin tener que engancharlo
+  // a cada Link del menú.
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [pathname])
+
   return (
     <ThemeProvider>
       <div className="flex h-screen overflow-hidden">
-        <DashboardSidebar />
+        <DashboardSidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <DashboardHeader />
+          <DashboardHeader onMenuClick={() => setMobileNavOpen(true)} />
           <main className="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-[#0a0f1a] to-[#0d1420]">{children}</main>
         </div>
       </div>
