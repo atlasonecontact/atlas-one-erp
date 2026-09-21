@@ -371,9 +371,13 @@ export function ProductModal({
                       onKeyDown={(e) => {
                         // Las pistolas lectoras terminan el escaneo mandando Enter, que sin esto
                         // dispara el submit del formulario antes de que termine la búsqueda.
+                        // No se usa blur() acá: mover el foco a mano dentro del keydown puede
+                        // confundir el focus-trap del Dialog y cerrarlo.
                         if (e.key === "Enter") {
                           e.preventDefault()
-                          e.currentTarget.blur()
+                          if (formData.barcode && formData.barcode.trim().length >= 6) {
+                            checkBarcode(formData.barcode.trim())
+                          }
                         }
                       }}
                       placeholder="Ej: 7790001234567"
