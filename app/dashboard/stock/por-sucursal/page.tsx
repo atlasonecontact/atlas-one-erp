@@ -53,17 +53,25 @@ export default function StockPorSucursalPage() {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: profile } = await supabase.from("profiles").select("business_id").eq("id", user.id).single()
+      // Un empleado solo ve su propio kiosko; el dueño ve todas sus sucursales.
+      const { data: employeeData } = await supabase
+        .from("employees")
+        .select("kiosko_id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle()
 
-      if (!profile?.business_id) return
+      let kioscosData: Kiosko[] = []
 
-      const { data: kioscosData } = await supabase
-        .from("kioscos")
-        .select("id, name")
-        .eq("business_id", profile.business_id)
-        .order("name")
+      if (employeeData?.kiosko_id) {
+        const { data } = await supabase.from("kioscos").select("id, name").eq("id", employeeData.kiosko_id)
+        kioscosData = data || []
+      } else {
+        const { data } = await supabase.from("kioscos").select("id, name").eq("owner_id", user.id).order("name")
+        kioscosData = data || []
+      }
 
-      if (kioscosData && kioscosData.length > 0) {
+      if (kioscosData.length > 0) {
         setKioscos(kioscosData)
         setSelectedKiosko(kioscosData[0].id)
       }
@@ -79,12 +87,10 @@ export default function StockPorSucursalPage() {
     try {
       const selectedKioskoData = kioscos.find((k) => k.id === kioskoId)
 
-      // Load products from specific sucursal (not Stock Central)
       const { data: productsData } = await supabase
         .from("products")
         .select("*")
         .eq("kiosko_id", kioskoId)
-        .neq("stock_location", "Stock Central")
         .order("name")
 
       if (productsData) {

@@ -43,23 +43,31 @@ export default function StockCentralPage() {
       } = await supabase.auth.getUser()
       if (!user) return
 
-      // Get user's profile to find business
-      const { data: profile } = await supabase.from("profiles").select("business_id").eq("id", user.id).single()
+      // Un empleado ve el stock de su kiosko; el dueño ve el stock
+      // consolidado de todas sus sucursales.
+      const { data: employeeData } = await supabase
+        .from("employees")
+        .select("kiosko_id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle()
 
-      if (!profile?.business_id) return
+      let kioskoIds: string[] = []
 
-      // Get kioscos for this business
-      const { data: kioscos } = await supabase.from("kioscos").select("id, name").eq("business_id", profile.business_id)
+      if (employeeData?.kiosko_id) {
+        kioskoIds = [employeeData.kiosko_id]
+        setKioskoId(employeeData.kiosko_id)
+      } else {
+        const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id)
+        kioskoIds = (kioscos || []).map((k) => k.id)
+        if (kioskoIds.length > 0) setKioskoId(kioskoIds[0])
+      }
 
-      if (kioscos && kioscos.length > 0) {
-        setKioskoId(kioscos[0].id)
-
-        // Load products from Stock Central only
+      if (kioskoIds.length > 0) {
         const { data: productsData } = await supabase
           .from("products")
           .select("*")
-          .eq("kiosko_id", kioscos[0].id)
-          .eq("stock_location", "Stock Central")
+          .in("kiosko_id", kioskoIds)
           .order("name")
 
         if (productsData) {
