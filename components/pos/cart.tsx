@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Minus, Plus, X } from "lucide-react"
 import type { CartItem } from "@/app/dashboard/ventas/page"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface CartProps {
   items: CartItem[]
@@ -52,7 +53,7 @@ export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, 
             <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-cyan-500/10">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                <p className="text-sm text-cyan-400">${item.price.toLocaleString()}</p>
+                <p className="text-sm text-cyan-400">{formatCurrency(item.price)}</p>
               </div>
 
               {/* Quantity controls */}
@@ -89,15 +90,15 @@ export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, 
         <div className="p-4 border-t border-cyan-500/10 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Subtotal</span>
-            <span className="text-white">${subtotal.toLocaleString()}</span>
+            <span className="text-white">{formatCurrency(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400">IVA (21%)</span>
-            <span className="text-white">${tax.toLocaleString()}</span>
+            <span className="text-gray-400">IVA (21%, incluido)</span>
+            <span className="text-white">{formatCurrency(tax)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold pt-2 border-t border-cyan-500/10">
             <span className="text-white">Total</span>
-            <span className="text-cyan-400">${total.toLocaleString()}</span>
+            <span className="text-cyan-400">{formatCurrency(total)}</span>
           </div>
 
           <Button

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { PurchaseModalNew } from "@/components/purchases/purchase-modal-new"
 import { Search, Plus, Eye, Check, Clock, Truck, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Purchase {
   id: string
@@ -25,6 +26,7 @@ export default function ComprasPage() {
   const [stats, setStats] = useState({ monthTotal: 0, pendingCount: 0, pendingTotal: 0, supplierCount: 0 })
 
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     loadUserAndPurchases()
@@ -138,7 +140,7 @@ export default function ComprasPage() {
 
   const handleNewPurchase = async (purchase: { supplier: string; total: number; status: string }) => {
     if (!kioskoId) {
-      alert("No hay kiosko seleccionado")
+      toast.warning("No hay kiosko seleccionado")
       return
     }
 

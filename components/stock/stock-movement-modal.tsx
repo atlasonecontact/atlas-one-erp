@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Package, Plus, Minus, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Product {
   id: string
@@ -36,6 +37,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
   const [saving, setSaving] = useState(false)
 
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     if (open && kioskoId) {
@@ -119,7 +121,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
       onClose()
     } catch (error: any) {
       console.error("Error saving movement:", error)
-      alert("Error al guardar el movimiento: " + error.message)
+      toast.error("Error al guardar el movimiento", error.message)
     } finally {
       setSaving(false)
     }

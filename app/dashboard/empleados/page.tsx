@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { EmployeeModal } from "@/components/employees/employee-modal"
 import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 import type { EmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 
 type Shift = {
@@ -48,6 +49,7 @@ export default function EmpleadosPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const supabase = createClient()
+  const toast = useToast()
 
   const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
 
@@ -162,7 +164,7 @@ export default function EmpleadosPage() {
       await loadEmployees()
     } catch (err) {
       console.error("Error deleting employee", err)
-      alert("No se pudo eliminar el empleado. Intenta de nuevo.")
+      toast.error("No se pudo eliminar el empleado", "Intentá de nuevo")
     } finally {
       setDeletingId(null)
     }

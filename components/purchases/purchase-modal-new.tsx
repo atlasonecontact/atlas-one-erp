@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Plus, Trash2, Package, ShoppingBag } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Product {
   id: string
@@ -56,6 +57,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
   const [saving, setSaving] = useState(false)
 
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     if (open && kioskoId) {
@@ -208,7 +210,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
       onClose()
     } catch (error: any) {
       console.error("Error saving purchase:", error)
-      alert("Error al guardar la compra: " + error.message)
+      toast.error("Error al guardar la compra", error.message)
     } finally {
       setSaving(false)
     }

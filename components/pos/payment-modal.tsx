@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, QrCode, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface PaymentModalProps {
   open: boolean
@@ -76,7 +77,7 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
           {/* Total */}
           <div className="text-center p-6 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
             <p className="text-sm text-gray-400 mb-1">Total a cobrar</p>
-            <p className="text-4xl font-bold text-cyan-400">${total.toLocaleString()}</p>
+            <p className="text-4xl font-bold text-cyan-400">{formatCurrency(total)}</p>
           </div>
 
           {/* Payment methods */}
@@ -110,12 +111,18 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
                 placeholder="$0"
                 value={cashReceived}
                 onChange={(e) => setCashReceived(e.target.value)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 className="bg-[#0d1424] border-cyan-500/20 text-white text-2xl text-center py-6"
               />
-              {cashAmount >= total && (
+              {cashAmount >= total ? (
                 <div className="flex justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                   <span className="text-green-400">Vuelto</span>
-                  <span className="text-green-400 font-bold">${change.toLocaleString()}</span>
+                  <span className="text-green-400 font-bold">{formatCurrency(change)}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <span className="text-amber-400 text-sm">Falta recibir</span>
+                  <span className="text-amber-400 font-bold">{formatCurrency(total - cashAmount)}</span>
                 </div>
               )}
             </div>

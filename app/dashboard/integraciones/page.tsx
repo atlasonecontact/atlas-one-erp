@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface IntegrationConfig {
   id: string
@@ -89,6 +90,7 @@ export default function IntegracionesPage() {
   const [showMPModal, setShowMPModal] = useState(false)
   
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     loadKioscos()
@@ -158,17 +160,17 @@ export default function IntegracionesPage() {
         })
 
       if (error) throw error
-      alert("Configuración guardada correctamente")
+      toast.success("Configuración guardada correctamente")
     } catch (error) {
       console.error("Error saving config:", error)
-      alert("Error al guardar la configuración")
+      toast.error("Error al guardar la configuración", "Intentá nuevamente en unos segundos")
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleTestConnection = async (service: 'arca' | 'mercadopago' | 'pedidosya' | 'rappi') => {
-    alert(`Probando conexión con ${service}... (Funcionalidad en desarrollo)`)
+    toast.info(`Probando conexión con ${service}`, "Funcionalidad en desarrollo")
   }
 
   if (isLoading) {

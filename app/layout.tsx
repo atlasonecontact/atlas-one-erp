@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -115,8 +116,10 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body className={`font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <ToastProvider>
+          {children}
+          <Analytics />
+        </ToastProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

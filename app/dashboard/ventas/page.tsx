@@ -407,9 +407,11 @@ export default function VentasPage() {
 
   const clearCart = () => setCart([])
 
+  // El precio de cada producto ya incluye IVA (precio de góndola / consumidor final).
+  // El total a cobrar es el subtotal; el IVA se desglosa solo a fines informativos/fiscales.
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
-  const tax = subtotal * 0.21
-  const total = subtotal + tax
+  const total = subtotal
+  const tax = total - total / 1.21
 
   const applyCartToProducts = (currentProducts: any[], items: CartItem[]) => {
     const updated = currentProducts
@@ -539,7 +541,7 @@ export default function VentasPage() {
         return
       }
 
-      alert("Error al procesar la venta")
+      toast.error("Error al procesar la venta", message || "Intentá nuevamente en unos segundos")
     }
   }
 

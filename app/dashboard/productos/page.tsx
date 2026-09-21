@@ -488,7 +488,7 @@ export default function ProductosPage() {
       setSelectedProducts([])
     } catch (error) {
       console.error("Error updating prices:", error)
-      alert("Error al actualizar precios")
+      toast.error("Error al actualizar precios", "Intentá nuevamente en unos segundos")
     } finally {
       setSyncing(false)
     }

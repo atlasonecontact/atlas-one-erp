@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Trash2, Warehouse, Building2, Search } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/toast-provider"
 
 interface Props {
   open: boolean
@@ -46,6 +47,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     if (open) {
@@ -98,18 +100,18 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
 
   const handleSubmit = async () => {
     if (items.length === 0) {
-      alert("Debe agregar al menos un producto")
+      toast.warning("Debe agregar al menos un producto")
       return
     }
 
     if (tipoDestino === "sucursal" && !destinoKioscoId) {
-      alert("Debe seleccionar una sucursal de destino")
+      toast.warning("Debe seleccionar una sucursal de destino")
       return
     }
 
     const invalidItems = items.filter((item) => !item.producto_id || item.cantidad <= 0)
     if (invalidItems.length > 0) {
-      alert("Todos los items deben tener un producto y cantidad válida")
+      toast.warning("Todos los items deben tener un producto y cantidad válida")
       return
     }
 
@@ -150,7 +152,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
       handleClose()
     } catch (error) {
       console.error("Error creando pedido interno:", error)
-      alert("Error al crear el pedido interno")
+      toast.error("Error al crear el pedido interno", "Intentá nuevamente en unos segundos")
     } finally {
       setLoading(false)
     }

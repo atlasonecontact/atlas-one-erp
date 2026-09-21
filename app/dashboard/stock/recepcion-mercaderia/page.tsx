@@ -452,10 +452,10 @@ export default function RecepcionMercaderiaPage() {
       // Reload receipts
       loadReceipts()
 
-      alert("Recepción de mercadería registrada exitosamente")
+      toast.success("Recepción de mercadería registrada exitosamente")
     } catch (error) {
       console.error("Error creating receipt:", error)
-      alert("Error al registrar la recepción")
+      toast.error("Error al registrar la recepción", "Intentá nuevamente en unos segundos")
     } finally {
       setLoading(false)
     }
