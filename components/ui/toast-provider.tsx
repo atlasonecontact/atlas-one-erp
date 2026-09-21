@@ -26,15 +26,15 @@ const ToastContext = createContext<ToastContextType | null>(null)
 export function useToast() {
   const context = useContext(ToastContext)
   if (!context) {
-    // Return a fallback that uses alert() if provider not found
+    // Provider not mounted (e.g. stale cached bundle) — log instead of blocking the UI with alert()
     return {
       showToast: (_type: ToastType, title: string, message?: string) => {
-        alert(`${title}${message ? `\n${message}` : ""}`)
+        console.warn(`[toast fallback] ${title}${message ? ` - ${message}` : ""}`)
       },
-      success: (title: string, message?: string) => alert(`✅ ${title}${message ? `\n${message}` : ""}`),
-      error: (title: string, message?: string) => alert(`❌ ${title}${message ? `\n${message}` : ""}`),
-      warning: (title: string, message?: string) => alert(`⚠️ ${title}${message ? `\n${message}` : ""}`),
-      info: (title: string, message?: string) => alert(`ℹ️ ${title}${message ? `\n${message}` : ""}`),
+      success: (title: string, message?: string) => console.warn(`[toast fallback] ✅ ${title}${message ? ` - ${message}` : ""}`),
+      error: (title: string, message?: string) => console.warn(`[toast fallback] ❌ ${title}${message ? ` - ${message}` : ""}`),
+      warning: (title: string, message?: string) => console.warn(`[toast fallback] ⚠️ ${title}${message ? ` - ${message}` : ""}`),
+      info: (title: string, message?: string) => console.warn(`[toast fallback] ℹ️ ${title}${message ? ` - ${message}` : ""}`),
     }
   }
   return context
