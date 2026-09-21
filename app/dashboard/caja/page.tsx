@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Wallet, Banknote, CreditCard, QrCode, TrendingUp, TrendingDown, DollarSign, Plus, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { useToast } from "@/components/ui/toast-provider"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface CashRegister {
   id: string
@@ -42,6 +44,7 @@ export default function CajaPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [showExpenseModal, setShowExpenseModal] = useState(false)
   const [showOpenModal, setShowOpenModal] = useState(false)
+  const [showCloseModal, setShowCloseModal] = useState(false)
   const [openingBalance, setOpeningBalance] = useState(0)
   const [newOpeningBalance, setNewOpeningBalance] = useState("")
   const [expenses, setExpenses] = useState<Transaction[]>([])
@@ -52,6 +55,7 @@ export default function CajaPage() {
   const { permissions } = useEmployeePermissions()
 
   const supabase = createClient()
+  const toast = useToast()
 
   useEffect(() => {
     loadUserAndCashRegister()
@@ -198,13 +202,19 @@ export default function CajaPage() {
     }
   }
 
-  const handleCloseCash = async () => {
+  const handleConfirmCloseCash = async (countedCash: number, notes: string) => {
     if (!currentRegister) return
-    
+
+    const difference = countedCash - currentBalance
+
     const { error } = await supabase
       .from("cash_registers")
       .update({
-        closing_balance: currentBalance,
+        closing_balance: countedCash,
+        expected_cash: currentBalance,
+        counted_cash: countedCash,
+        cash_difference: difference,
+        closing_notes: notes || null,
         status: "closed",
         closed_at: new Date().toISOString(),
       })
@@ -214,6 +224,16 @@ export default function CajaPage() {
       setIsOpen(false)
       setCurrentRegister(null)
       setExpenses([])
+      setShowCloseModal(false)
+      toast.success(
+        "Caja cerrada",
+        difference === 0
+          ? "El conteo coincide con lo esperado"
+          : `Diferencia de ${formatCurrency(Math.abs(difference))} ${difference > 0 ? "sobrante" : "faltante"}`,
+      )
+    } else {
+      console.error("Error closing cash register:", error)
+      toast.error("No se pudo cerrar la caja", "Intentá nuevamente en unos segundos")
     }
   }
 
@@ -302,7 +322,7 @@ export default function CajaPage() {
             </Button>
           )}
           <Button
-            onClick={() => isOpen ? handleCloseCash() : setShowOpenModal(true)}
+            onClick={() => isOpen ? setShowCloseModal(true) : setShowOpenModal(true)}
             disabled={isOpen ? !permissions.can_close_register : !permissions.can_open_register}
             title={
               (isOpen ? !permissions.can_close_register : !permissions.can_open_register)
@@ -336,7 +356,7 @@ export default function CajaPage() {
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-400">Balance actual</p>
-            <p className="text-3xl font-bold text-white">${currentBalance.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-white">{formatCurrency(currentBalance)}</p>
           </div>
         </div>
       </div>
@@ -348,7 +368,7 @@ export default function CajaPage() {
             <span className="text-sm text-gray-400">Apertura</span>
             <DollarSign className="w-5 h-5 text-cyan-400" />
           </div>
-          <p className="text-2xl font-bold text-white">${openingBalance.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-white">{formatCurrency(openingBalance)}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -356,7 +376,7 @@ export default function CajaPage() {
             <span className="text-sm text-gray-400">Ventas totales</span>
             <TrendingUp className="w-5 h-5 text-green-400" />
           </div>
-          <p className="text-2xl font-bold text-green-400">${totalSales.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-green-400">{formatCurrency(totalSales)}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -364,7 +384,7 @@ export default function CajaPage() {
             <span className="text-sm text-gray-400">Gastos</span>
             <TrendingDown className="w-5 h-5 text-red-400" />
           </div>
-          <p className="text-2xl font-bold text-red-400">${totalExpenses.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-red-400">{formatCurrency(totalExpenses)}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -391,7 +411,7 @@ export default function CajaPage() {
                   <p className="text-xs text-gray-500">{salesByMethod.cashCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">${salesByMethod.cash.toLocaleString()}</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.cash)}</p>
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
@@ -404,7 +424,7 @@ export default function CajaPage() {
                   <p className="text-xs text-gray-500">{salesByMethod.cardCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">${salesByMethod.card.toLocaleString()}</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.card)}</p>
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
@@ -417,7 +437,7 @@ export default function CajaPage() {
                   <p className="text-xs text-gray-500">{salesByMethod.qrCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">${salesByMethod.qr.toLocaleString()}</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.qr)}</p>
             </div>
           </div>
         </div>
@@ -438,7 +458,7 @@ export default function CajaPage() {
                     <p className="text-white font-medium">{expense.notes || 'Gasto'}</p>
                     <p className="text-xs text-gray-500">{new Date(expense.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                  <p className="text-red-400 font-bold">-${expense.amount.toLocaleString()}</p>
+                  <p className="text-red-400 font-bold">-{formatCurrency(expense.amount)}</p>
                 </div>
               ))}
             </div>
@@ -448,6 +468,14 @@ export default function CajaPage() {
 
       {/* Expense Modal */}
       <ExpenseModal open={showExpenseModal} onClose={() => setShowExpenseModal(false)} onSave={handleAddExpense} />
+
+      {/* Close Cash Modal (arqueo) */}
+      <CloseCashModal
+        open={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        expectedCash={currentBalance}
+        onConfirm={handleConfirmCloseCash}
+      />
 
       {/* Open Cash Modal */}
       <Dialog open={showOpenModal} onOpenChange={setShowOpenModal}>
@@ -552,6 +580,108 @@ function ExpenseModal({
               className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
             >
               Registrar
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CloseCashModal({
+  open,
+  onClose,
+  expectedCash,
+  onConfirm,
+}: {
+  open: boolean
+  onClose: () => void
+  expectedCash: number
+  onConfirm: (countedCash: number, notes: string) => void
+}) {
+  const [counted, setCounted] = useState("")
+  const [notes, setNotes] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+
+  const countedAmount = Number.parseFloat(counted) || 0
+  const difference = countedAmount - expectedCash
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    await onConfirm(countedAmount, notes)
+    setSubmitting(false)
+    setCounted("")
+    setNotes("")
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">Cerrar Caja — Arqueo</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="flex justify-between p-4 rounded-lg bg-white/5">
+            <span className="text-gray-400">Efectivo esperado (teórico)</span>
+            <span className="text-white font-bold">{formatCurrency(expectedCash)}</span>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Efectivo contado en caja</Label>
+            <Input
+              type="number"
+              value={counted}
+              onChange={(e) => setCounted(e.target.value)}
+              placeholder="$0"
+              autoFocus
+              className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-5"
+            />
+            <p className="text-xs text-gray-500">Contá el efectivo físico de la caja antes de confirmar el cierre</p>
+          </div>
+
+          {counted !== "" && (
+            <div
+              className={`flex justify-between p-4 rounded-lg border ${
+                difference === 0
+                  ? "bg-green-500/10 border-green-500/20"
+                  : "bg-amber-500/10 border-amber-500/20"
+              }`}
+            >
+              <span className={difference === 0 ? "text-green-400" : "text-amber-400"}>
+                {difference === 0 ? "Coincide" : difference > 0 ? "Sobrante" : "Faltante"}
+              </span>
+              <span className={`font-bold ${difference === 0 ? "text-green-400" : "text-amber-400"}`}>
+                {formatCurrency(Math.abs(difference))}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Notas (opcional)</Label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ej: faltante por vuelto mal dado"
+              className="bg-[#0d1424] border-cyan-500/20 text-white"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={counted === "" || submitting}
+              className="flex-1 bg-red-500 hover:bg-red-400 text-white font-semibold"
+            >
+              {submitting ? "Cerrando..." : "Confirmar Cierre"}
             </Button>
           </div>
         </form>
