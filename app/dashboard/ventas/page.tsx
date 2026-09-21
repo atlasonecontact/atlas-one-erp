@@ -106,9 +106,12 @@ export default function VentasPage() {
   const searchParams = useSearchParams()
   const { config } = useTheme()
   const { permissions, loading: permsLoading } = useEmployeePermissions()
+  const [searchInput, setSearchInput] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const PRODUCTS_PAGE_SIZE = 60
+  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PAGE_SIZE)
   const [showPayment, setShowPayment] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
   const [lastSale, setLastSale] = useState<{
@@ -371,6 +374,17 @@ export default function VentasPage() {
 
   const categories = ["all", "Bebidas", "Snacks", "Golosinas", "Cigarrillos", "Lácteos"]
 
+  // Debounce: filtrar 12.000+ productos en cada tecla tildaba el buscador.
+  useEffect(() => {
+    const id = setTimeout(() => setSearchQuery(searchInput), 300)
+    return () => clearTimeout(id)
+  }, [searchInput])
+
+  // Volver a la primera página cada vez que cambia el filtro.
+  useEffect(() => {
+    setVisibleCount(PRODUCTS_PAGE_SIZE)
+  }, [searchQuery, selectedCategory])
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -378,6 +392,11 @@ export default function VentasPage() {
     const matchesCategory = selectedCategory === "all" || p.category === selectedCategory
     return matchesSearch && matchesCategory
   })
+
+  // Nunca renderizar el catálogo entero de una: con miles de SKUs eso es lo
+  // que hacía que la grilla del POS se sintiera trabada al tipear o scrollear.
+  const visibleProducts = filteredProducts.slice(0, visibleCount)
+  const hasMoreProducts = filteredProducts.length > visibleProducts.length
 
   const addToCart = (product: any) => {
     setCart((prev) => {
@@ -619,8 +638,8 @@ export default function VentasPage() {
               <Input
                 type="text"
                 placeholder="Buscar productos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500 h-11 lg:h-10 text-base lg:text-sm"
               />
             </div>
@@ -669,7 +688,18 @@ export default function VentasPage() {
 
           {/* Products grid - scrollable on mobile */}
           <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-visible">
-            <ProductGrid products={filteredProducts} onAddToCart={addToCart} />
+            <ProductGrid products={visibleProducts} onAddToCart={addToCart} />
+            {hasMoreProducts && (
+              <div className="flex justify-center py-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setVisibleCount((prev) => prev + PRODUCTS_PAGE_SIZE)}
+                  className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                >
+                  Mostrar más ({filteredProducts.length - visibleProducts.length} restantes)
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

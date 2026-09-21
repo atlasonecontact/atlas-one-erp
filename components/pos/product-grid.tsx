@@ -2,6 +2,7 @@
 
 import { Package, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface Product {
   id: string
@@ -45,7 +46,7 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
             <p className="text-xs text-gray-500 mb-2">{product.category}</p>
 
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-cyan-400">${product.price.toLocaleString()}</span>
+              <span className="text-lg font-bold text-cyan-400">{formatCurrency(product.price)}</span>
               <div
                 className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-full text-xs",
