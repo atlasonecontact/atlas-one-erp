@@ -128,7 +128,6 @@ export function ProductModal({
   const [quickStockQty, setQuickStockQty] = useState("")
 
   useEffect(() => {
-    console.error("[DEBUG] reset effect fired, open=", open, "product=", product, "initialBarcode=", initialBarcode)
     if (open) {
       setMatchedProduct(null)
       setQuickStockQty("")
@@ -137,17 +136,12 @@ export function ProductModal({
         setLots(product.lots || [])
         setShowLots(!!(product.lots && product.lots.length > 0))
       } else {
-        console.error("[DEBUG] reset effect resetting formData to EMPTY/initialBarcode")
         setFormData(initialBarcode ? { ...EMPTY_PRODUCT, barcode: initialBarcode } : EMPTY_PRODUCT)
         setLots([])
         setShowLots(false)
       }
     }
   }, [product, open, initialBarcode])
-
-  useEffect(() => {
-    console.error("[DEBUG] formData.name changed to:", JSON.stringify(formData.name))
-  }, [formData.name])
 
   const margin = formData.price > 0 ? ((formData.price - formData.cost) / formData.price) * 100 : 0
 
@@ -206,39 +200,29 @@ export function ProductModal({
   }
 
   const lookupExternal = async (code: string) => {
-    console.error("[DEBUG] lookupExternal start", code)
     setIsLookingUp(true)
     try {
       const found =
-        (await lookupSharedCatalog(code).catch((e) => { console.error("[DEBUG] lookupSharedCatalog threw", e); return null })) ??
-        (await lookupOpenFoodFacts(code).catch((e) => { console.error("[DEBUG] lookupOpenFoodFacts threw", e); return null })) ??
-        (await lookupUpcItemDb(code).catch((e) => { console.error("[DEBUG] lookupUpcItemDb threw", e); return null }))
-
-      console.error("[DEBUG] found =", JSON.stringify(found))
+        (await lookupSharedCatalog(code).catch(() => null)) ??
+        (await lookupOpenFoodFacts(code).catch(() => null)) ??
+        (await lookupUpcItemDb(code).catch(() => null))
 
       if (found) {
-        console.error("[DEBUG] about to setFormData with name", found.name)
-        setFormData((prev) => {
-          console.error("[DEBUG] setFormData updater running, prev.name=", prev.name)
-          return {
-            ...prev,
-            name: found.name,
-            category: found.category || prev.category,
-          }
-        })
+        setFormData((prev) => ({
+          ...prev,
+          name: found.name,
+          category: found.category || prev.category,
+        }))
         toast.success("Producto encontrado", found.name)
-        console.error("[DEBUG] setFormData + toast.success called")
       } else {
         setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
         toast.info("Código escaneado", "No lo encontramos en ninguna base, editá el nombre por defecto")
       }
-    } catch (e) {
-      console.error("[DEBUG] outer catch hit", e)
+    } catch {
       setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
       toast.warning("No se pudo buscar el producto", "Revisá tu conexión y editá el nombre por defecto")
     } finally {
       setIsLookingUp(false)
-      console.error("[DEBUG] lookupExternal finally, isLookingUp=false")
     }
   }
 
@@ -384,6 +368,14 @@ export function ProductModal({
                       value={formData.barcode || ""}
                       onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                       onBlur={handleBarcodeBlur}
+                      onKeyDown={(e) => {
+                        // Las pistolas lectoras terminan el escaneo mandando Enter, que sin esto
+                        // dispara el submit del formulario antes de que termine la búsqueda.
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          e.currentTarget.blur()
+                        }
+                      }}
                       placeholder="Ej: 7790001234567"
                       className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
