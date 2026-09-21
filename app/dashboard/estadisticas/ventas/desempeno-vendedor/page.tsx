@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Trophy, TrendingUp, Users, Clock, Download, RefreshCw } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 
 export const dynamic = "force-dynamic"
 
@@ -93,6 +94,7 @@ export default function DesempenoVendedorPage() {
 
   return (
     <div className="space-y-6 p-8">
+      <DemoDataBanner />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

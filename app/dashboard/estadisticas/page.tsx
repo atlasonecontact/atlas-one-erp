@@ -377,7 +377,6 @@ export default function EstadisticasPage() {
                     <th className="text-left p-4 text-sm font-medium text-gray-400">Producto</th>
                     <th className="text-right p-4 text-sm font-medium text-gray-400">Ventas</th>
                     <th className="text-right p-4 text-sm font-medium text-gray-400">Unidades</th>
-                    <th className="text-right p-4 text-sm font-medium text-gray-400">Tendencia</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -396,11 +395,6 @@ export default function EstadisticasPage() {
                       </td>
                       <td className="p-4 text-right text-white">${product.sales.toLocaleString()}</td>
                       <td className="p-4 text-right text-gray-400">{product.units}</td>
-                      <td className="p-4 text-right">
-                        <span className="text-green-400 flex items-center justify-end gap-1">
-                          <ArrowUp className="w-4 h-4" />+{Math.floor(Math.random() * 20)}%
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>

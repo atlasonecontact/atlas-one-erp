@@ -6,6 +6,7 @@ import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react"
 import { GlobalFiltersComponent, type GlobalFilters } from "@/components/dashboard/global-filters"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
+import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 import { subDays } from "date-fns"
 import {
   LineChart,
@@ -83,6 +84,7 @@ export default function ComportamientoCompraPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+      <DemoDataBanner />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-white mb-2">Comportamiento de Compra</h1>

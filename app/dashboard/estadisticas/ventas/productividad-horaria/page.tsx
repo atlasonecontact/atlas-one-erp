@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Clock, TrendingUp, Calendar, Download, RefreshCw } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
+import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 
 export const dynamic = "force-dynamic"
 
@@ -73,6 +74,7 @@ export default function ProductividadHorariaPage() {
 
   return (
     <div className="space-y-6 p-8">
+      <DemoDataBanner />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

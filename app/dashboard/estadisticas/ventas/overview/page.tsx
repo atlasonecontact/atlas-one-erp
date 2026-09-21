@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { DollarSign, ShoppingCart, TrendingUp, Calendar, Download, RefreshCw, ArrowUp, Package } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 
 export const dynamic = "force-dynamic"
 
@@ -79,6 +80,7 @@ export default function VentasOverviewPage() {
 
   return (
     <div className="space-y-6 p-8">
+      <DemoDataBanner />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
