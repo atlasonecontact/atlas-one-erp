@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Plus, Eye, DollarSign, Package, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { PurchaseModalNew } from "@/components/purchases/purchase-modal-new"
 
 interface PurchaseWithItems {
   id: string
@@ -22,6 +23,7 @@ export default function PedidoProveedorPage() {
   const [purchases, setPurchases] = useState<PurchaseWithItems[]>([])
   const [loading, setLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false)
 
   const supabase = createClient()
 
@@ -163,11 +165,24 @@ export default function PedidoProveedorPage() {
           <h1 className="text-2xl font-bold text-white">Pedido a Proveedor OC</h1>
           <p className="text-gray-400 text-sm">Gestiona las órdenes de compra y su estado de pago</p>
         </div>
-        <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2">
+        <Button
+          onClick={() => setShowNewOrderModal(true)}
+          disabled={!kioskoId}
+          className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold gap-2"
+        >
           <Plus className="w-4 h-4" />
           Nueva Orden de Compra
         </Button>
       </div>
+
+      {kioskoId && (
+        <PurchaseModalNew
+          open={showNewOrderModal}
+          onClose={() => setShowNewOrderModal(false)}
+          kioskoId={kioskoId}
+          onSuccess={() => loadPurchases(kioskoId)}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
