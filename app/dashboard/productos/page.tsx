@@ -365,9 +365,11 @@ export default function ProductosPage() {
         setProducts((prev) => [...prev, mappedProduct])
         toast.success("Producto creado", `"${product.name}" fue creado correctamente`)
       } else if (error) {
+        console.error("[DEBUG] handleSave insert error", error)
         toast.error("Error al guardar", error.message)
       }
     }
+    console.error("[DEBUG] handleSave closing modal, product.name was:", product.name)
     setShowModal(false)
     setEditingProduct(null)
   }
