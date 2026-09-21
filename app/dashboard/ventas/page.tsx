@@ -372,7 +372,11 @@ export default function VentasPage() {
     syncOfflineSales()
   }, [kioskoId, syncOfflineSales])
 
-  const categories = ["all", "Bebidas", "Snacks", "Golosinas", "Cigarrillos", "Lácteos"]
+  // Se derivan de los productos reales del kiosko (no de una lista fija) para
+  // que los tabs del POS siempre coincidan con las categorías que existen de
+  // verdad, incluso si difieren de las categorías "canónicas" sugeridas al
+  // dar de alta un producto.
+  const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))]
 
   // Debounce: filtrar 12.000+ productos en cada tecla tildaba el buscador.
   useEffect(() => {

@@ -12,6 +12,7 @@ import { ScanLine, Loader2, Plus, Trash2, PackagePlus, ClipboardList, Pencil } f
 import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { useToast } from "@/components/ui/toast-provider"
 import { createClient } from "@/lib/supabase/client"
+import { PRODUCT_CATEGORIES } from "@/lib/constants/categories"
 
 export interface ProductLot {
   id?: string
@@ -80,16 +81,7 @@ function guessCategory(tags: string[]): string | null {
   return null
 }
 
-const categories = [
-  "Bebidas",
-  "Bebidas Alcohólicas",
-  "Snacks",
-  "Golosinas",
-  "Cigarrillos",
-  "Energizantes",
-  "Lácteos",
-  "Panadería",
-]
+const categories = PRODUCT_CATEGORIES
 
 const EMPTY_PRODUCT: Product = {
   id: "",
