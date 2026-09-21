@@ -200,29 +200,39 @@ export function ProductModal({
   }
 
   const lookupExternal = async (code: string) => {
+    console.error("[DEBUG] lookupExternal start", code)
     setIsLookingUp(true)
     try {
       const found =
-        (await lookupSharedCatalog(code).catch(() => null)) ??
-        (await lookupOpenFoodFacts(code).catch(() => null)) ??
-        (await lookupUpcItemDb(code).catch(() => null))
+        (await lookupSharedCatalog(code).catch((e) => { console.error("[DEBUG] lookupSharedCatalog threw", e); return null })) ??
+        (await lookupOpenFoodFacts(code).catch((e) => { console.error("[DEBUG] lookupOpenFoodFacts threw", e); return null })) ??
+        (await lookupUpcItemDb(code).catch((e) => { console.error("[DEBUG] lookupUpcItemDb threw", e); return null }))
+
+      console.error("[DEBUG] found =", JSON.stringify(found))
 
       if (found) {
-        setFormData((prev) => ({
-          ...prev,
-          name: found.name,
-          category: found.category || prev.category,
-        }))
+        console.error("[DEBUG] about to setFormData with name", found.name)
+        setFormData((prev) => {
+          console.error("[DEBUG] setFormData updater running, prev.name=", prev.name)
+          return {
+            ...prev,
+            name: found.name,
+            category: found.category || prev.category,
+          }
+        })
         toast.success("Producto encontrado", found.name)
+        console.error("[DEBUG] setFormData + toast.success called")
       } else {
         setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
         toast.info("Código escaneado", "No lo encontramos en ninguna base, editá el nombre por defecto")
       }
-    } catch {
+    } catch (e) {
+      console.error("[DEBUG] outer catch hit", e)
       setFormData((prev) => ({ ...prev, name: `Producto ${code}` }))
       toast.warning("No se pudo buscar el producto", "Revisá tu conexión y editá el nombre por defecto")
     } finally {
       setIsLookingUp(false)
+      console.error("[DEBUG] lookupExternal finally, isLookingUp=false")
     }
   }
 
