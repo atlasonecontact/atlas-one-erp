@@ -100,6 +100,8 @@ export interface CartItem {
   price: number
   quantity: number
   stock: number
+  isPromotion?: boolean
+  promotionComponents?: { productId: string; productName: string; quantity: number; unitPrice: number }[]
 }
 
 export default function VentasPage() {
@@ -123,6 +125,7 @@ export default function VentasPage() {
     offline?: boolean
   } | null>(null)
   const [products, setProducts] = useState<any[]>([])
+  const [promotions, setPromotions] = useState<{ id: string; name: string; price: number; items: { product_id: string; quantity: number }[] }[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string>("")
   const [kioskoName, setKioskoName] = useState<string>("ATLAS ONE")
@@ -223,6 +226,7 @@ export default function VentasPage() {
       setKioskoId(employeeData.kiosko_id)
       loadKioskoInfo(employeeData.kiosko_id)
       loadProducts(employeeData.kiosko_id)
+      loadPromotions(employeeData.kiosko_id)
     } else {
       const { data: kioscos } = await supabase
         .from("kioscos")
@@ -236,10 +240,33 @@ export default function VentasPage() {
         setKioskoName(kioscos[0].name || "ATLAS ONE")
         setKioskoAddress(kioscos[0].location || "")
         loadProducts(kioscos[0].id)
+        loadPromotions(kioscos[0].id)
       } else {
         setIsLoading(false)
       }
     }
+  }
+
+  const loadPromotions = async (kiosko_id: string) => {
+    const { data, error } = await supabase
+      .from("promotions")
+      .select("id, name, price, promotion_items(product_id, quantity)")
+      .eq("kiosko_id", kiosko_id)
+      .order("name")
+
+    if (error) {
+      console.error("[v0] Error loading promotions:", error)
+      return
+    }
+
+    setPromotions(
+      (data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        items: (p.promotion_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity })),
+      })),
+    )
   }
 
   const loadKioskoInfo = async (kiosko_id: string) => {
@@ -372,11 +399,58 @@ export default function VentasPage() {
     syncOfflineSales()
   }, [kioskoId, syncOfflineSales])
 
+  // Una promocion se vende como si fuera "un producto mas" del POS: se
+  // deriva de products + promotions en cada render (no se persiste como
+  // producto) para que el precio/stock de sus componentes este siempre al
+  // dia. El stock disponible de la promo es cuantas veces se puede armar el
+  // combo con el stock actual de cada componente; el precio de cada
+  // componente se prorratea del precio de la promo segun su peso en el
+  // precio normal, para que register_sale descuente stock real sin tocar
+  // esa funcion (ver buildSaleItems).
+  const promotionProducts = promotions
+    .map((promo) => {
+      const components = promo.items
+        .map((it) => {
+          const p = products.find((pr) => pr.id === it.product_id)
+          if (!p) return null
+          return { productId: p.id, productName: p.name, quantity: it.quantity, price: p.price, stock: p.stock }
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null)
+
+      if (components.length === 0) return null
+
+      const availableStock = Math.min(...components.map((c) => Math.floor(c.stock / c.quantity)))
+      const normalTotal = components.reduce((sum, c) => sum + c.price * c.quantity, 0)
+      const promotionComponents = components.map((c) => ({
+        productId: c.productId,
+        productName: c.productName,
+        quantity: c.quantity,
+        unitPrice:
+          normalTotal > 0
+            ? ((c.price * c.quantity) / normalTotal) * (promo.price / c.quantity)
+            : promo.price / components.length / c.quantity,
+      }))
+
+      return {
+        id: promo.id,
+        name: promo.name,
+        category: "Promociones",
+        price: promo.price,
+        stock: Math.max(0, availableStock),
+        status: availableStock > 0 ? "active" : "low_stock",
+        isPromotion: true,
+        promotionComponents,
+      }
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null)
+
+  const sellableProducts = [...products, ...promotionProducts]
+
   // Se derivan de los productos reales del kiosko (no de una lista fija) para
   // que los tabs del POS siempre coincidan con las categorías que existen de
   // verdad, incluso si difieren de las categorías "canónicas" sugeridas al
   // dar de alta un producto.
-  const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))]
+  const categories = ["all", ...Array.from(new Set(sellableProducts.map((p) => p.category).filter(Boolean)))]
 
   // Debounce: filtrar 12.000+ productos en cada tecla tildaba el buscador.
   useEffect(() => {
@@ -389,7 +463,7 @@ export default function VentasPage() {
     setVisibleCount(PRODUCTS_PAGE_SIZE)
   }, [searchQuery, selectedCategory])
 
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = sellableProducts.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -409,7 +483,18 @@ export default function VentasPage() {
         if (existing.quantity >= product.stock) return prev
         return prev.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, stock: product.stock }]
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          stock: product.stock,
+          isPromotion: product.isPromotion,
+          promotionComponents: product.promotionComponents,
+        },
+      ]
     })
     if (window.innerWidth < 1024) {
       // Don't auto-show, just update the count
@@ -436,12 +521,41 @@ export default function VentasPage() {
   const total = subtotal
   const tax = total - total / 1.21
 
+  // Una promocion no es una fila de products: al armar los items reales de
+  // la venta (y al descontar stock localmente) se descompone en sus
+  // productos componentes, para que tanto register_sale como el stock
+  // offline descuenten el producto real, no la promo.
+  const buildSaleItems = (items: CartItem[]) => {
+    const out: { productId: string; productName: string; quantity: number; unitPrice: number }[] = []
+    for (const item of items) {
+      if (item.isPromotion && item.promotionComponents) {
+        for (const comp of item.promotionComponents) {
+          out.push({
+            productId: comp.productId,
+            productName: comp.productName,
+            quantity: comp.quantity * item.quantity,
+            unitPrice: comp.unitPrice,
+          })
+        }
+      } else {
+        out.push({ productId: item.id, productName: item.name, quantity: item.quantity, unitPrice: item.price })
+      }
+    }
+    return out
+  }
+
   const applyCartToProducts = (currentProducts: any[], items: CartItem[]) => {
+    const saleItems = buildSaleItems(items)
+    const decrementByProduct = new Map<string, number>()
+    for (const si of saleItems) {
+      decrementByProduct.set(si.productId, (decrementByProduct.get(si.productId) || 0) + si.quantity)
+    }
+
     const updated = currentProducts
       .map((p) => {
-        const cartItem = items.find((c) => c.id === p.id)
-        if (!cartItem) return p
-        const nextStock = Math.max(0, Number(p.stock ?? 0) - cartItem.quantity)
+        const dec = decrementByProduct.get(p.id)
+        if (!dec) return p
+        const nextStock = Math.max(0, Number(p.stock ?? 0) - dec)
         return {
           ...p,
           stock: nextStock,
@@ -471,10 +585,10 @@ export default function VentasPage() {
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
-          items: cart.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            unitPrice: item.price,
+          items: buildSaleItems(cart).map((si) => ({
+            productId: si.productId,
+            quantity: si.quantity,
+            unitPrice: si.unitPrice,
           })),
         })
 
@@ -498,11 +612,11 @@ export default function VentasPage() {
           sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
-          items: cart.map((item) => ({
-            product_id: item.id,
-            product_name: item.name,
-            quantity: item.quantity,
-            unit_price: item.price, // Precio histórico al momento de la venta
+          items: buildSaleItems(cart).map((si) => ({
+            product_id: si.productId,
+            product_name: si.productName,
+            quantity: si.quantity,
+            unit_price: si.unitPrice, // Precio histórico al momento de la venta (prorrateado si viene de una promo)
           })),
         },
       })
@@ -546,10 +660,10 @@ export default function VentasPage() {
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
-          items: cart.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            unitPrice: item.price,
+          items: buildSaleItems(cart).map((si) => ({
+            productId: si.productId,
+            quantity: si.quantity,
+            unitPrice: si.unitPrice,
           })),
         })
 
