@@ -30,6 +30,7 @@ import { useScanner } from "@/lib/hooks/use-scanner"
 import { useToast } from "@/components/ui/toast-provider"
 import { createClient } from "@/lib/supabase/client"
 import { PRODUCT_CATEGORIES } from "@/lib/constants/categories"
+import { defaultExpirationDate } from "@/lib/constants/shelf-life"
 
 export interface ProductLot {
   id?: string
@@ -169,7 +170,10 @@ export function ProductModal({
   }
 
   const addLot = () => {
-    setLots((prev) => [...prev, { lot_number: "", quantity: 0, expiration_date: "" }])
+    setLots((prev) => [
+      ...prev,
+      { lot_number: "", quantity: 0, expiration_date: defaultExpirationDate(formData.category) },
+    ])
   }
 
   const updateLot = (index: number, field: keyof ProductLot, value: string | number) => {
@@ -229,6 +233,9 @@ export function ProductModal({
           ...prev,
           name: found.name,
           category: found.category || prev.category,
+          // Vencimiento estimado por categoria (editable): el EAN no trae la
+          // fecha real, esa depende del lote de cada recepcion.
+          expiration_date: prev.expiration_date || defaultExpirationDate(found.category || prev.category),
         }))
         toast.success("Producto encontrado", found.name)
       } else {
