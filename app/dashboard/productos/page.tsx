@@ -802,6 +802,7 @@ export default function ProductosPage() {
       ) : (
         /* Products table */
         <div className="rounded-xl border border-primary/10 bg-card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-primary/10">
@@ -827,7 +828,9 @@ export default function ProductosPage() {
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Precio</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
-                <th className="text-right text-sm font-medium text-muted-foreground p-4">Acciones</th>
+                <th className="text-right text-sm font-medium text-muted-foreground p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -919,7 +922,7 @@ export default function ProductosPage() {
                         {product.status === "active" ? "Activo" : "Bajo stock"}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
@@ -944,6 +947,7 @@ export default function ProductosPage() {
               )}
             </tbody>
           </table>
+          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
