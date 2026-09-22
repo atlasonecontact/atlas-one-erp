@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,16 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
   const [selectedMethod, setSelectedMethod] = useState("cash")
   const [cashReceived, setCashReceived] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Precargar "efectivo recibido" con el total al abrir el modal: con el
+  // input vacío el botón "Confirmar Pago" quedaba deshabilitado en silencio
+  // (pago exacto es el caso más común) y parecía que "Cobrar" no hacía nada.
+  useEffect(() => {
+    if (open) {
+      setSelectedMethod("cash")
+      setCashReceived(total > 0 ? total.toFixed(2) : "")
+    }
+  }, [open, total])
 
   const cashAmount = Number.parseFloat(cashReceived) || 0
   const change = cashAmount - total
