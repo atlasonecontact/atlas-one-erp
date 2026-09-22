@@ -819,15 +819,15 @@ export default function ProductosPage() {
                   </button>
                 </th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
+                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
+                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Precio</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
+                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
                 <th className="text-right text-sm font-medium text-muted-foreground p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
                   Acciones
                 </th>
@@ -866,7 +866,7 @@ export default function ProductosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="hidden lg:table-cell p-4">
                       {product.brand ? (
                         <span className="text-sm text-foreground font-medium">{product.brand}</span>
                       ) : (
@@ -878,7 +878,7 @@ export default function ProductosPage() {
                         {product.category}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="hidden xl:table-cell p-4">
                       {product.subcategory ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                           {product.subcategory}
@@ -887,21 +887,21 @@ export default function ProductosPage() {
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="hidden xl:table-cell p-4">
                       {product.line ? (
                         <span className="text-sm text-muted-foreground">{product.line}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="hidden xl:table-cell p-4">
                       {product.supplier ? (
                         <span className="text-sm text-muted-foreground">{product.supplier}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
+                    <td className="hidden lg:table-cell p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
                     <td className="p-4 text-primary font-medium">${product.price.toLocaleString()}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -911,7 +911,7 @@ export default function ProductosPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="hidden lg:table-cell p-4">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           product.status === "active"
