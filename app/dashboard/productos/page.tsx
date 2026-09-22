@@ -682,12 +682,12 @@ export default function ProductosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Productos</h1>
           <p className="text-muted-foreground text-sm">Gestiona tu catálogo de productos</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
             variant="outline"
             onClick={fetchProducts}
