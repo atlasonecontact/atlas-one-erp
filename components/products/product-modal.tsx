@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScanLine, Loader2, Plus, Trash2, PackagePlus, ClipboardList, Pencil } from "lucide-react"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
+import { useScanner } from "@/lib/hooks/use-scanner"
 import { useToast } from "@/components/ui/toast-provider"
 import { createClient } from "@/lib/supabase/client"
 import { PRODUCT_CATEGORIES } from "@/lib/constants/categories"
@@ -247,6 +248,24 @@ export function ProductModal({
       checkBarcode(formData.barcode.trim())
     }
   }
+
+  // Captura la pistolita lectora sin importar qué campo tenga el foco:
+  // el escaneo llega como tecleo rápido + Enter, y este listener global
+  // lo intercepta antes de que el navegador lo escriba en cualquier input.
+  const { startListening, stopListening } = useScanner({
+    onScan: (code) => checkBarcode(code),
+    minLength: 6,
+  })
+
+  useEffect(() => {
+    if (open) {
+      startListening()
+    } else {
+      stopListening()
+    }
+    return () => stopListening()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const handleQuickAddStock = () => {
     const qty = Number(quickStockQty)
