@@ -11,4 +11,8 @@ export const PRODUCT_CATEGORIES = [
   "Energizantes",
   "Lácteos",
   "Panadería",
+  "Almacén",
+  "Galletitas",
+  "Helados",
+  "Importados",
 ] as const
