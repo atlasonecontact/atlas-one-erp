@@ -4,9 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductModal, type ProductLot } from "@/components/products/product-modal"
+import { ProductDetailModal } from "@/components/products/product-detail-modal"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
+import { CameraScanner } from "@/components/mobile/camera-scanner"
+import { useScanner } from "@/lib/hooks/use-scanner"
 import {
   Search,
   Plus,
@@ -26,6 +29,7 @@ import {
   Cigarette,
   Droplet,
   Beer,
+  ScanLine,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
@@ -83,6 +87,9 @@ export default function ProductosPage() {
   const searchParams = useSearchParams()
   const [initialBarcode, setInitialBarcode] = useState<string | undefined>(undefined)
   const { permissions, loading: permsLoading } = useEmployeePermissions()
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [scannedProduct, setScannedProduct] = useState<Product | null>(null)
+  const [showLookupScanner, setShowLookupScanner] = useState(false)
 
   const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
@@ -239,6 +246,41 @@ export default function ProductosPage() {
     setEditingProduct({ ...product, lots: lotsData || [] })
     setShowModal(true)
   }
+
+  // Escaneo de consulta (pistolita o camara): busca en los productos ya
+  // cargados de este kiosko y abre la cajita de detalle. Si no existe,
+  // ofrece crearlo con el codigo precargado en vez de dejar el escaneo sin
+  // respuesta.
+  const handleScanLookup = (code: string) => {
+    setShowLookupScanner(false)
+    const found = products.find((p) => p.barcode === code || p.sku === code || p.id === code)
+    if (found) {
+      setScannedProduct(found)
+      setShowDetailModal(true)
+    } else {
+      toast.warning("Producto no encontrado", `Código ${code}: no está cargado todavía`)
+      setInitialBarcode(code)
+      setEditingProduct(null)
+      setShowModal(true)
+    }
+  }
+
+  const { startListening: startLookupListening, stopListening: stopLookupListening } = useScanner({
+    onScan: handleScanLookup,
+    minLength: 6,
+  })
+
+  useEffect(() => {
+    // Solo escucha la pistolita cuando estamos en la lista (no mientras hay
+    // otro modal abierto, para no pisar el escaneo de esos formularios).
+    if (!showModal && !showCSVModal && !showPriceModal && !showDetailModal) {
+      startLookupListening()
+    } else {
+      stopLookupListening()
+    }
+    return () => stopLookupListening()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showModal, showCSVModal, showPriceModal, showDetailModal])
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("products").delete().eq("id", id)
@@ -560,6 +602,14 @@ export default function ProductosPage() {
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Sincronizar
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowLookupScanner(true)}
+            className="border-primary/30 text-muted-foreground hover:text-foreground bg-transparent"
+          >
+            <ScanLine className="w-4 h-4 mr-2" />
+            Buscar con scanner
           </Button>
           {permissions.can_manage_inventory && (
             <>
@@ -983,6 +1033,26 @@ export default function ProductosPage() {
         selectedProducts={selectedProducts}
         categories={categories.filter((c) => c !== "all")}
         onApply={handlePriceAdjustment}
+      />
+
+      {/* Cajita de detalle al escanear un producto ya cargado */}
+      <ProductDetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false)
+          setScannedProduct(null)
+        }}
+        product={scannedProduct}
+        onEdit={handleEdit}
+        onQuickAddStock={handleQuickAddStock}
+        onStartReception={handleStartReception}
+      />
+
+      {/* Camara para buscar por scanner en celulares/tablets sin pistolita USB */}
+      <CameraScanner
+        isOpen={showLookupScanner}
+        onClose={() => setShowLookupScanner(false)}
+        onScan={handleScanLookup}
       />
     </div>
   )
