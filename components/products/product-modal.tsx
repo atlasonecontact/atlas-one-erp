@@ -8,7 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScanLine, Loader2, Plus, Trash2, PackagePlus, ClipboardList, Pencil } from "lucide-react"
+import {
+  ScanLine,
+  Loader2,
+  Plus,
+  Trash2,
+  PackagePlus,
+  ClipboardList,
+  Pencil,
+  Barcode,
+  Tag,
+  Truck,
+  DollarSign,
+  Boxes,
+  CalendarClock,
+  Layers,
+  CheckCircle2,
+} from "lucide-react"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { useScanner } from "@/lib/hooks/use-scanner"
 import { useToast } from "@/components/ui/toast-provider"
@@ -376,12 +392,20 @@ export function ProductModal({
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold">{product ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
+                <DialogTitle className="flex items-center gap-2.5 text-xl font-bold">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-400">
+                    {product ? <Pencil className="w-4 h-4" /> : <Boxes className="w-4 h-4" />}
+                  </span>
+                  {product ? "Editar Producto" : "Nuevo Producto"}
+                </DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Código de barras / EAN-13</Label>
+              <form onSubmit={handleSubmit} className="space-y-5 py-4">
+                <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-cyan-400">
+                    <Barcode className="w-3.5 h-3.5" />
+                    Código de barras / EAN-13
+                  </div>
                   <div className="flex gap-2">
                     <Input
                       value={formData.barcode || ""}
@@ -400,188 +424,231 @@ export function ProductModal({
                         }
                       }}
                       placeholder="Ej: 7790001234567"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-white text-base h-11"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setShowScanner(true)}
                       disabled={isLookingUp}
-                      className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent shrink-0 px-3"
+                      className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 bg-transparent shrink-0 px-3 h-11"
                     >
                       {isLookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanLine className="w-4 h-4" />}
                     </Button>
                   </div>
-                  {isLookingUp && <p className="text-xs text-cyan-400">Buscando producto...</p>}
+                  {isLookingUp && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-cyan-400">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Buscando producto...
+                    </p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Nombre del producto</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ej: Gaseosa Cola 500ml"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
-                  />
-                </div>
+                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <Tag className="w-3.5 h-3.5" />
+                    Datos del producto
+                  </div>
 
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Marca</Label>
+                    <Label className="text-gray-300">Nombre del producto</Label>
                     <Input
-                      value={formData.brand || ""}
-                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                      placeholder="Ej: Coca-Cola"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Ej: Gaseosa Cola 500ml"
                       className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Marca</Label>
+                      <Input
+                        value={formData.brand || ""}
+                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                        placeholder="Ej: Coca-Cola"
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Línea / Variante</Label>
+                      <Input
+                        value={formData.variant || ""}
+                        onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
+                        placeholder="Ej: Zero"
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Categoría</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+                          {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat} className="text-white hover:bg-white/10">
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Subcategoría</Label>
+                      <Input
+                        value={formData.subcategory || ""}
+                        onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                        placeholder="Ej: Gaseosas"
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Línea / Variante</Label>
+                    <Label className="flex items-center gap-1.5 text-gray-300">
+                      <Truck className="w-3.5 h-3.5 text-gray-500" />
+                      Proveedor
+                    </Label>
                     <Input
-                      value={formData.variant || ""}
-                      onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
-                      placeholder="Ej: Zero"
+                      value={formData.supplier || ""}
+                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                      placeholder="Ej: Distribuidora Norte"
                       className="bg-[#0d1424] border-cyan-500/20 text-white"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Categoría</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#0d1424] border-cyan-500/20">
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="text-white hover:bg-white/10">
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Precio e IVA
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Subcategoría</Label>
-                    <Input
-                      value={formData.subcategory || ""}
-                      onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                      placeholder="Ej: Gaseosas"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Proveedor</Label>
-                  <Input
-                    value={formData.supplier || ""}
-                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                    placeholder="Ej: Distribuidora Norte"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
-                  />
-                </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Costo</Label>
+                      <Input
+                        type="number"
+                        value={formData.cost}
+                        onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Precio de venta</Label>
+                      <Input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Margen</Label>
+                      <div
+                        className={`h-10 flex items-center px-3 rounded-md border font-semibold ${
+                          margin >= 30
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                            : margin >= 10
+                              ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                              : "bg-red-500/10 border-red-500/30 text-red-400"
+                        }`}
+                      >
+                        {margin.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Costo</Label>
-                    <Input
-                      type="number"
-                      value={formData.cost}
-                      onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Precio de venta</Label>
-                    <Input
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Margen</Label>
-                    <div className="h-10 flex items-center px-3 rounded-md bg-[#0d1424] border border-cyan-500/20 text-cyan-400 font-medium">
-                      {margin.toFixed(1)}%
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">IVA (%)</Label>
+                      <Input
+                        type="number"
+                        value={formData.vat_rate ?? ""}
+                        onChange={(e) => setFormData({ ...formData, vat_rate: Number(e.target.value) })}
+                        placeholder="Ej: 21"
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Unidad de medida</Label>
+                      <Input
+                        value={formData.unit || ""}
+                        onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        placeholder="Ej: unidad, kg, l"
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">IVA (%)</Label>
-                    <Input
-                      type="number"
-                      value={formData.vat_rate ?? ""}
-                      onChange={(e) => setFormData({ ...formData, vat_rate: Number(e.target.value) })}
-                      placeholder="Ej: 21"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
+                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <Boxes className="w-3.5 h-3.5" />
+                    Stock
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Unidad de medida</Label>
-                    <Input
-                      value={formData.unit || ""}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      placeholder="Ej: unidad, kg, l"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Stock inicial</Label>
+                      <Input
+                        type="number"
+                        value={formData.stock}
+                        onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                        disabled={showLots}
+                        className="bg-[#0d1424] border-cyan-500/20 text-white disabled:opacity-50"
+                      />
+                      {showLots && <p className="text-xs text-gray-500">Se calcula de los lotes: {lotsTotal}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Stock mínimo</Label>
+                      <Input
+                        type="number"
+                        value={formData.min_stock ?? ""}
+                        onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Stock máximo</Label>
+                      <Input
+                        type="number"
+                        value={formData.max_stock ?? ""}
+                        onChange={(e) => setFormData({ ...formData, max_stock: Number(e.target.value) })}
+                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Stock inicial</Label>
+                    <Label className="flex items-center gap-1.5 text-gray-300">
+                      <CalendarClock className="w-3.5 h-3.5 text-gray-500" />
+                      Fecha de vencimiento (opcional)
+                    </Label>
                     <Input
-                      type="number"
-                      value={formData.stock}
-                      onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                      type="date"
+                      value={formData.expiration_date || ""}
+                      onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
                       disabled={showLots}
                       className="bg-[#0d1424] border-cyan-500/20 text-white disabled:opacity-50"
                     />
-                    {showLots && <p className="text-xs text-gray-500">Se calcula de los lotes: {lotsTotal}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Stock mínimo</Label>
-                    <Input
-                      type="number"
-                      value={formData.min_stock ?? ""}
-                      onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Stock máximo</Label>
-                    <Input
-                      type="number"
-                      value={formData.max_stock ?? ""}
-                      onChange={(e) => setFormData({ ...formData, max_stock: Number(e.target.value) })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
-                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Fecha de vencimiento (opcional)</Label>
-                  <Input
-                    type="date"
-                    value={formData.expiration_date || ""}
-                    onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
-                    disabled={showLots}
-                    className="bg-[#0d1424] border-cyan-500/20 text-white disabled:opacity-50"
-                  />
-                </div>
-
-                <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-cyan-500/10">
+                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-gray-300">Gestionar por lotes</Label>
+                      <Label className="flex items-center gap-1.5 text-gray-300">
+                        <Layers className="w-3.5 h-3.5 text-gray-500" />
+                        Gestionar por lotes
+                      </Label>
                       <p className="text-xs text-gray-500">Cantidad y vencimiento por lote de este producto</p>
                     </div>
                     <Button
@@ -663,7 +730,11 @@ export function ProductModal({
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold">
+                  <Button
+                    type="submit"
+                    className="flex-1 gap-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-lg shadow-cyan-500/20"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
                     {product ? "Guardar Cambios" : "Crear Producto"}
                   </Button>
                 </div>
