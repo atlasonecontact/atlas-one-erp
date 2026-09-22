@@ -61,6 +61,22 @@ export function useEmployeePermissions() {
         return
       }
 
+      // El dueño manda primero: si el usuario es dueño de un kiosko, tiene
+      // permisos completos siempre, aunque por algun motivo (carga de datos,
+      // pruebas) tambien exista una fila suya en employees. Antes esto se
+      // chequeaba al reves y un dueño con una fila de empleado colgada
+      // terminaba con permisos limitados (ej: sin "Gestionar inventario").
+      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+      if (cancelled) return
+
+      if (kioscos && kioscos.length > 0) {
+        setIsOwner(true)
+        setKioskoId(kioscos[0].id)
+        setPermissions(OWNER_PERMISSIONS)
+        setLoading(false)
+        return
+      }
+
       const { data: employeeData } = await supabase
         .from("employees")
         .select("kiosko_id, permissions")
@@ -75,11 +91,9 @@ export function useEmployeePermissions() {
         setKioskoId(employeeData.kiosko_id)
         setPermissions({ ...DEFAULT_EMPLOYEE_PERMISSIONS, ...(employeeData.permissions || {}) })
       } else {
-        const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
-        if (cancelled) return
-        setIsOwner(true)
-        setKioskoId(kioscos && kioscos.length > 0 ? kioscos[0].id : null)
-        setPermissions(OWNER_PERMISSIONS)
+        setIsOwner(false)
+        setKioskoId(null)
+        setPermissions(DEFAULT_EMPLOYEE_PERMISSIONS)
       }
       setLoading(false)
     }
