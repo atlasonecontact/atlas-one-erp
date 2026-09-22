@@ -19,6 +19,7 @@ import {
   Plug,
   Bike,
   TrendingUp,
+  Gift,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
@@ -70,6 +71,12 @@ const menuSections = [
     items: [
       { href: "/dashboard/ventas", label: "Punto de Venta", icon: ShoppingCart, permission: "can_sell" },
       { href: "/dashboard/productos", label: "Productos", icon: Package, permission: "can_manage_inventory" },
+      {
+        href: "/dashboard/productos/promociones",
+        label: "Promociones",
+        icon: Gift,
+        permission: "can_manage_inventory",
+      },
       {
         title: "Stock",
         items: [

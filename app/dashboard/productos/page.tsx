@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductModal, type ProductLot } from "@/components/products/product-modal"
 import { ProductDetailModal } from "@/components/products/product-detail-modal"
-import { PromotionModal, type Promotion, type PromotionItemInput } from "@/components/products/promotion-modal"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
@@ -31,7 +30,6 @@ import {
   Droplet,
   Beer,
   ScanLine,
-  Gift,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
@@ -92,9 +90,6 @@ export default function ProductosPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [scannedProduct, setScannedProduct] = useState<Product | null>(null)
   const [showLookupScanner, setShowLookupScanner] = useState(false)
-  const [promotions, setPromotions] = useState<Promotion[]>([])
-  const [showPromotionModal, setShowPromotionModal] = useState(false)
-  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null)
 
   const fetchProducts = async (kiosko_id?: string) => {
     setLoading(true)
@@ -167,32 +162,6 @@ export default function ProductosPage() {
     setLoading(false)
   }
 
-  const loadPromotions = async (kiosko_id: string) => {
-    const { data, error } = await supabase
-      .from("promotions")
-      .select("id, name, price, promotion_items(product_id, quantity, products(name))")
-      .eq("kiosko_id", kiosko_id)
-      .order("name")
-
-    if (error) {
-      console.error("Error fetching promotions:", error)
-      return
-    }
-
-    setPromotions(
-      (data || []).map((promo: any) => ({
-        id: promo.id,
-        name: promo.name,
-        price: promo.price,
-        items: (promo.promotion_items || []).map((it: any) => ({
-          product_id: it.product_id,
-          quantity: it.quantity,
-          product_name: it.products?.name,
-        })),
-      })),
-    )
-  }
-
   useEffect(() => {
     const loadUserAndProducts = async () => {
       const {
@@ -214,7 +183,6 @@ export default function ProductosPage() {
       if (employeeData) {
         setKioskoId(employeeData.kiosko_id)
         fetchProducts(employeeData.kiosko_id)
-        loadPromotions(employeeData.kiosko_id)
       } else {
         // User is owner
         const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
@@ -222,7 +190,6 @@ export default function ProductosPage() {
         if (kioscos && kioscos.length > 0) {
           setKioskoId(kioscos[0].id)
           fetchProducts(kioscos[0].id)
-          loadPromotions(kioscos[0].id)
         } else {
           setLoading(false)
         }
@@ -320,67 +287,6 @@ export default function ProductosPage() {
     if (!error) {
       setProducts((prev) => prev.filter((p) => p.id !== id))
     }
-  }
-
-  // Guarda la promocion (cabecera) y reemplaza sus items completos: es mas
-  // simple y menos propenso a errores que hacer un diff fila por fila, y el
-  // volumen de items por promo es chico.
-  const handleSavePromotion = async (
-    promo: { id?: string; name: string; price: number },
-    items: PromotionItemInput[],
-  ) => {
-    if (!kioskoId) return
-
-    let promotionId = promo.id
-
-    if (promotionId) {
-      const { error } = await supabase
-        .from("promotions")
-        .update({ name: promo.name, price: promo.price, updated_at: new Date().toISOString() })
-        .eq("id", promotionId)
-      if (error) {
-        toast.error("Error al guardar la promoción", error.message)
-        return
-      }
-      await supabase.from("promotion_items").delete().eq("promotion_id", promotionId)
-    } else {
-      const { data, error } = await supabase
-        .from("promotions")
-        .insert({ kiosko_id: kioskoId, name: promo.name, price: promo.price })
-        .select("id")
-        .single()
-      if (error || !data) {
-        toast.error("Error al crear la promoción", error?.message)
-        return
-      }
-      promotionId = data.id
-    }
-
-    const { error: itemsError } = await supabase
-      .from("promotion_items")
-      .insert(items.map((i) => ({ promotion_id: promotionId, product_id: i.product_id, quantity: i.quantity })))
-
-    if (itemsError) {
-      toast.error("Error al guardar los productos de la promoción", itemsError.message)
-      return
-    }
-
-    toast.success(promo.id ? "Promoción actualizada" : "Promoción creada", promo.name)
-    setShowPromotionModal(false)
-    setEditingPromotion(null)
-    loadPromotions(kioskoId)
-  }
-
-  const handleDeletePromotion = async (id: string) => {
-    const { error } = await supabase.from("promotions").delete().eq("id", id)
-    if (error) {
-      toast.error("Error al eliminar la promoción", error.message)
-      return
-    }
-    setPromotions((prev) => prev.filter((p) => p.id !== id))
-    setShowPromotionModal(false)
-    setEditingPromotion(null)
-    toast.success("Promoción eliminada")
   }
 
   const contributeToBarcodeCatalog = async (product: Omit<Product, "id"> & { id?: string }) => {
@@ -725,18 +631,6 @@ export default function ProductosPage() {
                 Ajustar Precios
               </Button>
               <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingPromotion(null)
-                  setShowPromotionModal(true)
-                }}
-                disabled={products.length === 0}
-                className="border-primary/30 text-muted-foreground hover:text-foreground"
-              >
-                <Gift className="w-4 h-4 mr-2" />
-                Agregar Promoción
-              </Button>
-              <Button
                 onClick={() => {
                   setEditingProduct(null)
                   setShowModal(true)
@@ -750,36 +644,6 @@ export default function ProductosPage() {
           )}
         </div>
       </div>
-
-      {/* Promociones */}
-      {promotions.length > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-card p-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Gift className="w-4 h-4 text-primary" />
-            Promociones ({promotions.length})
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {promotions.map((promo) => (
-              <button
-                key={promo.id}
-                onClick={() => {
-                  if (!permissions.can_manage_inventory) return
-                  setEditingPromotion(promo)
-                  setShowPromotionModal(true)
-                }}
-                disabled={!permissions.can_manage_inventory}
-                className="text-left p-3 rounded-lg border border-primary/10 bg-muted/30 hover:bg-muted/50 transition-colors disabled:cursor-default"
-              >
-                <p className="text-sm font-semibold text-foreground">{promo.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {promo.items.map((i) => `${i.quantity}x ${i.product_name || "?"}`).join(" + ")}
-                </p>
-                <p className="text-sm text-primary font-medium mt-1">${promo.price.toLocaleString("es-AR")}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col gap-4">
@@ -1189,19 +1053,6 @@ export default function ProductosPage() {
         isOpen={showLookupScanner}
         onClose={() => setShowLookupScanner(false)}
         onScan={handleScanLookup}
-      />
-
-      {/* Promociones */}
-      <PromotionModal
-        open={showPromotionModal}
-        onClose={() => {
-          setShowPromotionModal(false)
-          setEditingPromotion(null)
-        }}
-        promotion={editingPromotion}
-        products={products.map((p) => ({ id: p.id, name: p.name, price: p.price, stock: p.stock }))}
-        onSave={handleSavePromotion}
-        onDelete={handleDeletePromotion}
       />
     </div>
   )

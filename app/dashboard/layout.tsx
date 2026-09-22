@@ -37,6 +37,7 @@ import {
   Plug,
   Menu,
   X,
+  Gift,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -150,7 +151,11 @@ function DashboardSidebar({
     {
       label: "PRODUCTOS",
       icon: Package,
-      href: "/dashboard/productos",
+      isExpandable: true,
+      items: [
+        { href: "/dashboard/productos", label: "Catálogo", icon: Package },
+        { href: "/dashboard/productos/promociones", label: "Promociones", icon: Gift },
+      ],
     },
     {
       label: "STOCK",
