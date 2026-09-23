@@ -15,6 +15,70 @@
 -- (status 'received') se consideran confirmadas: su stock ya se sumo.
 -- ============================================================================
 
+-- 0) Tablas base (create_merchandise_receipts.sql nunca se habia corrido en
+--    produccion: las tablas no existian). Solo lectura por RLS; toda escritura
+--    pasa por las funciones de mas abajo. purchase_id queda sin FK hasta que
+--    se vincule con ordenes de compra (MVP-3).
+CREATE TABLE IF NOT EXISTS merchandise_receipts (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kiosko_id               UUID NOT NULL REFERENCES kioscos(id) ON DELETE CASCADE,
+  purchase_id             UUID,
+  receipt_number          TEXT NOT NULL,
+  receipt_date            DATE NOT NULL,
+  supplier_name           TEXT NOT NULL,
+  supplier_contact        TEXT,
+  receipt_photo_url       TEXT,
+  received_by_employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+  received_by_name        TEXT NOT NULL,
+  total_amount            NUMERIC(12, 2),
+  notes                   TEXT,
+  status                  TEXT NOT NULL DEFAULT 'draft'
+    CONSTRAINT merchandise_receipts_status_check
+    CHECK (status IN ('draft', 'confirmed', 'received', 'verified', 'discrepancy', 'cancelled')),
+  created_at              TIMESTAMPTZ DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS merchandise_receipt_items (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  receipt_id   UUID NOT NULL REFERENCES merchandise_receipts(id) ON DELETE CASCADE,
+  product_id   UUID REFERENCES products(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  quantity     INTEGER NOT NULL CHECK (quantity > 0),
+  unit_cost    NUMERIC(12, 2),
+  subtotal     NUMERIC(12, 2),
+  notes        TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_merchandise_receipts_kiosko ON merchandise_receipts (kiosko_id);
+CREATE INDEX IF NOT EXISTS idx_merchandise_receipts_date ON merchandise_receipts (receipt_date);
+CREATE INDEX IF NOT EXISTS idx_merchandise_receipt_items_receipt ON merchandise_receipt_items (receipt_id);
+CREATE INDEX IF NOT EXISTS idx_merchandise_receipt_items_product ON merchandise_receipt_items (product_id);
+
+ALTER TABLE merchandise_receipts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE merchandise_receipt_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Employees can view merchandise receipts" ON merchandise_receipts;
+CREATE POLICY "Employees can view merchandise receipts" ON merchandise_receipts FOR SELECT
+  USING (kiosko_id IN (SELECT kiosko_id FROM employees WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Employees can view merchandise receipt items" ON merchandise_receipt_items;
+CREATE POLICY "Employees can view merchandise receipt items" ON merchandise_receipt_items FOR SELECT
+  USING (receipt_id IN (
+    SELECT id FROM merchandise_receipts
+    WHERE kiosko_id IN (SELECT kiosko_id FROM employees WHERE user_id = auth.uid())
+  ));
+
+-- Bucket para las fotos de remitos (la pantalla las sube con getPublicUrl).
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "receipts_upload_authenticated" ON storage.objects;
+CREATE POLICY "receipts_upload_authenticated" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'receipts');
+
 -- 1) Columnas nuevas y estados -----------------------------------------------
 ALTER TABLE merchandise_receipts
   ADD COLUMN IF NOT EXISTS confirmed_at            TIMESTAMPTZ,
