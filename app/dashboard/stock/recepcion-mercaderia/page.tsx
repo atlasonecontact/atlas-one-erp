@@ -21,7 +21,9 @@ import {
   Search,
   CheckCircle2,
   AlertTriangle,
+  ScanLine,
 } from "lucide-react"
+import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { compressImage } from "@/lib/utils/compress-image"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
@@ -109,6 +111,8 @@ export default function RecepcionMercaderiaPage() {
   const [filteredSuppliers, setFilteredSuppliers] = useState<string[]>([])
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [scannerMode, setScannerMode] = useState(true) // Scanner enabled by default
+  const [barcodeInput, setBarcodeInput] = useState("")
+  const [showCameraScanner, setShowCameraScanner] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -145,6 +149,7 @@ export default function RecepcionMercaderiaPage() {
       const filtered = products.filter(
         (p) =>
           p.name.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+          p.barcode?.includes(productSearchQuery.trim()) ||
           p.sku?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
           p.category?.toLowerCase().includes(productSearchQuery.toLowerCase()),
       )
@@ -172,6 +177,9 @@ export default function RecepcionMercaderiaPage() {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!scannerMode || showConfirm || cancelTarget) return
+      // El campo "Buscar por código de barras" maneja su propio Enter: si no,
+      // una pistola escaneando ahi agregaria el producto dos veces.
+      if ((e.target as HTMLElement | null)?.dataset?.barcodeInput) return
 
       const currentTime = new Date().getTime()
 
@@ -274,9 +282,8 @@ export default function RecepcionMercaderiaPage() {
     if (!product) {
       toast.warning(
         "Producto no encontrado",
-        `Código ${barcode} no está cargado. Creálo desde Productos con este código.`,
+        `Código ${barcode} no está cargado. Guardá el borrador y creálo desde Productos con este código.`,
       )
-      router.push(`/dashboard/productos?new_barcode=${barcode}`)
       return
     }
 
@@ -753,6 +760,58 @@ export default function RecepcionMercaderiaPage() {
                 </div>
               )}
 
+              {/* Buscar por código de barras: escribirlo, pegarlo, usar la pistola o la cámara */}
+              <div className="mb-4 space-y-2">
+                <Label className="text-slate-300 flex items-center gap-2">
+                  <ScanLine className="w-4 h-4 text-cyan-400" />
+                  Buscar por código de barras
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    data-barcode-input="true"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        const code = barcodeInput.trim()
+                        if (code.length >= 4) {
+                          handleBarcodeScanned(code)
+                          setBarcodeInput("")
+                        }
+                      }
+                    }}
+                    placeholder="Escaneá o escribí el código y apretá Enter"
+                    inputMode="numeric"
+                    className="bg-slate-800/50 border-slate-700 text-white"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const code = barcodeInput.trim()
+                      if (code.length >= 4) {
+                        handleBarcodeScanned(code)
+                        setBarcodeInput("")
+                      }
+                    }}
+                    disabled={barcodeInput.trim().length < 4}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white shrink-0"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Buscar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCameraScanner(true)}
+                    className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 shrink-0"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Cámara
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 {/* Product search with autocompletion */}
                 <div className="md:col-span-2 space-y-2 relative">
@@ -762,7 +821,7 @@ export default function RecepcionMercaderiaPage() {
                     <Input
                       value={productSearchQuery}
                       onChange={(e) => setProductSearchQuery(e.target.value)}
-                      placeholder="Buscar por nombre, SKU o categoría..."
+                      placeholder="Buscar por nombre, código de barras, SKU o categoría..."
                       className="pl-10 bg-slate-800/50 border-slate-700 text-white"
                       onFocus={() => productSearchQuery && setShowProductDropdown(true)}
                     />
@@ -1042,6 +1101,15 @@ export default function RecepcionMercaderiaPage() {
             )}
           </div>
         </Card>
+
+        <CameraScanner
+          isOpen={showCameraScanner}
+          onClose={() => setShowCameraScanner(false)}
+          onScan={(code: string) => {
+            setShowCameraScanner(false)
+            handleBarcodeScanned(code)
+          }}
+        />
 
         {/* Resumen antes de confirmar: impacto exacto en stock */}
         {showConfirm && (
