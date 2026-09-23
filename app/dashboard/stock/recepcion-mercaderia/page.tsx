@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,7 @@ interface Product {
   category: string
   cost: number
   barcode: string
+  stock_quantity: number
 }
 
 interface ReceiptItem {
@@ -50,10 +51,13 @@ interface MerchandiseReceipt {
   receipt_number: string
   receipt_date: string
   supplier_name: string
+  supplier_contact?: string | null
+  notes?: string | null
   received_by_name: string
   total_amount: number
   status: string
   receipt_photo_url: string | null
+  cancel_reason?: string | null
   created_at: string
 }
 
@@ -61,10 +65,21 @@ export default function RecepcionMercaderiaPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const toast = useToast()
-  const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
-  const { permissions, loading: permsLoading } = useEmployeePermissions()
+  const { permissions, loading: permsLoading, isOwner } = useEmployeePermissions()
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [employeeInfo, setEmployeeInfo] = useState<{ id: string; name: string | null } | null>(null)
+
+  // Borrador -> confirmar: el stock solo cambia al confirmar (ver scripts/209)
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const idempotencyKeyRef = useRef<string>("")
+  const [cancelTarget, setCancelTarget] = useState<MerchandiseReceipt | null>(null)
+  const [cancelReason, setCancelReason] = useState("")
+  const [cancelling, setCancelling] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [receipts, setReceipts] = useState<MerchandiseReceipt[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -156,7 +171,7 @@ export default function RecepcionMercaderiaPage() {
   // Listener for barcode scanner input
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (!scannerMode) return
+      if (!scannerMode || showConfirm || cancelTarget) return
 
       const currentTime = new Date().getTime()
 
@@ -182,7 +197,7 @@ export default function RecepcionMercaderiaPage() {
 
     window.addEventListener("keypress", handleKeyPress)
     return () => window.removeEventListener("keypress", handleKeyPress)
-  }, [barcodeBuffer, lastKeyTime, scannerMode, items, products])
+  }, [barcodeBuffer, lastKeyTime, scannerMode, items, products, showConfirm, cancelTarget])
 
   async function loadUser() {
     const {
@@ -194,9 +209,22 @@ export default function RecepcionMercaderiaPage() {
     }
     setUser(user)
 
-    const { data: employee } = await supabase.from("employees").select("kiosko_id").eq("user_id", user.id).single()
+    // El dueño manda primero (mismo criterio que useEmployeePermissions); antes
+    // solo se miraba employees y un dueño sin fila de empleado no podia usar
+    // la pantalla.
+    const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("id, name, kiosko_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
 
-    if (employee) {
+    if (employee) setEmployeeInfo({ id: employee.id, name: employee.name })
+
+    if (kioscos && kioscos.length > 0) {
+      setKioskoId(kioscos[0].id)
+    } else if (employee) {
       setKioskoId(employee.kiosko_id)
     }
   }
@@ -204,7 +232,7 @@ export default function RecepcionMercaderiaPage() {
   async function loadProducts() {
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, sku, category, cost, barcode")
+      .select("id, name, sku, category, cost, barcode, stock_quantity")
       .eq("kiosko_id", kioskoId)
       .eq("is_active", true)
       .order("name")
@@ -357,111 +385,198 @@ export default function RecepcionMercaderiaPage() {
     return publicUrl
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!kioskoId || !user) return
+  function resetForm() {
+    setReceiptNumber("")
+    setReceiptDate(new Date().toISOString().split("T")[0])
+    setSupplierName("")
+    setSupplierContact("")
+    setReceiptPhoto(null)
+    setReceiptPhotoPreview(null)
+    setExistingPhotoUrl(null)
+    setNotes("")
+    setItems([])
+    setEditingDraftId(null)
+  }
 
-    setLoading(true)
+  function errorMessage(error: unknown) {
+    const message = (error as any)?.message
+    return message ? String(message) : "Intentá nuevamente en unos segundos"
+  }
 
+  // Guarda la recepcion como borrador (no toca el stock). Si ya se estaba
+  // editando un borrador, lo actualiza en vez de crear otro.
+  async function persistDraft(): Promise<string> {
+    if (!kioskoId || !user) throw new Error("Sesión no válida")
+
+    let photoUrl = existingPhotoUrl
+    if (receiptPhoto) {
+      const uploaded = await uploadPhoto()
+      if (uploaded) photoUrl = uploaded
+    }
+
+    const { data, error } = await supabase.rpc("save_receipt_draft", {
+      p_receipt: {
+        kiosko_id: kioskoId,
+        receipt_id: editingDraftId,
+        receipt_number: receiptNumber,
+        receipt_date: receiptDate,
+        supplier_name: supplierName,
+        supplier_contact: supplierContact,
+        receipt_photo_url: photoUrl,
+        received_by_employee_id: employeeInfo?.id ?? null,
+        received_by_name: employeeInfo?.name || user.email,
+        notes,
+        items: items.map((item) => ({
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_cost: item.unit_cost,
+        })),
+      },
+    })
+
+    if (error) throw error
+    const receiptId = data?.receipt_id as string
+    setEditingDraftId(receiptId)
+    return receiptId
+  }
+
+  async function handleSaveDraft() {
+    if (saving || confirming) return
+    if (!receiptNumber || !supplierName || items.length === 0) {
+      toast.warning("Faltan datos", "Completá remito, proveedor y al menos un producto")
+      return
+    }
+
+    setSaving(true)
     try {
-      // Upload photo if exists
-      let photoUrl = null
-      if (receiptPhoto) {
-        photoUrl = await uploadPhoto()
-      }
-
-      // Get employee info
-      const { data: employee } = await supabase.from("employees").select("id, name").eq("user_id", user.id).single()
-
-      const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0)
-
-      // Create receipt
-      const { data: receipt, error: receiptError } = await supabase
-        .from("merchandise_receipts")
-        .insert({
-          kiosko_id: kioskoId,
-          receipt_number: receiptNumber,
-          receipt_date: receiptDate,
-          supplier_name: supplierName,
-          supplier_contact: supplierContact,
-          receipt_photo_url: photoUrl,
-          received_by_employee_id: employee?.id,
-          received_by_name: employee?.name || user.email,
-          total_amount: totalAmount,
-          notes,
-          status: "received",
-        })
-        .select()
-        .single()
-
-      if (receiptError) throw receiptError
-
-      // Create receipt items
-      const itemsToInsert = items.map((item) => ({
-        receipt_id: receipt.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_cost: item.unit_cost,
-        subtotal: item.subtotal,
-      }))
-
-      const { error: itemsError } = await supabase.from("merchandise_receipt_items").insert(itemsToInsert)
-
-      if (itemsError) throw itemsError
-
-      // Update product stock
-      for (const item of items) {
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product_id)
-          .single()
-
-        if (product) {
-          await supabase
-            .from("products")
-            .update({
-              stock_quantity: (product.stock_quantity || 0) + item.quantity,
-            })
-            .eq("id", item.product_id)
-
-          // Record stock movement
-          await supabase.from("stock_movements").insert({
-            kiosko_id: kioskoId,
-            product_id: item.product_id,
-            movement_type: "receipt",
-            quantity: item.quantity,
-            reference_id: receipt.id,
-            reason: `Recepción de mercadería - Remito ${receiptNumber}`,
-            created_by: employee?.id,
-          })
-        }
-      }
-
-      // Reset form
-      setReceiptNumber("")
-      setReceiptDate(new Date().toISOString().split("T")[0])
-      setSupplierName("")
-      setSupplierContact("")
-      setReceiptPhoto(null)
-      setReceiptPhotoPreview(null)
-      setNotes("")
-      setItems([])
-
-      // Reload receipts
+      await persistDraft()
+      toast.success("Borrador guardado", "El stock no se modificó. Podés confirmarlo cuando quieras.")
+      resetForm()
       loadReceipts()
-
-      toast.success("Recepción de mercadería registrada exitosamente")
     } catch (error) {
-      console.error("Error creating receipt:", error)
-      toast.error("Error al registrar la recepción", "Intentá nuevamente en unos segundos")
+      console.error("Error saving draft:", error)
+      toast.error("Error al guardar el borrador", errorMessage(error))
     } finally {
-      setLoading(false)
+      setSaving(false)
+    }
+  }
+
+  // Confirmar abre el resumen con el impacto exacto en stock; recien al
+  // aceptarlo ahi se suma la mercaderia.
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!kioskoId || !user || items.length === 0) return
+    idempotencyKeyRef.current = crypto.randomUUID()
+    setShowConfirm(true)
+  }
+
+  async function confirmReceipt() {
+    if (confirming) return
+    setConfirming(true)
+    try {
+      const receiptId = await persistDraft()
+      const { data, error } = await supabase.rpc("confirm_receipt", {
+        p_receipt_id: receiptId,
+        p_idempotency_key: idempotencyKeyRef.current,
+      })
+      if (error) throw error
+
+      setShowConfirm(false)
+      resetForm()
+      loadReceipts()
+      loadProducts()
+      toast.success(
+        data?.already_confirmed ? "La recepción ya estaba confirmada" : "Recepción confirmada",
+        "El stock fue actualizado",
+      )
+    } catch (error) {
+      console.error("Error confirming receipt:", error)
+      toast.error("Error al confirmar la recepción", errorMessage(error))
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  async function continueDraft(receipt: MerchandiseReceipt) {
+    const { data, error } = await supabase
+      .from("merchandise_receipt_items")
+      .select("product_id, product_name, quantity, unit_cost, subtotal")
+      .eq("receipt_id", receipt.id)
+
+    if (error || !data) {
+      toast.error("No se pudo abrir el borrador", errorMessage(error))
+      return
+    }
+
+    resetForm()
+    setEditingDraftId(receipt.id)
+    setReceiptNumber(receipt.receipt_number)
+    setReceiptDate(receipt.receipt_date)
+    setSupplierName(receipt.supplier_name)
+    setSupplierContact(receipt.supplier_contact || "")
+    setNotes(receipt.notes || "")
+    setExistingPhotoUrl(receipt.receipt_photo_url)
+    setReceiptPhotoPreview(receipt.receipt_photo_url)
+    setItems(
+      data.map((row: any) => ({
+        product_id: row.product_id,
+        product_name: row.product_name,
+        quantity: Number(row.quantity),
+        unit_cost: Number(row.unit_cost) || 0,
+        subtotal: Number(row.subtotal) || 0,
+      })),
+    )
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    toast.info("Borrador cargado", `Remito ${receipt.receipt_number}`)
+  }
+
+  async function submitCancel() {
+    if (!cancelTarget || cancelling) return
+    setCancelling(true)
+    try {
+      const { error } = await supabase.rpc("cancel_receipt", {
+        p_receipt_id: cancelTarget.id,
+        p_reason: cancelReason.trim() || null,
+      })
+      if (error) throw error
+
+      toast.success(
+        cancelTarget.status === "draft" ? "Borrador descartado" : "Recepción anulada",
+        cancelTarget.status === "draft" ? undefined : "El stock se revirtió con un movimiento compensatorio",
+      )
+      if (editingDraftId === cancelTarget.id) resetForm()
+      setCancelTarget(null)
+      setCancelReason("")
+      loadReceipts()
+      loadProducts()
+    } catch (error) {
+      console.error("Error cancelling receipt:", error)
+      toast.error("No se pudo anular", errorMessage(error))
+    } finally {
+      setCancelling(false)
     }
   }
 
   const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0)
+
+  // Impacto exacto en stock por producto (una fila por producto aunque este
+  // repetido en varias lineas): stock actual + recibido = stock nuevo.
+  const stockImpact = Object.values(
+    items.reduce(
+      (acc, item) => {
+        const current = products.find((p) => p.id === item.product_id)?.stock_quantity ?? 0
+        acc[item.product_id] = {
+          name: item.product_name,
+          add: (acc[item.product_id]?.add ?? 0) + item.quantity,
+          current,
+        }
+        return acc
+      },
+      {} as Record<string, { name: string; add: number; current: number }>,
+    ),
+  )
+  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0)
   const filteredReceipts = receipts.filter(
     (r) =>
       r.receipt_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -507,6 +622,13 @@ export default function RecepcionMercaderiaPage() {
         {/* New Receipt Form */}
         <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {editingDraftId && (
+              <div className="p-3 bg-amber-950/30 border border-amber-900/50 rounded-lg text-sm text-amber-300">
+                Estás editando un <strong>borrador</strong>: todavía no se sumó nada al stock. El stock cambia
+                recién cuando confirmás la recepción.
+              </div>
+            )}
+
             {/* Receipt Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -777,26 +899,28 @@ export default function RecepcionMercaderiaPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setReceiptNumber("")
-                  setSupplierName("")
-                  setSupplierContact("")
-                  setReceiptPhoto(null)
-                  setReceiptPhotoPreview(null)
-                  setNotes("")
-                  setItems([])
-                }}
+                onClick={resetForm}
                 className="border-slate-700 text-slate-300 hover:bg-slate-800"
               >
-                Limpiar
+                {editingDraftId ? "Cancelar edición" : "Limpiar"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
+                className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Guardando..." : "Guardar borrador"}
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !receiptNumber || !supplierName || items.length === 0}
+                disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
                 className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
               >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? "Guardando..." : "Registrar Recepción"}
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Confirmar recepción
               </Button>
             </div>
           </form>
@@ -824,17 +948,39 @@ export default function RecepcionMercaderiaPage() {
                 className="flex items-center justify-between bg-slate-800/30 rounded-lg p-4 border border-slate-800 hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  {receipt.status === "received" ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-400" />
-                  ) : receipt.status === "discrepancy" ? (
-                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  {receipt.status === "draft" ? (
+                    <FileText className="w-5 h-5 text-amber-400" />
+                  ) : receipt.status === "cancelled" ? (
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
                   ) : (
-                    <FileText className="w-5 h-5 text-cyan-400" />
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
                   )}
                   <div>
-                    <div className="text-white font-semibold">{receipt.receipt_number}</div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-white font-semibold ${receipt.status === "cancelled" ? "line-through opacity-60" : ""}`}
+                      >
+                        {receipt.receipt_number}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          receipt.status === "draft"
+                            ? "bg-amber-500/20 text-amber-300"
+                            : receipt.status === "cancelled"
+                              ? "bg-red-500/20 text-red-300"
+                              : "bg-green-500/20 text-green-300"
+                        }`}
+                      >
+                        {receipt.status === "draft"
+                          ? "Borrador"
+                          : receipt.status === "cancelled"
+                            ? "Anulada"
+                            : "Confirmada"}
+                      </span>
+                    </div>
                     <div className="text-sm text-slate-400">
                       {receipt.supplier_name} • {new Date(receipt.receipt_date).toLocaleDateString()}
+                      {receipt.status === "cancelled" && receipt.cancel_reason ? ` • ${receipt.cancel_reason}` : ""}
                     </div>
                   </div>
                 </div>
@@ -857,6 +1003,36 @@ export default function RecepcionMercaderiaPage() {
                       <Camera className="w-4 h-4" />
                     </Button>
                   )}
+                  {receipt.status === "draft" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => continueDraft(receipt)}
+                        className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
+                      >
+                        Continuar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCancelTarget(receipt)}
+                        className="border-slate-700 text-slate-300"
+                      >
+                        Descartar
+                      </Button>
+                    </>
+                  )}
+                  {receipt.status === "confirmed" && isOwner && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCancelTarget(receipt)}
+                      className="border-red-800 text-red-300 hover:bg-red-950/30"
+                    >
+                      Anular
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -866,6 +1042,109 @@ export default function RecepcionMercaderiaPage() {
             )}
           </div>
         </Card>
+
+        {/* Resumen antes de confirmar: impacto exacto en stock */}
+        {showConfirm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-slate-800">
+                <h2 className="text-xl font-bold text-white">Confirmar recepción</h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  Remito {receiptNumber} • {supplierName} • {totalUnits} unidades
+                </p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-2">
+                <p className="text-sm text-slate-300 mb-3">
+                  Al confirmar se va a sumar este stock. No se puede editar después: si hay un error, se anula y
+                  queda registrado.
+                </p>
+                {stockImpact.map((row) => (
+                  <div
+                    key={row.name}
+                    className="flex items-center justify-between bg-slate-800/40 rounded-lg px-4 py-3 border border-slate-800"
+                  >
+                    <span className="text-white font-medium">{row.name}</span>
+                    <span className="text-slate-300 text-sm">
+                      {row.current} + <span className="text-cyan-400 font-semibold">{row.add}</span> ={" "}
+                      <span className="text-white font-bold">{row.current + row.add}</span> un.
+                    </span>
+                  </div>
+                ))}
+                <div className="flex justify-end pt-3 text-slate-300">
+                  Total del remito:{" "}
+                  <span className="ml-2 text-cyan-400 font-bold">${totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowConfirm(false)}
+                  disabled={confirming}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                >
+                  Volver
+                </Button>
+                <Button
+                  type="button"
+                  onClick={confirmReceipt}
+                  disabled={confirming}
+                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                >
+                  {confirming ? "Confirmando..." : "Confirmar y sumar al stock"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Anular recepción confirmada / descartar borrador */}
+        {cancelTarget && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+              <h2 className="text-xl font-bold text-white">
+                {cancelTarget.status === "draft" ? "Descartar borrador" : "Anular recepción"}
+              </h2>
+              <p className="text-sm text-slate-300">
+                Remito {cancelTarget.receipt_number} • {cancelTarget.supplier_name}
+                {cancelTarget.status === "draft"
+                  ? ". No se modificó el stock, solo se descarta el borrador."
+                  : ". Se va a restar del stock lo que se había sumado, con un movimiento compensatorio que queda en el historial (el original no se borra)."}
+              </p>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Motivo (opcional)</Label>
+                <Textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={3}
+                  className="bg-slate-800/50 border-slate-700 text-white"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCancelTarget(null)
+                    setCancelReason("")
+                  }}
+                  disabled={cancelling}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                >
+                  Volver
+                </Button>
+                <Button
+                  type="button"
+                  onClick={submitCancel}
+                  disabled={cancelling}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {cancelling ? "Procesando..." : cancelTarget.status === "draft" ? "Descartar" : "Anular recepción"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
