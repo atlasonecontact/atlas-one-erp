@@ -802,7 +802,76 @@ export default function ProductosPage() {
       ) : (
         /* Products table */
         <div className="rounded-xl border border-primary/10 bg-card overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Vista de tarjetas para pantallas chicas: editar/eliminar siempre visibles */}
+          <div className="lg:hidden divide-y divide-primary/10">
+            {filteredProducts.length === 0 ? (
+              <p className="p-8 text-center text-muted-foreground">
+                No hay productos. Agrega uno o importa desde CSV.
+              </p>
+            ) : (
+              paginatedProducts.map((product) => (
+                <div key={product.id} className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => toggleProductSelection(product.id)}
+                      className="mt-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {selectedProducts.includes(product.id) ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground font-medium break-words">{product.name}</p>
+                      {product.barcode && <p className="text-xs text-muted-foreground">{product.barcode}</p>}
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground">
+                          {product.category}
+                        </span>
+                        {product.brand && <span className="text-xs text-muted-foreground">{product.brand}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-primary font-semibold">${product.price.toLocaleString()}</span>
+                      <span
+                        className={`flex items-center gap-1 text-sm ${
+                          product.stock <= 10 ? "text-yellow-400" : "text-foreground"
+                        }`}
+                      >
+                        {product.stock <= 10 && <AlertTriangle className="w-4 h-4" />}
+                        {product.stock} un.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(product)}
+                        className="border-primary/30 gap-1.5"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                        className="border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-primary/10">
@@ -819,15 +888,15 @@ export default function ProductosPage() {
                   </button>
                 </th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
-                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
-                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
+                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
+                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
+                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Precio</th>
                 <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
-                <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
+                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
                 <th className="text-right text-sm font-medium text-muted-foreground p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
                   Acciones
                 </th>
@@ -866,7 +935,7 @@ export default function ProductosPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden lg:table-cell p-4">
+                    <td className="hidden xl:table-cell p-4">
                       {product.brand ? (
                         <span className="text-sm text-foreground font-medium">{product.brand}</span>
                       ) : (
@@ -878,7 +947,7 @@ export default function ProductosPage() {
                         {product.category}
                       </span>
                     </td>
-                    <td className="hidden xl:table-cell p-4">
+                    <td className="hidden 2xl:table-cell p-4">
                       {product.subcategory ? (
                         <span className="px-2 py-1 rounded-full text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                           {product.subcategory}
@@ -887,21 +956,21 @@ export default function ProductosPage() {
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="hidden xl:table-cell p-4">
+                    <td className="hidden 2xl:table-cell p-4">
                       {product.line ? (
                         <span className="text-sm text-muted-foreground">{product.line}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="hidden xl:table-cell p-4">
+                    <td className="hidden 2xl:table-cell p-4">
                       {product.supplier ? (
                         <span className="text-sm text-muted-foreground">{product.supplier}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="hidden lg:table-cell p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
+                    <td className="hidden xl:table-cell p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
                     <td className="p-4 text-primary font-medium">${product.price.toLocaleString()}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -911,7 +980,7 @@ export default function ProductosPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="hidden lg:table-cell p-4">
+                    <td className="hidden xl:table-cell p-4">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           product.status === "active"
