@@ -90,9 +90,19 @@ const categoryKeywords: Array<{ category: string; keywords: string[] }> = [
 ]
 
 function guessCategory(tags: string[]): string | null {
-  const lowerTags = tags.map((t) => t.toLowerCase())
+  // Las etiquetas de OpenFoodFacts vienen como "en:non-alcoholic-beverages".
+  const lowerTags = tags.map((t) => t.toLowerCase().replace(/^[a-z]{2}:/, ""))
+  // "non-alcoholic-beverages" contiene "alcoholic": sin este chequeo la
+  // Coca-Cola quedaba como "Bebidas Alcohólicas".
+  const sinAlcohol = lowerTags.some(
+    (t) => t.includes("non-alcoholic") || t.includes("alcohol-free") || t.includes("sin-alcohol"),
+  )
+  const matches = (tag: string, kw: string) =>
+    kw.includes("-") ? tag.includes(kw) : tag.split(/[^a-z]+/).includes(kw)
+
   for (const { category, keywords } of categoryKeywords) {
-    if (keywords.some((kw) => lowerTags.some((tag) => tag.includes(kw)))) {
+    if (category === "Bebidas Alcohólicas" && sinAlcohol) continue
+    if (keywords.some((kw) => lowerTags.some((tag) => matches(tag, kw)))) {
       return category
     }
   }
