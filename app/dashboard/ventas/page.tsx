@@ -328,7 +328,14 @@ export default function VentasPage() {
   }
 
   const handleOpenCashAndContinue = async () => {
-    if (!kioskoId || openingCash) return
+    if (openingCash) return
+    if (!kioskoId) {
+      toast.error(
+        "No se encontró tu kiosco",
+        "Tu usuario no figura como empleado activo de ningún kiosco. Pedile al dueño que revise tu alta en Empleados.",
+      )
+      return
+    }
     setOpeningCash(true)
     try {
       // Otra pestana o usuario pudo haberla abierto: si ya hay una, se usa esa.

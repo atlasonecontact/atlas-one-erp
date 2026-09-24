@@ -180,8 +180,14 @@ export default function CajaPage() {
   }
 
   const handleOpenCash = async () => {
-    if (!kioskoId) return
-    
+    if (!kioskoId) {
+      toast.error(
+        "No se encontró tu kiosco",
+        "Tu usuario no figura como empleado activo de ningún kiosco. Pedile al dueño que revise tu alta en Empleados.",
+      )
+      return
+    }
+
     // Cualquier usuario del kiosko puede abrir la caja (cerrarla sigue
     // dependiendo del permiso). Si ya hay una abierta, se muestra esa en vez
     // de crear una segunda.
