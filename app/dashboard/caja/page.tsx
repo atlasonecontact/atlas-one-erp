@@ -182,6 +182,29 @@ export default function CajaPage() {
   const handleOpenCash = async () => {
     if (!kioskoId) return
     
+    // Cualquier usuario del kiosko puede abrir la caja (cerrarla sigue
+    // dependiendo del permiso). Si ya hay una abierta, se muestra esa en vez
+    // de crear una segunda.
+    const { data: existing } = await supabase
+      .from("cash_registers")
+      .select("*")
+      .eq("kiosko_id", kioskoId)
+      .eq("status", "open")
+      .order("opened_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      setCurrentRegister(existing)
+      setOpeningBalance(Number(existing.opening_balance))
+      setIsOpen(true)
+      setShowOpenModal(false)
+      setNewOpeningBalance("")
+      await loadTransactions(existing.id)
+      toast.info("La caja ya estaba abierta", "Se muestra la caja abierta actual")
+      return
+    }
+
     const balance = Number(newOpeningBalance) || 0
     const { data, error } = await supabase
       .from("cash_registers")
@@ -193,13 +216,18 @@ export default function CajaPage() {
       .select()
       .single()
 
-    if (!error && data) {
-      setCurrentRegister(data)
-      setOpeningBalance(balance)
-      setIsOpen(true)
-      setShowOpenModal(false)
-      setNewOpeningBalance("")
+    if (error || !data) {
+      console.error("[Caja] Error al abrir la caja:", error)
+      toast.error("No se pudo abrir la caja", error?.message || "Intentá nuevamente en unos segundos")
+      return
     }
+
+    setCurrentRegister(data)
+    setOpeningBalance(balance)
+    setIsOpen(true)
+    setShowOpenModal(false)
+    setNewOpeningBalance("")
+    toast.success("Caja abierta", `Saldo inicial ${formatCurrency(balance)}`)
   }
 
   const handleConfirmCloseCash = async (countedCash: number, notes: string) => {
@@ -323,12 +351,8 @@ export default function CajaPage() {
           )}
           <Button
             onClick={() => isOpen ? setShowCloseModal(true) : setShowOpenModal(true)}
-            disabled={isOpen ? !permissions.can_close_register : !permissions.can_open_register}
-            title={
-              (isOpen ? !permissions.can_close_register : !permissions.can_open_register)
-                ? "No tenés permiso para esta acción"
-                : undefined
-            }
+            disabled={isOpen && !permissions.can_close_register}
+            title={isOpen && !permissions.can_close_register ? "No tenés permiso para cerrar la caja" : undefined}
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}

@@ -1095,33 +1095,24 @@ export default function VentasPage() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-md p-6 space-y-4">
             <h2 className="text-xl font-bold text-white">Abrí la caja para empezar a vender</h2>
-            {permissions.can_open_register ? (
-              <>
-                <p className="text-sm text-gray-400">
-                  Ingresá con cuánto efectivo arrancás el turno. Después seguís con el cobro.
-                </p>
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-300">Saldo inicial</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    autoFocus
-                    value={openCashBalance}
-                    onChange={(e) => setOpenCashBalance(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleOpenCashAndContinue()
-                    }}
-                    placeholder="$0"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-6"
-                  />
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-gray-400">
-                No hay ninguna caja abierta y tu usuario no tiene permiso para abrirla. Pedile a tu encargado o al
-                dueño que abra la caja desde Caja.
-              </p>
-            )}
+            <p className="text-sm text-gray-400">
+              Ingresá con cuánto efectivo arrancás el turno. Después seguís con el cobro.
+            </p>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Saldo inicial</label>
+              <Input
+                type="number"
+                min="0"
+                autoFocus
+                value={openCashBalance}
+                onChange={(e) => setOpenCashBalance(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleOpenCashAndContinue()
+                }}
+                placeholder="$0"
+                className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-6"
+              />
+            </div>
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
@@ -1131,15 +1122,13 @@ export default function VentasPage() {
               >
                 Cancelar
               </Button>
-              {permissions.can_open_register && (
-                <Button
-                  onClick={handleOpenCashAndContinue}
-                  disabled={openingCash}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
-                >
-                  {openingCash ? "Abriendo..." : "Abrir caja y continuar"}
-                </Button>
-              )}
+              <Button
+                onClick={handleOpenCashAndContinue}
+                disabled={openingCash}
+                className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
+              >
+                {openingCash ? "Abriendo..." : "Abrir caja y continuar"}
+              </Button>
             </div>
           </div>
         </div>
