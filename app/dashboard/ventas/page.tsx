@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
@@ -106,6 +106,8 @@ export interface CartItem {
 
 export default function VentasPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const { config } = useTheme()
   const { permissions, loading: permsLoading } = useEmployeePermissions()
   const [searchInput, setSearchInput] = useState("")
@@ -134,6 +136,10 @@ export default function VentasPage() {
   const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
   const [showMobileCart, setShowMobileCart] = useState(false)
+  const [openRegisterId, setOpenRegisterId] = useState<string | null>(null)
+  const [showOpenCash, setShowOpenCash] = useState(false)
+  const [openCashBalance, setOpenCashBalance] = useState("")
+  const [openingCash, setOpeningCash] = useState(false)
   const [arcaStatus, setArcaStatus] = useState<{ ready: boolean; reason?: string; environment?: string }>(
     { ready: false, reason: "Cargando configuración de ARCA..." },
   )
@@ -154,6 +160,13 @@ export default function VentasPage() {
   const handleBarcodeScanned = useCallback(
     (barcode: string) => {
       // Search for product by barcode
+      // Un escaneo siempre deja el buscador limpio y con el foco puesto.
+      setSearchInput("")
+      setSearchQuery("")
+      const refocus = () => {
+        if (typeof window !== "undefined" && window.innerWidth >= 1024) searchInputRef.current?.focus()
+      }
+
       const product = products.find((p) => p.barcode === barcode || p.id === barcode || p.sku === barcode)
 
       if (product) {
@@ -167,12 +180,15 @@ export default function VentasPage() {
           addToCart(matchByName)
           toast.success("Producto agregado", `${matchByName.name} x1`)
         } else {
-          toast.warning("Producto no encontrado", `Código: ${barcode}`)
-          setSearchQuery(barcode)
+          toast.warning("Producto no encontrado", `Código: ${barcode}`, {
+            label: "Crear producto con este código",
+            onClick: () => router.push(`/dashboard/productos?new_barcode=${encodeURIComponent(barcode)}`),
+          })
         }
       }
+      refocus()
     },
-    [products, toast],
+    [products, toast, router],
   )
 
   const {
@@ -196,6 +212,13 @@ export default function VentasPage() {
     startListening()
     return () => stopListening()
   }, [])
+
+  // El foco vuelve al buscador despues de cada accion (solo escritorio: en
+  // celular abriria el teclado cada vez).
+  useEffect(() => {
+    if (showPayment || showReceipt || showMobileCart) return
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) searchInputRef.current?.focus()
+  }, [cart, showPayment, showReceipt, showMobileCart])
 
   useEffect(() => {
     loadUserAndProducts()
@@ -227,6 +250,7 @@ export default function VentasPage() {
       loadKioskoInfo(employeeData.kiosko_id)
       loadProducts(employeeData.kiosko_id)
       loadPromotions(employeeData.kiosko_id)
+      loadOpenRegister(employeeData.kiosko_id)
     } else {
       const { data: kioscos } = await supabase
         .from("kioscos")
@@ -241,6 +265,7 @@ export default function VentasPage() {
         setKioskoAddress(kioscos[0].location || "")
         loadProducts(kioscos[0].id)
         loadPromotions(kioscos[0].id)
+        loadOpenRegister(kioscos[0].id)
       } else {
         setIsLoading(false)
       }
@@ -267,6 +292,82 @@ export default function VentasPage() {
         items: (p.promotion_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity })),
       })),
     )
+  }
+
+  // Caja abierta del kiosko (una sola por vez). Sin caja abierta no se cobra:
+  // la UI pide abrirla y register_sale tambien lo rechaza (scripts/210).
+  const loadOpenRegister = async (kiosko_id: string) => {
+    const cacheKey = `atlas.cache.openRegister.${kiosko_id}.v1`
+    try {
+      const { data, error } = await supabase
+        .from("cash_registers")
+        .select("id")
+        .eq("kiosko_id", kiosko_id)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (error) throw error
+      setOpenRegisterId(data?.id ?? null)
+      window.localStorage.setItem(cacheKey, data?.id ?? "")
+    } catch {
+      // Sin conexion: se usa la ultima caja conocida para poder seguir vendiendo.
+      const cached = window.localStorage.getItem(cacheKey)
+      if (cached) setOpenRegisterId(cached)
+    }
+  }
+
+  const requestCheckout = () => {
+    if (!openRegisterId) {
+      setShowMobileCart(false)
+      setShowOpenCash(true)
+      return
+    }
+    setShowMobileCart(false)
+    setShowPayment(true)
+  }
+
+  const handleOpenCashAndContinue = async () => {
+    if (!kioskoId || openingCash) return
+    setOpeningCash(true)
+    try {
+      // Otra pestana o usuario pudo haberla abierto: si ya hay una, se usa esa.
+      const { data: existing } = await supabase
+        .from("cash_registers")
+        .select("id")
+        .eq("kiosko_id", kioskoId)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      let registerId: string | null = existing?.id ?? null
+      if (!registerId) {
+        const { data, error } = await supabase
+          .from("cash_registers")
+          .insert({
+            kiosko_id: kioskoId,
+            employee_id: employeeId,
+            opening_balance: Number(openCashBalance) || 0,
+            status: "open",
+          })
+          .select("id")
+          .single()
+        if (error) throw error
+        registerId = data.id
+      }
+
+      setOpenRegisterId(registerId)
+      window.localStorage.setItem(`atlas.cache.openRegister.${kioskoId}.v1`, registerId ?? "")
+      setShowOpenCash(false)
+      setOpenCashBalance("")
+      setShowPayment(true)
+    } catch (error) {
+      console.error("[v0] Error opening cash register:", error)
+      toast.error("No se pudo abrir la caja", (error as any)?.message || "Intentá nuevamente en unos segundos")
+    } finally {
+      setOpeningCash(false)
+    }
   }
 
   const loadKioskoInfo = async (kiosko_id: string) => {
@@ -407,7 +508,9 @@ export default function VentasPage() {
   // componente se prorratea del precio de la promo segun su peso en el
   // precio normal, para que register_sale descuente stock real sin tocar
   // esa funcion (ver buildSaleItems).
-  const promotionProducts = promotions
+  const promotionProducts = useMemo(
+    () =>
+      promotions
     .map((promo) => {
       const components = promo.items
         .map((it) => {
@@ -442,15 +545,20 @@ export default function VentasPage() {
         promotionComponents,
       }
     })
-    .filter((p): p is NonNullable<typeof p> => p !== null)
+    .filter((p): p is NonNullable<typeof p> => p !== null),
+    [promotions, products],
+  )
 
-  const sellableProducts = [...products, ...promotionProducts]
+  const sellableProducts = useMemo(() => [...products, ...promotionProducts], [products, promotionProducts])
 
   // Se derivan de los productos reales del kiosko (no de una lista fija) para
   // que los tabs del POS siempre coincidan con las categorías que existen de
   // verdad, incluso si difieren de las categorías "canónicas" sugeridas al
   // dar de alta un producto.
-  const categories = ["all", ...Array.from(new Set(sellableProducts.map((p) => p.category).filter(Boolean)))]
+  const categories = useMemo(
+    () => ["all", ...Array.from(new Set(sellableProducts.map((p) => p.category).filter(Boolean)))],
+    [sellableProducts],
+  )
 
   // Debounce: filtrar 12.000+ productos en cada tecla tildaba el buscador.
   useEffect(() => {
@@ -463,13 +571,20 @@ export default function VentasPage() {
     setVisibleCount(PRODUCTS_PAGE_SIZE)
   }, [searchQuery, selectedCategory])
 
-  const filteredProducts = sellableProducts.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesCategory = selectedCategory === "all" || p.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  // Memoizado: con miles de productos, refiltrar en cada render (y cada tecla
+  // renderiza la pagina) tildaba el buscador.
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase()
+    return sellableProducts.filter((p) => {
+      const matchesSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.barcode && String(p.barcode).includes(searchQuery.trim()))
+      const matchesCategory = selectedCategory === "all" || p.category === selectedCategory
+      return matchesSearch && matchesCategory
+    })
+  }, [sellableProducts, searchQuery, selectedCategory])
 
   // Nunca renderizar el catálogo entero de una: con miles de SKUs eso es lo
   // que hacía que la grilla del POS se sintiera trabada al tipear o scrollear.
@@ -572,6 +687,11 @@ export default function VentasPage() {
   }
 
   const handlePayment = async (method: string) => {
+    if (!openRegisterId) {
+      setShowPayment(false)
+      setShowOpenCash(true)
+      return
+    }
     try {
       const isOffline = typeof window !== "undefined" && !window.navigator.onLine
       const saleNumber = `V-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
@@ -585,6 +705,7 @@ export default function VentasPage() {
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
+          cashRegisterId: openRegisterId,
           items: buildSaleItems(cart).map((si) => ({
             productId: si.productId,
             quantity: si.quantity,
@@ -612,6 +733,7 @@ export default function VentasPage() {
           sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
+          cash_register_id: openRegisterId,
           items: buildSaleItems(cart).map((si) => ({
             product_id: si.productId,
             product_name: si.productName,
@@ -644,6 +766,16 @@ export default function VentasPage() {
       console.error("[v0] Error saving sale:", error)
 
       const message = (error as any)?.message ? String((error as any).message) : ""
+
+      if (message.toLowerCase().includes("caja abierta")) {
+        // La caja se cerro (otra pestana/usuario) mientras se armaba la venta.
+        setOpenRegisterId(null)
+        setShowPayment(false)
+        setShowOpenCash(true)
+        toast.error("La caja está cerrada", "Abrí la caja para registrar la venta")
+        return
+      }
+
       const looksOffline =
         typeof window !== "undefined" &&
         (!window.navigator.onLine ||
@@ -660,6 +792,7 @@ export default function VentasPage() {
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
+          cashRegisterId: openRegisterId,
           items: buildSaleItems(cart).map((si) => ({
             productId: si.productId,
             quantity: si.quantity,
@@ -754,8 +887,9 @@ export default function VentasPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Buscar productos..."
+                placeholder="Buscar productos o escanear..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500 h-11 lg:h-10 text-base lg:text-sm"
@@ -831,7 +965,7 @@ export default function VentasPage() {
             onUpdateQuantity={updateQuantity}
             onRemove={removeFromCart}
             onClear={clearCart}
-            onCheckout={() => setShowPayment(true)}
+            onCheckout={requestCheckout}
           />
         </div>
       </div>
@@ -944,16 +1078,68 @@ export default function VentasPage() {
                   Vaciar
                 </Button>
                 <Button
-                  onClick={() => {
-                    setShowMobileCart(false)
-                    setShowPayment(true)
-                  }}
+                  onClick={requestCheckout}
                   className="flex-1 h-12 text-black font-semibold"
                   style={{ backgroundColor: config.primary }}
                 >
                   Cobrar
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sin caja abierta no se cobra */}
+      {showOpenCash && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Abrí la caja para empezar a vender</h2>
+            {permissions.can_open_register ? (
+              <>
+                <p className="text-sm text-gray-400">
+                  Ingresá con cuánto efectivo arrancás el turno. Después seguís con el cobro.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">Saldo inicial</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    autoFocus
+                    value={openCashBalance}
+                    onChange={(e) => setOpenCashBalance(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleOpenCashAndContinue()
+                    }}
+                    placeholder="$0"
+                    className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-6"
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">
+                No hay ninguna caja abierta y tu usuario no tiene permiso para abrirla. Pedile a tu encargado o al
+                dueño que abra la caja desde Caja.
+              </p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowOpenCash(false)}
+                disabled={openingCash}
+                className="border-cyan-500/20 text-gray-300 bg-transparent"
+              >
+                Cancelar
+              </Button>
+              {permissions.can_open_register && (
+                <Button
+                  onClick={handleOpenCashAndContinue}
+                  disabled={openingCash}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
+                >
+                  {openingCash ? "Abriendo..." : "Abrir caja y continuar"}
+                </Button>
+              )}
             </div>
           </div>
         </div>

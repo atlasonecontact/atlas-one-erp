@@ -31,7 +31,7 @@ export function useScanner(config: ScannerConfig) {
     onScan,
     minLength = 4,
     maxLength = 50,
-    scanTimeout = 100, // Scanners typically send characters very fast (< 50ms between chars)
+    scanTimeout = 50, // Una pistola manda los caracteres a menos de 50 ms entre si
     preventDefaultKeys = true,
   } = config
 
@@ -49,46 +49,48 @@ export function useScanner(config: ScannerConfig) {
 
       const now = Date.now()
       const key = event.key
-
-      // Reset buffer if too much time passed between keystrokes
-      if (now - lastKeyTime.current > scanTimeout) {
-        bufferRef.current = ""
-      }
+      // Tiempo desde la tecla anterior, calculado ANTES de actualizarlo. (Antes
+      // se actualizaba primero, "isScanning" daba siempre true y desde la 4ta
+      // tecla rapida se hacia preventDefault: el buscador perdia caracteres.)
+      const gap = now - lastKeyTime.current
       lastKeyTime.current = now
 
-      // Handle Enter key - scanner sends Enter at the end
+      // Una pistola escribe todo el codigo + Enter en rafaga. Solo se toma como
+      // escaneo si la secuencia termina en Enter y ninguna tecla tardo mas de
+      // scanTimeout; las teclas se dejan pasar siempre, nunca se bloquean.
       if (key === "Enter") {
         const barcode = bufferRef.current.trim()
+        bufferRef.current = ""
 
-        if (barcode.length >= minLength && barcode.length <= maxLength) {
-          // Valid barcode
-          const scannedProduct: ScannedProduct = {
-            barcode,
-            timestamp: new Date(),
+        if (barcode.length >= minLength && barcode.length <= maxLength && gap <= scanTimeout) {
+          setLastScan({ barcode, timestamp: new Date() })
+
+          // Los caracteres del codigo ya se escribieron en el campo con foco:
+          // se quitan para que el buscador/formulario quede limpio.
+          const el = event.target as HTMLElement | null
+          if (
+            (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
+            el.value.endsWith(barcode)
+          ) {
+            const proto = el instanceof HTMLInputElement ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype
+            Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(el, el.value.slice(0, -barcode.length))
+            el.dispatchEvent(new Event("input", { bubbles: true }))
           }
-          setLastScan(scannedProduct)
-          onScan(barcode)
 
           if (preventDefaultKeys) {
             event.preventDefault()
           }
+          onScan(barcode)
         }
-
-        bufferRef.current = ""
         return
       }
 
-      // Only accept alphanumeric characters for barcode
       if (key.length === 1 && /[a-zA-Z0-9\-]/.test(key)) {
+        // Una pausa larga empieza una secuencia nueva (tipeo humano).
+        if (gap > scanTimeout) bufferRef.current = ""
         bufferRef.current += key
-
-        if (preventDefaultKeys) {
-          // Prevent default only if it looks like a fast scan sequence
-          const isScanning = now - lastKeyTime.current < scanTimeout
-          if (isScanning && bufferRef.current.length > 3) {
-            event.preventDefault()
-          }
-        }
+      } else if (key.length === 1) {
+        bufferRef.current = ""
       }
     },
     [isListening, minLength, maxLength, scanTimeout, onScan, preventDefaultKeys]

@@ -11,13 +11,19 @@ interface Toast {
   title: string
   message?: string
   duration?: number
+  action?: ToastAction
+}
+
+export interface ToastAction {
+  label: string
+  onClick: () => void
 }
 
 interface ToastContextType {
-  showToast: (type: ToastType, title: string, message?: string, duration?: number) => void
+  showToast: (type: ToastType, title: string, message?: string, duration?: number, action?: ToastAction) => void
   success: (title: string, message?: string) => void
   error: (title: string, message?: string) => void
-  warning: (title: string, message?: string) => void
+  warning: (title: string, message?: string, action?: ToastAction) => void
   info: (title: string, message?: string) => void
 }
 
@@ -79,6 +85,17 @@ function ToastComponent({ toast, onRemove }: { toast: Toast; onRemove: (id: stri
       <div className="flex-1 min-w-0">
         <p className="text-white font-medium text-sm">{toast.title}</p>
         {toast.message && <p className="text-gray-400 text-sm mt-0.5">{toast.message}</p>}
+        {toast.action && (
+          <button
+            onClick={() => {
+              toast.action?.onClick()
+              onRemove(toast.id)
+            }}
+            className="mt-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+          >
+            {toast.action.label}
+          </button>
+        )}
       </div>
       <button
         onClick={() => onRemove(toast.id)}
@@ -98,14 +115,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const showToast = useCallback(
-    (type: ToastType, title: string, message?: string, duration = 4000) => {
+    (type: ToastType, title: string, message?: string, duration = 4000, action?: ToastAction) => {
       const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      const toast: Toast = { id, type, title, message, duration }
+      const toast: Toast = { id, type, title, message, duration: action ? Math.max(duration, 8000) : duration, action }
 
       setToasts((prev) => [...prev, toast])
 
-      if (duration > 0) {
-        setTimeout(() => removeToast(id), duration)
+      if (toast.duration && toast.duration > 0) {
+        setTimeout(() => removeToast(id), toast.duration)
       }
     },
     [removeToast]
@@ -115,7 +132,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     showToast,
     success: (title, message) => showToast("success", title, message),
     error: (title, message) => showToast("error", title, message),
-    warning: (title, message) => showToast("warning", title, message),
+    warning: (title, message, action) => showToast("warning", title, message, 4000, action),
     info: (title, message) => showToast("info", title, message),
   }
 

@@ -12,6 +12,7 @@ export type QueuedSale = {
   saleNumber: string
   totalAmount: number
   paymentMethod: string
+  cashRegisterId?: string | null
   items: QueuedSaleItem[]
 }
 
@@ -43,6 +44,20 @@ export function enqueueSale(sale: QueuedSale) {
   setQueuedSales(queue)
 }
 
+const REJECTED_KEY = "atlas.offline.salesRejected.v1"
+
+export function getRejectedSales(): QueuedSale[] {
+  if (typeof window === "undefined") return []
+  const data = safeParseJson<QueuedSale[]>(window.localStorage.getItem(REJECTED_KEY))
+  return Array.isArray(data) ? data : []
+}
+
+function rejectQueuedSale(sale: QueuedSale) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(REJECTED_KEY, JSON.stringify([...getRejectedSales(), sale]))
+  removeQueuedSale(sale.id)
+}
+
 export function removeQueuedSale(id: string) {
   const queue = getQueuedSales().filter((s) => s.id !== id)
   setQueuedSales(queue)
@@ -55,6 +70,7 @@ function buildSalePayload(sale: QueuedSale) {
     sale_number: sale.saleNumber,
     total_amount: sale.totalAmount,
     payment_method: sale.paymentMethod,
+    cash_register_id: sale.cashRegisterId ?? null,
     // Timestamp original de la venta (offline), no el de sincronización
     created_at: new Date(sale.createdAt).toISOString(),
     items: sale.items.map((item) => ({
@@ -82,8 +98,15 @@ export async function flushQueuedSales(supabase: any): Promise<{ flushed: number
 
       removeQueuedSale(sale.id)
       flushed += 1
-    } catch {
+    } catch (error) {
       failed += 1
+      // Rechazada por el servidor porque no habia caja abierta: reintentar no
+      // sirve y trabaria toda la cola. Se aparta para revisarla a mano.
+      const message = String((error as any)?.message ?? "").toLowerCase()
+      if (message.includes("caja abierta")) {
+        rejectQueuedSale(sale)
+        continue
+      }
       // If one fails, stop early to avoid hammering (usually auth/network)
       break
     }
