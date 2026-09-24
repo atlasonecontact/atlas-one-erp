@@ -357,8 +357,6 @@ export default function CajaPage() {
           )}
           <Button
             onClick={() => isOpen ? setShowCloseModal(true) : setShowOpenModal(true)}
-            disabled={isOpen && !permissions.can_close_register}
-            title={isOpen && !permissions.can_close_register ? "No tenés permiso para cerrar la caja" : undefined}
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}
