@@ -12,6 +12,7 @@ interface MonthRow {
   month: string
   sales: number
   sales_count: number
+  saved: number
 }
 
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -35,6 +36,7 @@ export default function CajaFuertePage() {
   const { isOwner, loading: permsLoading } = useEmployeePermissions()
   const [today, setToday] = useState(0)
   const [month, setMonth] = useState(0)
+  const [safe, setSafe] = useState(0)
   const [months, setMonths] = useState<MonthRow[]>([])
   const [needsSetup, setNeedsSetup] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -68,11 +70,13 @@ export default function CajaFuertePage() {
     } else if (data) {
       setToday(Number(data.today))
       setMonth(Number(data.month))
+      setSafe(Number(data.safe ?? 0))
       setMonths(
         (data.months || []).map((m: any) => ({
           month: m.month,
           sales: Number(m.sales),
           sales_count: Number(m.sales_count),
+          saved: Number(m.saved ?? 0),
         })),
       )
     }
@@ -110,16 +114,29 @@ export default function CajaFuertePage() {
         </Link>
       </div>
 
-      <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-6 flex items-center gap-4 flex-wrap">
-        <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
-          <PiggyBank className="w-7 h-7 text-green-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+            <PiggyBank className="w-7 h-7 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-300">Total en la caja fuerte</p>
+            <p className="text-4xl font-bold text-amber-400">{formatCurrency(safe)}</p>
+            <p className="text-xs text-gray-400 mt-1">Lo que se guardó al cerrar cada caja</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-300">Ganado en {currentLabel} (hasta hoy)</p>
-          <p className="text-4xl font-bold text-green-400">{formatCurrency(month)}</p>
-          <p className="text-sm text-gray-300 mt-1">
-            Hoy: <span className="font-semibold text-white">{formatCurrency(today)}</span>
-          </p>
+
+        <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-7 h-7 text-green-400" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-300">Ganado en {currentLabel} (hasta hoy)</p>
+            <p className="text-4xl font-bold text-green-400">{formatCurrency(month)}</p>
+            <p className="text-sm text-gray-300 mt-1">
+              Hoy: <span className="font-semibold text-white">{formatCurrency(today)}</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -153,7 +170,12 @@ export default function CajaFuertePage() {
                   </p>
                   <p className="text-xs text-gray-500">{m.sales_count} ventas</p>
                 </div>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(m.sales)}</p>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-green-400">{formatCurrency(m.sales)}</p>
+                  {m.saved !== 0 && (
+                    <p className="text-xs text-amber-400">Guardado en la caja fuerte: {formatCurrency(m.saved)}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>

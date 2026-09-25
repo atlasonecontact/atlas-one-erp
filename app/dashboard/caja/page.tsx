@@ -144,7 +144,7 @@ export default function CajaPage() {
   const [currentRegister, setCurrentRegister] = useState<CashRegister | null>(null)
   const [lastClosed, setLastClosed] = useState<CashRegister | null>(null)
   const [history, setHistory] = useState<CashRegister[]>([])
-  const [earnings, setEarnings] = useState<{ today: number; month: number } | null>(null)
+  const [earnings, setEarnings] = useState<{ today: number; month: number; safe: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [opening, setOpening] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
@@ -270,7 +270,7 @@ export default function CajaPage() {
   // Lo ganado (todas las ventas): hoy y en el mes hasta hoy. Solo lo ve el dueño.
   const loadEarnings = async (kiosko_id: string) => {
     const { data, error } = await supabase.rpc("earnings_summary", { p_kiosko: kiosko_id })
-    if (!error && data) setEarnings({ today: Number(data.today), month: Number(data.month) })
+    if (!error && data) setEarnings({ today: Number(data.today), month: Number(data.month), safe: Number(data.safe ?? 0) })
   }
 
   const handleOpenCash = async () => {
@@ -521,8 +521,14 @@ export default function CajaPage() {
       {isOwner && earnings && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <PiggyBank className="w-7 h-7 text-green-400" />
+            <div className="flex items-center gap-8 flex-wrap">
+              <div className="flex items-center gap-3">
+                <PiggyBank className="w-7 h-7 text-amber-400" />
+                <div>
+                  <p className="text-xs text-gray-300">En la caja fuerte</p>
+                  <p className="text-2xl font-bold text-amber-400">{formatCurrency(earnings.safe)}</p>
+                </div>
+              </div>
               <div>
                 <p className="text-xs text-gray-300">Ganado este mes (hasta hoy)</p>
                 <p className="text-2xl font-bold text-green-400">{formatCurrency(earnings.month)}</p>
