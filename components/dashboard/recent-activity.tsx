@@ -58,6 +58,7 @@ export function RecentActivity() {
         .from("sales")
         .select("id, total_amount, created_at, payment_method")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .order("created_at", { ascending: false })
         .limit(5)
 

@@ -180,6 +180,7 @@ export function useDashboardData(period: string) {
         .from("sales")
         .select("id, total_amount, payment_method, created_at")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .order("created_at", { ascending: false })
         .limit(5)
 

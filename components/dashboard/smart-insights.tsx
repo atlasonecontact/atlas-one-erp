@@ -51,6 +51,7 @@ export function SmartInsights() {
         .from("sales")
         .select("id")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", todayStart)
 
       if (todaySales && todaySales.length > 0) {
@@ -106,6 +107,7 @@ export function SmartInsights() {
         .from("sales")
         .select("created_at")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", weekAgo.toISOString())
 
       const hourCounts = new Map<number, number>()
@@ -135,12 +137,14 @@ export function SmartInsights() {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", weekAgo.toISOString())
 
       const { data: lastWeekSales } = await supabase
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", twoWeeksAgo.toISOString())
         .lt("created_at", weekAgo.toISOString())
 

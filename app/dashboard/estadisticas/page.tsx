@@ -63,6 +63,7 @@ export default function EstadisticasPage() {
         .from("sales")
         .select("id, total_amount, payment_method, created_at")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", startDate.toISOString())
 
       // Previous period for comparison
@@ -70,6 +71,7 @@ export default function EstadisticasPage() {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", prevStartDate.toISOString())
         .lt("created_at", startDate.toISOString())
 
@@ -97,6 +99,7 @@ export default function EstadisticasPage() {
         .from("sales")
         .select("id, total_amount, employee_id")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", startDate.toISOString())
 
       // Calculate totals

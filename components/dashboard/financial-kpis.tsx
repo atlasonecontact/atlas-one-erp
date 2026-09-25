@@ -131,6 +131,7 @@ export function FinancialKPIs({ data, isLoading = false }: FinancialKPIsProps) {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", monthStart.toISOString())
 
       const totalSales = sales?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
@@ -350,6 +351,7 @@ export function PerformanceKPIs({ data, isLoading = false }: PerformanceKPIsProp
         .from("sales")
         .select("id, total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", monthStart.toISOString())
 
       const totalSales = sales?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0

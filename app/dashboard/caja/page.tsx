@@ -390,24 +390,30 @@ export default function CajaPage() {
   const handleAddMovement = async (type: string, direction: string, description: string, amount: number) => {
     if (!currentRegister) return
 
-    const { data, error } = await supabase
-      .from("cash_register_transactions")
-      .insert({
-        cash_register_id: currentRegister.id,
-        type,
-        direction,
-        amount,
-        payment_method: "cash",
-        notes: description,
-      })
-      .select()
-      .single()
+    const { data: rpcData, error } = await supabase.rpc("add_cash_movement", {
+      p_register: currentRegister.id,
+      p_type: type,
+      p_direction: direction,
+      p_amount: amount,
+      p_notes: description,
+    })
 
-    if (error || !data) {
+    if (error) {
       console.error("[Caja] Error al registrar el movimiento:", error)
-      toast.error("No se pudo registrar el movimiento", error?.message || "Intentá nuevamente")
+      toast.error("No se pudo registrar el movimiento", error.message || "Intentá nuevamente")
       return
     }
+
+    const data = {
+      id: (rpcData as any)?.transaction_id ?? crypto.randomUUID(),
+      cash_register_id: currentRegister.id,
+      type,
+      direction,
+      amount,
+      payment_method: "cash",
+      notes: description,
+      created_at: new Date().toISOString(),
+    } as any
 
     setMovements((prev) => [data, ...prev])
     setShowMovementModal(false)

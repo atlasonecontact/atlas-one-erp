@@ -71,6 +71,7 @@ export default function FinanzasEstadisticasPage() {
         .from("sales")
         .select("id, total_amount, created_at")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", startDate.toISOString())
 
       const saleIds = sales?.map(s => s.id) || []

@@ -72,6 +72,7 @@ export default function VentasEstadisticasPage() {
         .from("sales")
         .select("id, total_amount, payment_method, employee_id, created_at, employees(name)")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: false })
 
@@ -80,6 +81,7 @@ export default function VentasEstadisticasPage() {
         .from("sales")
         .select("total_amount")
         .in("kiosko_id", kioskoIds)
+        .neq("status", "cancelled")
         .gte("created_at", previousStart.toISOString())
         .lt("created_at", startDate.toISOString())
 

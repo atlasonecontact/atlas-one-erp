@@ -156,6 +156,47 @@ export default function VentasPage() {
     }
   }, [searchParams, products])
 
+  // "Anular y rehacer" desde el historial: la venta anulada deja sus productos
+  // en localStorage y el POS los carga en el carrito (una sola vez).
+  useEffect(() => {
+    if (products.length === 0 || typeof window === "undefined") return
+    let raw: string | null = null
+    try {
+      raw = window.localStorage.getItem("atlas.redoSale.v1")
+      if (raw) window.localStorage.removeItem("atlas.redoSale.v1")
+    } catch {
+      return
+    }
+    if (!raw) return
+
+    try {
+      const saved = JSON.parse(raw) as { sale_number?: string; items?: { product_id: string; name: string; quantity: number }[] }
+      const missing: string[] = []
+      const nextCart: CartItem[] = []
+      for (const it of saved.items || []) {
+        const p = products.find((x: any) => x.id === it.product_id)
+        if (!p || p.stock <= 0) {
+          missing.push(it.name)
+          continue
+        }
+        const existing = nextCart.find((c) => c.id === p.id)
+        const qty = Math.min(it.quantity, p.stock - (existing?.quantity ?? 0))
+        if (qty <= 0) continue
+        if (existing) existing.quantity += qty
+        else nextCart.push({ id: p.id, name: p.name, price: p.price, quantity: qty, stock: p.stock })
+      }
+      if (nextCart.length > 0) setCart(nextCart)
+      toast.info(
+        `Rehaciendo la venta ${saved.sale_number ?? ""}`.trim(),
+        missing.length > 0
+          ? `Sin stock o no encontrados: ${missing.join(", ")}`
+          : "Corregí lo que haga falta y cobrala de nuevo",
+      )
+    } catch {
+      // datos inválidos: se ignora
+    }
+  }, [products])
+
   // Scanner integration
   const handleBarcodeScanned = useCallback(
     (barcode: string) => {
