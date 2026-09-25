@@ -20,6 +20,7 @@ import {
   Bike,
   TrendingUp,
   Gift,
+  PiggyBank,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
@@ -97,6 +98,7 @@ const menuSections = [
       { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
       { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
       { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
+      { href: "/dashboard/caja/plata", label: "Plata (caja fuerte y banco)", icon: PiggyBank, permission: "can_manage_employees" },
     ],
   },
   {

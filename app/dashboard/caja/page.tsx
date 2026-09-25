@@ -2,12 +2,26 @@
 
 import type React from "react"
 
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Wallet, Banknote, CreditCard, QrCode, TrendingUp, TrendingDown, DollarSign, Plus, RefreshCw } from "lucide-react"
+import {
+  Wallet,
+  Banknote,
+  CreditCard,
+  QrCode,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Plus,
+  RefreshCw,
+  PiggyBank,
+  Landmark,
+  History,
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { useToast } from "@/components/ui/toast-provider"
@@ -20,11 +34,20 @@ interface CashRegister {
   status: string
   opened_at: string
   closed_at: string | null
+  shift?: string | null
+  cashier_name?: string | null
+  expected_cash?: number | null
+  counted_cash?: number | null
+  cash_difference?: number | null
+  withdrawn_amount?: number | null
+  withdrawn_destination?: string | null
+  left_for_next?: number | null
 }
 
 interface Transaction {
   id: string
   type: string
+  direction?: string | null
   amount: number
   payment_method: string | null
   notes: string | null
@@ -35,24 +58,97 @@ interface SalesByMethod {
   cash: number
   card: number
   qr: number
+  other: number
   cashCount: number
   cardCount: number
   qrCount: number
 }
 
+const EMPTY_SALES: SalesByMethod = { cash: 0, card: 0, qr: 0, other: 0, cashCount: 0, cardCount: 0, qrCount: 0 }
+
+const SHIFTS = ["Mañana", "Tarde", "Noche"]
+
+const MOVEMENT_TYPES = [
+  { value: "expense", label: "Gasto (limpieza, delivery, etc.)", direction: "out" },
+  { value: "owner_withdrawal", label: "Retiro del dueño", direction: "out" },
+  { value: "supplier_payment", label: "Pago a proveedor", direction: "out" },
+  { value: "employee_advance", label: "Vale a empleado", direction: "out" },
+  { value: "other_out", label: "Otro egreso", direction: "out" },
+  { value: "change_in", label: "Ingreso de cambio (monedas / billetes chicos)", direction: "in" },
+  { value: "other_in", label: "Otro ingreso", direction: "in" },
+] as const
+
+const MOVEMENT_LABEL: Record<string, string> = {
+  expense: "Gasto",
+  owner_withdrawal: "Retiro del dueño",
+  supplier_payment: "Pago a proveedor",
+  employee_advance: "Vale a empleado",
+  other_out: "Egreso",
+  change_in: "Ingreso de cambio",
+  other_in: "Ingreso",
+  deposit: "Depósito",
+}
+
+const DESTINATION_LABEL: Record<string, string> = {
+  safe: "Caja fuerte",
+  bank: "Banco",
+  owner: "Retiro del dueño",
+}
+
+const isIncome = (t: Transaction) => t.direction === "in"
+
+function isMissingFunction(error: any) {
+  const msg = String(error?.message || "").toLowerCase()
+  return error?.code === "PGRST202" || msg.includes("could not find the function") || msg.includes("does not exist")
+}
+
+function toSalesByMethod(sales: { total_amount: number; payment_method: string | null }[]): SalesByMethod {
+  const byMethod: SalesByMethod = { ...EMPTY_SALES }
+  sales.forEach((s) => {
+    const amount = Number(s.total_amount) || 0
+    switch (s.payment_method?.toLowerCase()) {
+      case "cash":
+      case "efectivo":
+        byMethod.cash += amount
+        byMethod.cashCount++
+        break
+      case "card":
+      case "tarjeta":
+        byMethod.card += amount
+        byMethod.cardCount++
+        break
+      case "qr":
+      case "transfer":
+      case "transferencia":
+        byMethod.qr += amount
+        byMethod.qrCount++
+        break
+      default:
+        // Un metodo desconocido NO es efectivo: antes se sumaba a la caja y inflaba el esperado.
+        byMethod.other += amount
+    }
+  })
+  return byMethod
+}
+
 export default function CajaPage() {
   const [isOpen, setIsOpen] = useState(false)
-  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [showMovementModal, setShowMovementModal] = useState(false)
   const [showOpenModal, setShowOpenModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
   const [openingBalance, setOpeningBalance] = useState(0)
   const [newOpeningBalance, setNewOpeningBalance] = useState("")
-  const [expenses, setExpenses] = useState<Transaction[]>([])
-  const [salesByMethod, setSalesByMethod] = useState<SalesByMethod>({ cash: 0, card: 0, qr: 0, cashCount: 0, cardCount: 0, qrCount: 0 })
+  const [shift, setShift] = useState("")
+  const [movements, setMovements] = useState<Transaction[]>([])
+  const [salesByMethod, setSalesByMethod] = useState<SalesByMethod>(EMPTY_SALES)
   const [currentRegister, setCurrentRegister] = useState<CashRegister | null>(null)
+  const [lastClosed, setLastClosed] = useState<CashRegister | null>(null)
+  const [history, setHistory] = useState<CashRegister[]>([])
+  const [treasury, setTreasury] = useState<{ safe: number; bank: number; total: number } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [opening, setOpening] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
-  const { permissions } = useEmployeePermissions()
+  const { isOwner } = useEmployeePermissions()
 
   const supabase = createClient()
   const toast = useToast()
@@ -61,15 +157,28 @@ export default function CajaPage() {
     loadUserAndCashRegister()
   }, [])
 
+  useEffect(() => {
+    if (kioskoId && isOwner) loadTreasury(kioskoId)
+  }, [kioskoId, isOwner])
+
+  useEffect(() => {
+    // Al abrir el modal, se sugiere lo que quedo en la caja del turno anterior.
+    if (showOpenModal && newOpeningBalance === "" && lastClosed) {
+      const left = lastClosed.left_for_next ?? lastClosed.closing_balance
+      if (left != null) setNewOpeningBalance(String(left))
+    }
+  }, [showOpenModal])
+
   const loadUserAndCashRegister = async () => {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
       return
     }
 
-    // Get kiosko
     const { data: employeeData } = await supabase
       .from("employees")
       .select("kiosko_id")
@@ -82,33 +191,21 @@ export default function CajaPage() {
     if (employeeData) {
       targetKioskoId = employeeData.kiosko_id
     } else {
-      const { data: kioscos } = await supabase
-        .from("kioscos")
-        .select("id")
-        .eq("owner_id", user.id)
-        .limit(1)
-
-      if (kioscos && kioscos.length > 0) {
-        targetKioskoId = kioscos[0].id
-      }
+      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+      if (kioscos && kioscos.length > 0) targetKioskoId = kioscos[0].id
     }
 
     if (targetKioskoId) {
       setKioskoId(targetKioskoId)
       await loadCashRegister(targetKioskoId)
-      await loadTodaySales(targetKioskoId)
+      await loadHistory(targetKioskoId)
     } else {
-      // No hay kioscos, pero no es un error
       console.warn("[Caja] No se encontró kiosko para el usuario")
     }
     setLoading(false)
   }
 
   const loadCashRegister = async (kiosko_id: string) => {
-    // Get today's open register or create one
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
     const { data: register } = await supabase
       .from("cash_registers")
       .select("*")
@@ -122,61 +219,56 @@ export default function CajaPage() {
       setCurrentRegister(register)
       setIsOpen(true)
       setOpeningBalance(Number(register.opening_balance))
-      await loadTransactions(register.id)
+      await Promise.all([loadMovements(register.id), loadSales(kiosko_id, register.opened_at)])
     } else {
+      setCurrentRegister(null)
       setIsOpen(false)
+      setMovements([])
+      setSalesByMethod(EMPTY_SALES)
     }
   }
 
-  const loadTransactions = async (registerId: string) => {
+  const loadMovements = async (registerId: string) => {
     const { data } = await supabase
       .from("cash_register_transactions")
       .select("*")
       .eq("cash_register_id", registerId)
-      .eq("type", "expense")
       .order("created_at", { ascending: false })
 
-    if (data) {
-      setExpenses(data)
-    }
+    if (data) setMovements(data)
   }
 
-  const loadTodaySales = async (kiosko_id: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
+  // Las ventas se cuentan desde que se abrio ESTA caja (no desde la medianoche),
+  // asi dos turnos el mismo dia no se mezclan.
+  const loadSales = async (kiosko_id: string, since: string) => {
     const { data: sales } = await supabase
       .from("sales")
       .select("total_amount, payment_method")
       .eq("kiosko_id", kiosko_id)
-      .gte("created_at", today.toISOString())
+      .gte("created_at", since)
+      .or("status.is.null,status.eq.completed")
 
-    if (sales) {
-      const byMethod: SalesByMethod = { cash: 0, card: 0, qr: 0, cashCount: 0, cardCount: 0, qrCount: 0 }
-      sales.forEach((s) => {
-        const amount = Number(s.total_amount)
-        switch (s.payment_method?.toLowerCase()) {
-          case "cash":
-          case "efectivo":
-            byMethod.cash += amount
-            byMethod.cashCount++
-            break
-          case "card":
-          case "tarjeta":
-            byMethod.card += amount
-            byMethod.cardCount++
-            break
-          case "qr":
-            byMethod.qr += amount
-            byMethod.qrCount++
-            break
-          default:
-            byMethod.cash += amount
-            byMethod.cashCount++
-        }
-      })
-      setSalesByMethod(byMethod)
+    if (sales) setSalesByMethod(toSalesByMethod(sales))
+  }
+
+  const loadHistory = async (kiosko_id: string) => {
+    const { data } = await supabase
+      .from("cash_registers")
+      .select("*")
+      .eq("kiosko_id", kiosko_id)
+      .eq("status", "closed")
+      .order("closed_at", { ascending: false })
+      .limit(15)
+
+    if (data) {
+      setHistory(data)
+      setLastClosed(data[0] ?? null)
     }
+  }
+
+  const loadTreasury = async (kiosko_id: string) => {
+    const { data, error } = await supabase.rpc("treasury_summary", { p_kiosko: kiosko_id })
+    if (!error && data) setTreasury({ safe: Number(data.safe), bank: Number(data.bank), total: Number(data.total) })
   }
 
   const handleOpenCash = async () => {
@@ -187,113 +279,137 @@ export default function CajaPage() {
       )
       return
     }
+    if (opening) return
+    setOpening(true)
 
-    // Cualquier usuario del kiosko puede abrir la caja (cerrarla sigue
-    // dependiendo del permiso). Si ya hay una abierta, se muestra esa en vez
-    // de crear una segunda.
-    const { data: existing } = await supabase
-      .from("cash_registers")
-      .select("*")
-      .eq("kiosko_id", kioskoId)
-      .eq("status", "open")
-      .order("opened_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    try {
+      const balance = Number(newOpeningBalance) || 0
 
-    if (existing) {
-      setCurrentRegister(existing)
-      setOpeningBalance(Number(existing.opening_balance))
-      setIsOpen(true)
+      const { data: rpcData, error: rpcError } = await supabase.rpc("open_cash_register", {
+        p_kiosko: kioskoId,
+        p_opening: balance,
+        p_shift: shift || null,
+        p_employee: null,
+      })
+
+      if (rpcError && !isMissingFunction(rpcError)) throw rpcError
+
+      if (rpcError) {
+        // Base sin scripts/212 todavia: alta directa como antes.
+        const { data: existing } = await supabase
+          .from("cash_registers")
+          .select("id")
+          .eq("kiosko_id", kioskoId)
+          .eq("status", "open")
+          .limit(1)
+          .maybeSingle()
+        if (!existing) {
+          const { error } = await supabase
+            .from("cash_registers")
+            .insert({ kiosko_id: kioskoId, opening_balance: balance, status: "open" })
+          if (error) throw error
+        }
+      } else if (rpcData && rpcData.created === false) {
+        toast.info("La caja ya estaba abierta", "Se muestra la caja abierta actual")
+      } else {
+        toast.success("Caja abierta", `Saldo inicial ${formatCurrency(balance)}`)
+      }
+
       setShowOpenModal(false)
       setNewOpeningBalance("")
-      await loadTransactions(existing.id)
-      toast.info("La caja ya estaba abierta", "Se muestra la caja abierta actual")
-      return
-    }
-
-    const balance = Number(newOpeningBalance) || 0
-    const { data, error } = await supabase
-      .from("cash_registers")
-      .insert({
-        kiosko_id: kioskoId,
-        opening_balance: balance,
-        status: "open",
-      })
-      .select()
-      .single()
-
-    if (error || !data) {
+      setShift("")
+      await loadCashRegister(kioskoId)
+    } catch (error: any) {
       console.error("[Caja] Error al abrir la caja:", error)
       toast.error("No se pudo abrir la caja", error?.message || "Intentá nuevamente en unos segundos")
-      return
+    } finally {
+      setOpening(false)
     }
-
-    setCurrentRegister(data)
-    setOpeningBalance(balance)
-    setIsOpen(true)
-    setShowOpenModal(false)
-    setNewOpeningBalance("")
-    toast.success("Caja abierta", `Saldo inicial ${formatCurrency(balance)}`)
   }
 
-  const handleConfirmCloseCash = async (countedCash: number, notes: string) => {
-    if (!currentRegister) return
+  const handleConfirmCloseCash = async (countedCash: number, notes: string, withdrawn: number, destination: string) => {
+    if (!currentRegister || !kioskoId) return
 
-    const difference = countedCash - currentBalance
+    const { data, error } = await supabase.rpc("close_cash_register", {
+      p_register: currentRegister.id,
+      p_counted: countedCash,
+      p_withdrawn: withdrawn,
+      p_destination: withdrawn > 0 ? destination : null,
+      p_notes: notes || null,
+    })
 
-    const { error } = await supabase
-      .from("cash_registers")
-      .update({
-        closing_balance: countedCash,
-        expected_cash: currentBalance,
-        counted_cash: countedCash,
-        cash_difference: difference,
-        closing_notes: notes || null,
-        status: "closed",
-        closed_at: new Date().toISOString(),
-      })
-      .eq("id", currentRegister.id)
+    let difference = countedCash - currentBalance
 
-    if (!error) {
-      setIsOpen(false)
-      setCurrentRegister(null)
-      setExpenses([])
-      setShowCloseModal(false)
-      toast.success(
-        "Caja cerrada",
-        difference === 0
-          ? "El conteo coincide con lo esperado"
-          : `Diferencia de ${formatCurrency(Math.abs(difference))} ${difference > 0 ? "sobrante" : "faltante"}`,
-      )
-    } else {
+    if (error && isMissingFunction(error)) {
+      // Base sin scripts/212 todavia: cierre simple como antes (sin retiro ni cuenta de plata).
+      const { error: updError } = await supabase
+        .from("cash_registers")
+        .update({
+          closing_balance: countedCash,
+          expected_cash: currentBalance,
+          counted_cash: countedCash,
+          cash_difference: difference,
+          closing_notes: notes || null,
+          status: "closed",
+          closed_at: new Date().toISOString(),
+        })
+        .eq("id", currentRegister.id)
+      if (updError) {
+        console.error("Error closing cash register:", updError)
+        toast.error("No se pudo cerrar la caja", updError.message)
+        return
+      }
+    } else if (error) {
       console.error("Error closing cash register:", error)
-      toast.error("No se pudo cerrar la caja", "Intentá nuevamente en unos segundos")
+      toast.error("No se pudo cerrar la caja", error.message)
+      return
+    } else if (data && typeof data.difference === "number") {
+      difference = Number(data.difference)
     }
+
+    setShowCloseModal(false)
+    toast.success(
+      "Caja cerrada",
+      difference === 0
+        ? "El conteo coincide con lo esperado"
+        : `Diferencia de ${formatCurrency(Math.abs(difference))} ${difference > 0 ? "sobrante" : "faltante"}`,
+    )
+    await loadCashRegister(kioskoId)
+    await loadHistory(kioskoId)
+    if (isOwner) await loadTreasury(kioskoId)
   }
 
-  const totalSales = salesByMethod.cash + salesByMethod.card + salesByMethod.qr
-  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0)
-  const currentBalance = openingBalance + salesByMethod.cash - totalExpenses
+  const totalSales = salesByMethod.cash + salesByMethod.card + salesByMethod.qr + salesByMethod.other
+  const totalIn = movements.filter(isIncome).reduce((acc, m) => acc + Number(m.amount), 0)
+  const totalOut = movements.filter((m) => !isIncome(m)).reduce((acc, m) => acc + Number(m.amount), 0)
+  const currentBalance = openingBalance + salesByMethod.cash + totalIn - totalOut
   const totalTransactions = salesByMethod.cashCount + salesByMethod.cardCount + salesByMethod.qrCount
 
-  const handleAddExpense = async (description: string, amount: number) => {
+  const handleAddMovement = async (type: string, direction: string, description: string, amount: number) => {
     if (!currentRegister) return
 
     const { data, error } = await supabase
       .from("cash_register_transactions")
       .insert({
         cash_register_id: currentRegister.id,
-        type: "expense",
-        amount: amount,
+        type,
+        direction,
+        amount,
+        payment_method: "cash",
         notes: description,
       })
       .select()
       .single()
 
-    if (!error && data) {
-      setExpenses((prev) => [data, ...prev])
+    if (error || !data) {
+      console.error("[Caja] Error al registrar el movimiento:", error)
+      toast.error("No se pudo registrar el movimiento", error?.message || "Intentá nuevamente")
+      return
     }
-    setShowExpenseModal(false)
+
+    setMovements((prev) => [data, ...prev])
+    setShowMovementModal(false)
+    toast.success(direction === "in" ? "Ingreso registrado" : "Egreso registrado", formatCurrency(amount))
   }
 
   if (loading) {
@@ -304,7 +420,6 @@ export default function CajaPage() {
     )
   }
 
-  // Si no hay kioskoId, mostrar mensaje
   if (!kioskoId) {
     return (
       <div className="space-y-6">
@@ -326,7 +441,7 @@ export default function CajaPage() {
             Andá a Configuración para crear tu primer kiosko.
           </p>
           <Button
-            onClick={() => window.location.href = "/dashboard/configuracion"}
+            onClick={() => (window.location.href = "/dashboard/configuracion")}
             className="bg-cyan-500 hover:bg-cyan-400 text-black"
           >
             Ir a Configuración
@@ -339,24 +454,24 @@ export default function CajaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Caja</h1>
-          <p className="text-gray-400 text-sm">Control de caja y movimientos del día</p>
+          <p className="text-gray-400 text-sm">Control de caja y movimientos del turno</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {isOpen && (
             <Button
-              onClick={() => setShowExpenseModal(true)}
+              onClick={() => setShowMovementModal(true)}
               variant="outline"
               className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
             >
               <Plus className="w-4 h-4" />
-              Registrar Gasto
+              Movimiento
             </Button>
           )}
           <Button
-            onClick={() => isOpen ? setShowCloseModal(true) : setShowOpenModal(true)}
+            onClick={() => (isOpen ? setShowCloseModal(true) : setShowOpenModal(true))}
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}
@@ -368,7 +483,7 @@ export default function CajaPage() {
       <div
         className={`rounded-xl border p-6 ${isOpen ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center ${isOpen ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
@@ -380,14 +495,56 @@ export default function CajaPage() {
               <p className={`text-xl font-bold ${isOpen ? "text-green-400" : "text-red-400"}`}>
                 {isOpen ? "Caja Abierta" : "Caja Cerrada"}
               </p>
+              {isOpen && currentRegister && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {currentRegister.shift ? `Turno ${currentRegister.shift} · ` : ""}
+                  {currentRegister.cashier_name ? `${currentRegister.cashier_name} · ` : ""}
+                  desde {new Date(currentRegister.opened_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
+                </p>
+              )}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-400">Balance actual</p>
+            <p className="text-sm text-gray-400">Efectivo esperado en caja</p>
             <p className="text-3xl font-bold text-white">{formatCurrency(currentBalance)}</p>
           </div>
         </div>
       </div>
+
+      {/* Plata guardada (solo dueño) */}
+      {isOwner && treasury && (
+        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 className="text-lg font-semibold text-white">Plata guardada</h3>
+            <Link href="/dashboard/caja/plata" className="text-sm text-cyan-400 hover:text-cyan-300">
+              Ver y mover plata →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
+              <PiggyBank className="w-6 h-6 text-amber-400" />
+              <div>
+                <p className="text-xs text-gray-500">Caja fuerte</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(treasury.safe)}</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
+              <Landmark className="w-6 h-6 text-blue-400" />
+              <div>
+                <p className="text-xs text-gray-500">Banco</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(treasury.bank)}</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
+              <Wallet className="w-6 h-6 text-green-400" />
+              <div>
+                <p className="text-xs text-gray-500">Total con la caja abierta</p>
+                <p className="text-xl font-bold text-green-400">{formatCurrency(treasury.total + (isOpen ? currentBalance : 0))}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -401,7 +558,7 @@ export default function CajaPage() {
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Ventas totales</span>
+            <span className="text-sm text-gray-400">Ventas del turno</span>
             <TrendingUp className="w-5 h-5 text-green-400" />
           </div>
           <p className="text-2xl font-bold text-green-400">{formatCurrency(totalSales)}</p>
@@ -409,10 +566,11 @@ export default function CajaPage() {
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Gastos</span>
+            <span className="text-sm text-gray-400">Egresos</span>
             <TrendingDown className="w-5 h-5 text-red-400" />
           </div>
-          <p className="text-2xl font-bold text-red-400">{formatCurrency(totalExpenses)}</p>
+          <p className="text-2xl font-bold text-red-400">{formatCurrency(totalOut)}</p>
+          {totalIn > 0 && <p className="text-xs text-gray-500 mt-1">Ingresos: {formatCurrency(totalIn)}</p>}
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
@@ -467,26 +625,39 @@ export default function CajaPage() {
               </div>
               <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.qr)}</p>
             </div>
+
+            {salesByMethod.other > 0 && (
+              <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                <p className="text-white font-medium">Otros métodos</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.other)}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Expenses */}
+        {/* Movements */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Gastos del Día</h3>
-          {expenses.length === 0 ? (
+          <h3 className="text-lg font-semibold text-white mb-4">Movimientos del turno</h3>
+          {movements.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <TrendingDown className="w-12 h-12 mb-3 opacity-50" />
-              <p className="text-sm">No hay gastos registrados</p>
+              <p className="text-sm">No hay movimientos registrados</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {expenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                  <div>
-                    <p className="text-white font-medium">{expense.notes || 'Gasto'}</p>
-                    <p className="text-xs text-gray-500">{new Date(expense.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {movements.map((m) => (
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div className="min-w-0">
+                    <p className="text-white font-medium truncate">{m.notes || MOVEMENT_LABEL[m.type] || "Movimiento"}</p>
+                    <p className="text-xs text-gray-500">
+                      {MOVEMENT_LABEL[m.type] || m.type} ·{" "}
+                      {new Date(m.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
                   </div>
-                  <p className="text-red-400 font-bold">-{formatCurrency(expense.amount)}</p>
+                  <p className={`font-bold shrink-0 ${isIncome(m) ? "text-green-400" : "text-red-400"}`}>
+                    {isIncome(m) ? "+" : "-"}
+                    {formatCurrency(m.amount)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -494,10 +665,69 @@ export default function CajaPage() {
         </div>
       </div>
 
-      {/* Expense Modal */}
-      <ExpenseModal open={showExpenseModal} onClose={() => setShowExpenseModal(false)} onSave={handleAddExpense} />
+      {/* Historial de cierres */}
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <History className="w-5 h-5 text-cyan-400" />
+          Historial de cierres
+        </h3>
+        {history.length === 0 ? (
+          <p className="text-sm text-gray-500 py-6 text-center">Todavía no hay cierres de caja.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-white/10">
+                  <th className="py-2 pr-4 font-medium">Cierre</th>
+                  <th className="py-2 pr-4 font-medium">Turno</th>
+                  <th className="py-2 pr-4 font-medium text-right">Esperado</th>
+                  <th className="py-2 pr-4 font-medium text-right">Contado</th>
+                  <th className="py-2 pr-4 font-medium text-right">Diferencia</th>
+                  <th className="py-2 pr-4 font-medium text-right">Retiro</th>
+                  <th className="py-2 font-medium text-right">Queda</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => {
+                  const diff = Number(h.cash_difference ?? 0)
+                  const hasWithdrawal = Number(h.withdrawn_amount ?? 0) > 0
+                  return (
+                    <tr key={h.id} className="border-b border-white/5 text-gray-300">
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        {h.closed_at
+                          ? new Date(h.closed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+                          : "-"}
+                      </td>
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        {h.shift || "-"}
+                        {h.cashier_name ? <span className="text-gray-500"> · {h.cashier_name}</span> : null}
+                      </td>
+                      <td className="py-3 pr-4 text-right">{h.expected_cash != null ? formatCurrency(Number(h.expected_cash)) : "-"}</td>
+                      <td className="py-3 pr-4 text-right">{h.counted_cash != null ? formatCurrency(Number(h.counted_cash)) : "-"}</td>
+                      <td
+                        className={`py-3 pr-4 text-right font-semibold ${
+                          diff === 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {h.cash_difference == null ? "-" : diff === 0 ? "Coincide" : `${diff > 0 ? "+" : "-"}${formatCurrency(Math.abs(diff))}`}
+                      </td>
+                      <td className="py-3 pr-4 text-right whitespace-nowrap">
+                        {hasWithdrawal
+                          ? `${formatCurrency(Number(h.withdrawn_amount))} → ${DESTINATION_LABEL[h.withdrawn_destination || ""] || ""}`
+                          : "-"}
+                      </td>
+                      <td className="py-3 text-right">{h.left_for_next != null ? formatCurrency(Number(h.left_for_next)) : "-"}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      {/* Close Cash Modal (arqueo) */}
+      <MovementModal open={showMovementModal} onClose={() => setShowMovementModal(false)} onSave={handleAddMovement} />
+
       <CloseCashModal
         open={showCloseModal}
         onClose={() => setShowCloseModal(false)}
@@ -513,6 +743,25 @@ export default function CajaPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
+              <Label className="text-gray-300">Turno</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {SHIFTS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setShift(shift === s ? "" : s)}
+                    className={`py-2 rounded-lg border text-sm transition-colors ${
+                      shift === s
+                        ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
+                        : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label className="text-gray-300">Saldo inicial</Label>
               <Input
                 type="number"
@@ -522,7 +771,9 @@ export default function CajaPage() {
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
               />
               <p className="text-xs text-gray-500">
-                Ingresá el dinero con el que iniciás la caja
+                {lastClosed && (lastClosed.left_for_next ?? lastClosed.closing_balance) != null
+                  ? `Quedó en la caja del turno anterior: ${formatCurrency(Number(lastClosed.left_for_next ?? lastClosed.closing_balance))}. Corregilo si contaste otra cosa.`
+                  : "Ingresá el dinero con el que iniciás la caja"}
               </p>
             </div>
             <div className="flex gap-3 pt-4">
@@ -536,9 +787,10 @@ export default function CajaPage() {
               </Button>
               <Button
                 onClick={handleOpenCash}
+                disabled={opening}
                 className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
               >
-                Abrir Caja
+                {opening ? "Abriendo..." : "Abrir Caja"}
               </Button>
             </div>
           </div>
@@ -548,21 +800,28 @@ export default function CajaPage() {
   )
 }
 
-function ExpenseModal({
+function MovementModal({
   open,
   onClose,
   onSave,
 }: {
   open: boolean
   onClose: () => void
-  onSave: (description: string, amount: number) => void
+  onSave: (type: string, direction: string, description: string, amount: number) => Promise<void> | void
 }) {
+  const [type, setType] = useState<string>("expense")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selected = MOVEMENT_TYPES.find((t) => t.value === type) ?? MOVEMENT_TYPES[0]
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(description, Number(amount))
+    if (saving) return
+    setSaving(true)
+    await onSave(selected.value, selected.direction, description.trim(), Number(amount))
+    setSaving(false)
     setDescription("")
     setAmount("")
   }
@@ -571,15 +830,30 @@ function ExpenseModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Registrar Gasto</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Movimiento de caja</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="text-gray-300">Tipo</Label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full h-10 rounded-md bg-[#0d1424] border border-cyan-500/20 text-white px-3 text-sm"
+            >
+              {MOVEMENT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.direction === "in" ? "Ingreso · " : "Egreso · "}
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="space-y-2">
             <Label className="text-gray-300">Descripción</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Compra de insumos"
+              placeholder="Ej: compra de insumos de limpieza"
               className="bg-[#0d1424] border-cyan-500/20 text-white"
             />
           </div>
@@ -587,6 +861,7 @@ function ExpenseModal({
             <Label className="text-gray-300">Monto</Label>
             <Input
               type="number"
+              min="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="$0"
@@ -604,10 +879,10 @@ function ExpenseModal({
             </Button>
             <Button
               type="submit"
-              disabled={!description || !amount}
+              disabled={saving || !description.trim() || !(Number(amount) > 0)}
               className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
             >
-              Registrar
+              {saving ? "Guardando..." : "Registrar"}
             </Button>
           </div>
         </form>
@@ -625,27 +900,36 @@ function CloseCashModal({
   open: boolean
   onClose: () => void
   expectedCash: number
-  onConfirm: (countedCash: number, notes: string) => void
+  onConfirm: (countedCash: number, notes: string, withdrawn: number, destination: string) => Promise<void> | void
 }) {
   const [counted, setCounted] = useState("")
   const [notes, setNotes] = useState("")
+  const [withdrawn, setWithdrawn] = useState("")
+  const [destination, setDestination] = useState("safe")
   const [submitting, setSubmitting] = useState(false)
 
   const countedAmount = Number.parseFloat(counted) || 0
+  const withdrawnAmount = Number.parseFloat(withdrawn) || 0
   const difference = countedAmount - expectedCash
+  const leftForNext = countedAmount - withdrawnAmount
+  const withdrawnTooMuch = withdrawnAmount > countedAmount
+  const canSubmit = counted !== "" && !withdrawnTooMuch && withdrawnAmount >= 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canSubmit || submitting) return
     setSubmitting(true)
-    await onConfirm(countedAmount, notes)
+    await onConfirm(countedAmount, notes, withdrawnAmount, destination)
     setSubmitting(false)
     setCounted("")
     setNotes("")
+    setWithdrawn("")
+    setDestination("safe")
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Cerrar Caja — Arqueo</DialogTitle>
         </DialogHeader>
@@ -659,6 +943,7 @@ function CloseCashModal({
             <Label className="text-gray-300">Efectivo contado en caja</Label>
             <Input
               type="number"
+              min="0"
               value={counted}
               onChange={(e) => setCounted(e.target.value)}
               placeholder="$0"
@@ -671,9 +956,7 @@ function CloseCashModal({
           {counted !== "" && (
             <div
               className={`flex justify-between p-4 rounded-lg border ${
-                difference === 0
-                  ? "bg-green-500/10 border-green-500/20"
-                  : "bg-amber-500/10 border-amber-500/20"
+                difference === 0 ? "bg-green-500/10 border-green-500/20" : "bg-amber-500/10 border-amber-500/20"
               }`}
             >
               <span className={difference === 0 ? "text-green-400" : "text-amber-400"}>
@@ -685,6 +968,45 @@ function CloseCashModal({
             </div>
           )}
 
+          <div className="space-y-3 p-4 rounded-lg border border-cyan-500/10 bg-white/[0.03]">
+            <Label className="text-gray-300">¿Qué hacés con el efectivo? (opcional)</Label>
+            <div className="space-y-2">
+              <Input
+                type="number"
+                min="0"
+                value={withdrawn}
+                onChange={(e) => setWithdrawn(e.target.value)}
+                placeholder="Monto que retirás de la caja"
+                className="bg-[#0d1424] border-cyan-500/20 text-white"
+              />
+              {withdrawnAmount > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {(["safe", "bank", "owner"] as const).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDestination(d)}
+                      className={`py-2 rounded-lg border text-xs transition-colors ${
+                        destination === d
+                          ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
+                          : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
+                      }`}
+                    >
+                      {DESTINATION_LABEL[d]}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {withdrawnTooMuch && <p className="text-xs text-red-400">No podés retirar más de lo que contaste.</p>}
+            </div>
+            {counted !== "" && !withdrawnTooMuch && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Queda en la caja para el próximo turno</span>
+                <span className="text-white font-semibold">{formatCurrency(leftForNext)}</span>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label className="text-gray-300">Notas (opcional)</Label>
             <Input
@@ -695,7 +1017,7 @@ function CloseCashModal({
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
@@ -706,7 +1028,7 @@ function CloseCashModal({
             </Button>
             <Button
               type="submit"
-              disabled={counted === "" || submitting}
+              disabled={!canSubmit || submitting}
               className="flex-1 bg-red-500 hover:bg-red-400 text-white font-semibold"
             >
               {submitting ? "Cerrando..." : "Confirmar Cierre"}

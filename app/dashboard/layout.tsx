@@ -38,6 +38,7 @@ import {
   Menu,
   X,
   Gift,
+  PiggyBank,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -185,7 +186,11 @@ function DashboardSidebar({
     {
       label: "CAJA",
       icon: Wallet,
-      href: "/dashboard/caja",
+      isExpandable: true,
+      items: [
+        { href: "/dashboard/caja", label: "Caja diaria", icon: Wallet },
+        { href: "/dashboard/caja/plata", label: "Plata (caja fuerte y banco)", icon: PiggyBank },
+      ],
     },
     {
       label: "ANÁLISIS DE DATOS",
