@@ -19,7 +19,6 @@ import {
   Plus,
   RefreshCw,
   PiggyBank,
-  Landmark,
   History,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -460,16 +459,20 @@ export default function CajaPage() {
           <p className="text-gray-400 text-sm">Control de caja y movimientos del turno</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {isOpen && (
-            <Button
-              onClick={() => setShowMovementModal(true)}
-              variant="outline"
-              className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Movimiento
-            </Button>
-          )}
+          <Button
+            onClick={() => {
+              if (!isOpen) {
+                toast.info("Abrí la caja primero", "Los movimientos se registran dentro de un turno con la caja abierta")
+                return
+              }
+              setShowMovementModal(true)
+            }}
+            variant="outline"
+            className={`border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2 ${isOpen ? "" : "opacity-60"}`}
+          >
+            <Plus className="w-4 h-4" />
+            Movimiento
+          </Button>
           <Button
             onClick={() => (isOpen ? setShowCloseModal(true) : setShowOpenModal(true))}
             className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
@@ -514,34 +517,17 @@ export default function CajaPage() {
       {/* Plata guardada (solo dueño) */}
       {isOwner && treasury && (
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <h3 className="text-lg font-semibold text-white">Plata guardada</h3>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <PiggyBank className="w-7 h-7 text-amber-400" />
+              <div>
+                <p className="text-xs text-gray-500">Guardado en la caja fuerte</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(treasury.safe)}</p>
+              </div>
+            </div>
             <Link href="/dashboard/caja/plata" className="text-sm text-cyan-400 hover:text-cyan-300">
-              Ver y mover plata →
+              Ver lo que se ganó por mes →
             </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
-              <PiggyBank className="w-6 h-6 text-amber-400" />
-              <div>
-                <p className="text-xs text-gray-500">Caja fuerte</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(treasury.safe)}</p>
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
-              <Landmark className="w-6 h-6 text-blue-400" />
-              <div>
-                <p className="text-xs text-gray-500">Banco</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(treasury.bank)}</p>
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-white/5 flex items-center gap-3">
-              <Wallet className="w-6 h-6 text-green-400" />
-              <div>
-                <p className="text-xs text-gray-500">Total con la caja abierta</p>
-                <p className="text-xl font-bold text-green-400">{formatCurrency(treasury.total + (isOpen ? currentBalance : 0))}</p>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -732,6 +718,7 @@ export default function CajaPage() {
         open={showCloseModal}
         onClose={() => setShowCloseModal(false)}
         expectedCash={currentBalance}
+        openingBalance={openingBalance}
         onConfirm={handleConfirmCloseCash}
       />
 
@@ -895,25 +882,32 @@ function CloseCashModal({
   open,
   onClose,
   expectedCash,
+  openingBalance,
   onConfirm,
 }: {
   open: boolean
   onClose: () => void
   expectedCash: number
+  openingBalance: number
   onConfirm: (countedCash: number, notes: string, withdrawn: number, destination: string) => Promise<void> | void
 }) {
   const [counted, setCounted] = useState("")
   const [notes, setNotes] = useState("")
-  const [withdrawn, setWithdrawn] = useState("")
-  const [destination, setDestination] = useState("safe")
+  const [left, setLeft] = useState("")
+  const [destination, setDestination] = useState<"safe" | "owner">("safe")
   const [submitting, setSubmitting] = useState(false)
 
+  useEffect(() => {
+    // Lo que se deja en la caja para el proximo turno (cambio) arranca igual al saldo de apertura.
+    if (open) setLeft(String(openingBalance || 0))
+  }, [open, openingBalance])
+
   const countedAmount = Number.parseFloat(counted) || 0
-  const withdrawnAmount = Number.parseFloat(withdrawn) || 0
   const difference = countedAmount - expectedCash
-  const leftForNext = countedAmount - withdrawnAmount
-  const withdrawnTooMuch = withdrawnAmount > countedAmount
-  const canSubmit = counted !== "" && !withdrawnTooMuch && withdrawnAmount >= 0
+  // Todo lo contado que no se deja en la caja se guarda (caja fuerte) o lo retira el dueño.
+  const leftAmount = Math.min(Math.max(Number.parseFloat(left) || 0, 0), countedAmount)
+  const withdrawnAmount = Math.max(countedAmount - leftAmount, 0)
+  const canSubmit = counted !== "" && countedAmount >= 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -923,7 +917,6 @@ function CloseCashModal({
     setSubmitting(false)
     setCounted("")
     setNotes("")
-    setWithdrawn("")
     setDestination("safe")
   }
 
@@ -969,40 +962,44 @@ function CloseCashModal({
           )}
 
           <div className="space-y-3 p-4 rounded-lg border border-cyan-500/10 bg-white/[0.03]">
-            <Label className="text-gray-300">¿Qué hacés con el efectivo? (opcional)</Label>
             <div className="space-y-2">
+              <Label className="text-gray-300">Queda en la caja para el próximo turno (cambio)</Label>
               <Input
                 type="number"
                 min="0"
-                value={withdrawn}
-                onChange={(e) => setWithdrawn(e.target.value)}
-                placeholder="Monto que retirás de la caja"
+                value={left}
+                onChange={(e) => setLeft(e.target.value)}
+                placeholder="$0"
                 className="bg-[#0d1424] border-cyan-500/20 text-white"
               />
-              {withdrawnAmount > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {(["safe", "bank", "owner"] as const).map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setDestination(d)}
-                      className={`py-2 rounded-lg border text-xs transition-colors ${
-                        destination === d
-                          ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                          : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
-                      }`}
-                    >
-                      {DESTINATION_LABEL[d]}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {withdrawnTooMuch && <p className="text-xs text-red-400">No podés retirar más de lo que contaste.</p>}
             </div>
-            {counted !== "" && !withdrawnTooMuch && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Queda en la caja para el próximo turno</span>
-                <span className="text-white font-semibold">{formatCurrency(leftForNext)}</span>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">El resto se guarda en</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["safe", "owner"] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDestination(d)}
+                    className={`py-2 rounded-lg border text-sm transition-colors ${
+                      destination === d
+                        ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
+                        : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
+                    }`}
+                  >
+                    {DESTINATION_LABEL[d]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {counted !== "" && (
+              <div className="flex justify-between text-sm pt-1">
+                <span className="text-gray-400">
+                  {destination === "safe" ? "Se guarda en la caja fuerte" : "Retira el dueño"}
+                </span>
+                <span className="text-white font-semibold">{formatCurrency(withdrawnAmount)}</span>
               </div>
             )}
           </div>

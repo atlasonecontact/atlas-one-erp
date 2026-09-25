@@ -1,51 +1,41 @@
 "use client"
 
-import type React from "react"
-
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Landmark, PiggyBank, RefreshCw, Wallet } from "lucide-react"
+import { PiggyBank, RefreshCw, TrendingUp } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
-import { useToast } from "@/components/ui/toast-provider"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { formatCurrency } from "@/lib/utils/currency"
 
-type Account = "safe" | "bank"
-type Mode = "in" | "out" | "transfer"
-
-interface TreasuryMovement {
-  id: string
-  account: Account
-  direction: "in" | "out"
-  amount: number
-  concept: string
-  note: string | null
-  created_at: string
+interface MonthRow {
+  month: string
+  sales: number
+  sales_count: number
+  to_safe: number
+  to_owner: number
 }
 
-const ACCOUNT_LABEL: Record<Account, string> = { safe: "Caja fuerte", bank: "Banco" }
+const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-const CONCEPT_LABEL: Record<string, string> = {
-  cash_close: "Cierre de caja",
-  manual: "Movimiento manual",
-  transfer: "Transferencia entre cuentas",
+function monthLabel(key: string) {
+  const [year, month] = key.split("-")
+  return `${MONTHS[Number(month) - 1] ?? key} ${year}`
+}
+
+function currentMonthKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit" }).format(new Date())
+  return parts.slice(0, 7)
 }
 
 export default function PlataPage() {
   const { isOwner, loading: permsLoading } = useEmployeePermissions()
-  const [kioskoId, setKioskoId] = useState<string | null>(null)
-  const [movements, setMovements] = useState<TreasuryMovement[]>([])
+  const [safe, setSafe] = useState<number | null>(null)
+  const [months, setMonths] = useState<MonthRow[]>([])
+  const [needsSetup, setNeedsSetup] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<Mode | null>(null)
-  const [openRegisterCash, setOpenRegisterCash] = useState<number | null>(null)
 
   const supabase = createClient()
-  const toast = useToast()
 
   useEffect(() => {
     load()
@@ -62,86 +52,34 @@ export default function PlataPage() {
     }
 
     const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
-    const kid = kioscos?.[0]?.id ?? null
-    setKioskoId(kid)
+    const kioskoId = kioscos?.[0]?.id
+    if (!kioskoId) {
+      setLoading(false)
+      return
+    }
 
-    if (kid) {
-      const { data } = await supabase
-        .from("treasury_movements")
-        .select("id, account, direction, amount, concept, note, created_at")
-        .eq("kiosko_id", kid)
-        .order("created_at", { ascending: false })
-        .limit(200)
-      if (data) setMovements(data as TreasuryMovement[])
+    const [summary, monthly] = await Promise.all([
+      supabase.rpc("treasury_summary", { p_kiosko: kioskoId }),
+      supabase.rpc("monthly_summary", { p_kiosko: kioskoId, p_months: 12 }),
+    ])
 
-      // Efectivo esperado hoy en la caja abierta (para el total): apertura + ventas en efectivo + ingresos - egresos.
-      const { data: reg } = await supabase
-        .from("cash_registers")
-        .select("id, opening_balance, opened_at")
-        .eq("kiosko_id", kid)
-        .eq("status", "open")
-        .order("opened_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (reg) {
-        const [{ data: sales }, { data: tx }] = await Promise.all([
-          supabase
-            .from("sales")
-            .select("total_amount, payment_method")
-            .eq("kiosko_id", kid)
-            .gte("created_at", reg.opened_at)
-            .or("status.is.null,status.eq.completed"),
-          supabase.from("cash_register_transactions").select("amount, direction").eq("cash_register_id", reg.id),
-        ])
-        const cashSales = (sales || [])
-          .filter((s: any) => ["cash", "efectivo"].includes(String(s.payment_method || "").toLowerCase()))
-          .reduce((acc: number, s: any) => acc + Number(s.total_amount), 0)
-        const inTx = (tx || []).filter((t: any) => t.direction === "in").reduce((a: number, t: any) => a + Number(t.amount), 0)
-        const outTx = (tx || []).filter((t: any) => t.direction !== "in").reduce((a: number, t: any) => a + Number(t.amount), 0)
-        setOpenRegisterCash(Number(reg.opening_balance) + cashSales + inTx - outTx)
-      } else {
-        setOpenRegisterCash(null)
-      }
+    if (summary.error || monthly.error) {
+      // Falta correr scripts/212 o scripts/213 en Supabase.
+      setNeedsSetup(true)
+    }
+    if (summary.data) setSafe(Number(summary.data.safe))
+    if (Array.isArray(monthly.data)) {
+      setMonths(
+        monthly.data.map((m: any) => ({
+          month: m.month,
+          sales: Number(m.sales),
+          sales_count: Number(m.sales_count),
+          to_safe: Number(m.to_safe),
+          to_owner: Number(m.to_owner),
+        })),
+      )
     }
     setLoading(false)
-  }
-
-  const balance = (account: Account) =>
-    movements.filter((m) => m.account === account).reduce((acc, m) => acc + (m.direction === "in" ? 1 : -1) * Number(m.amount), 0)
-
-  const safe = balance("safe")
-  const bank = balance("bank")
-  const total = safe + bank + (openRegisterCash ?? 0)
-
-  const handleSave = async (params: { mode: Mode; account: Account; to: Account; amount: number; note: string }) => {
-    if (!kioskoId) return false
-    const { mode: m, account, to, amount, note } = params
-
-    if ((m === "out" || m === "transfer") && amount > balance(account)) {
-      toast.error("No alcanza la plata", `En ${ACCOUNT_LABEL[account]} hay ${formatCurrency(balance(account))}`)
-      return false
-    }
-
-    const rows: Record<string, unknown>[] =
-      m === "transfer"
-        ? [
-            { kiosko_id: kioskoId, account, direction: "out", amount, concept: "transfer", note: note || `Pasa a ${ACCOUNT_LABEL[to]}` },
-            { kiosko_id: kioskoId, account: to, direction: "in", amount, concept: "transfer", note: note || `Viene de ${ACCOUNT_LABEL[account]}` },
-          ]
-        : [{ kiosko_id: kioskoId, account, direction: m, amount, concept: "manual", note: note || null }]
-
-    const { error } = await supabase.from("treasury_movements").insert(rows)
-    if (error) {
-      console.error("[Plata] Error al registrar el movimiento:", error)
-      toast.error("No se pudo registrar el movimiento", error.message)
-      return false
-    }
-
-    toast.success("Movimiento registrado", formatCurrency(amount))
-    setMode(null)
-    await load()
-    return true
   }
 
   if (permsLoading || loading) {
@@ -156,209 +94,79 @@ export default function PlataPage() {
     return (
       <div className="space-y-6">
         <AccessDenied
-          title="Solo el dueño puede ver la plata guardada"
-          message="Esta pantalla muestra los saldos de la caja fuerte y del banco. Pedile al dueño del kiosco que la consulte."
+          title="Solo el dueño puede ver esta pantalla"
+          message="Acá se muestra cuánta plata se acumuló y cuánto se ganó por mes. Pedile al dueño del kiosco que la consulte."
         />
       </div>
     )
   }
 
+  const thisMonth = currentMonthKey()
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Plata</h1>
-          <p className="text-gray-400 text-sm">
-            Cuánta plata hay y dónde está. Los cierres de caja que depositan en la caja fuerte o el banco suman solos.{" "}
-            <Link href="/dashboard/caja" className="text-cyan-400 hover:text-cyan-300">
-              Volver a Caja
-            </Link>
-          </p>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Plata</h1>
+        <Link href="/dashboard/caja" className="text-sm text-cyan-400 hover:text-cyan-300">
+          ← Volver a Caja
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-6 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
+          <PiggyBank className="w-7 h-7 text-green-400" />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button onClick={() => setMode("in")} className="bg-cyan-500 hover:bg-cyan-400 text-black gap-2">
-            <ArrowDownLeft className="w-4 h-4" />
-            Ingresar plata
-          </Button>
-          <Button
-            onClick={() => setMode("out")}
-            variant="outline"
-            className="border-cyan-500/20 text-gray-300 bg-transparent gap-2"
-          >
-            <ArrowUpRight className="w-4 h-4" />
-            Sacar plata
-          </Button>
-          <Button
-            onClick={() => setMode("transfer")}
-            variant="outline"
-            className="border-cyan-500/20 text-gray-300 bg-transparent gap-2"
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-            Pasar entre cuentas
-          </Button>
+        <div>
+          <p className="text-sm text-gray-300">Total acumulado en la caja fuerte</p>
+          <p className="text-4xl font-bold text-green-400">{formatCurrency(safe ?? 0)}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Caja fuerte</span>
-            <PiggyBank className="w-5 h-5 text-amber-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{formatCurrency(safe)}</p>
+      {needsSetup && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          Falta un paso en la base de datos para ver esta pantalla completa (scripts 212 y 213). Avisale a quien
+          administra el sistema.
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Banco</span>
-            <Landmark className="w-5 h-5 text-blue-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{formatCurrency(bank)}</p>
-        </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Efectivo en la caja abierta</span>
-            <Wallet className="w-5 h-5 text-cyan-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{openRegisterCash == null ? "Caja cerrada" : formatCurrency(openRegisterCash)}</p>
-        </div>
-        <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-300">Total</span>
-            <Wallet className="w-5 h-5 text-green-400" />
-          </div>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(total)}</p>
-        </div>
-      </div>
+      )}
 
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4">Movimientos</h3>
-        {movements.length === 0 ? (
-          <p className="text-sm text-gray-500 py-8 text-center">
-            Todavía no hay movimientos. Cuando cierres una caja y retires efectivo a la caja fuerte o al banco, van a
-            aparecer acá.
-          </p>
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-cyan-400" />
+          Lo que se ganó por mes
+        </h3>
+
+        {months.length === 0 ? (
+          <p className="text-sm text-gray-500 py-8 text-center">Todavía no hay ventas registradas.</p>
         ) : (
-          <div className="space-y-2 max-h-[32rem] overflow-y-auto">
-            {movements.map((m) => (
-              <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 gap-3">
-                <div className="min-w-0">
-                  <p className="text-white font-medium truncate">{m.note || CONCEPT_LABEL[m.concept] || "Movimiento"}</p>
-                  <p className="text-xs text-gray-500">
-                    {ACCOUNT_LABEL[m.account]} · {CONCEPT_LABEL[m.concept] || m.concept} ·{" "}
-                    {new Date(m.created_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
-                  </p>
+          <div className="space-y-3">
+            {months.map((m) => (
+              <div
+                key={m.month}
+                className={`p-4 rounded-lg border ${
+                  m.month === thisMonth ? "border-cyan-500/30 bg-cyan-500/5" : "border-white/5 bg-white/5"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <p className="text-white font-semibold">
+                      {monthLabel(m.month)}
+                      {m.month === thisMonth && <span className="ml-2 text-xs text-cyan-400">(este mes)</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">{m.sales_count} ventas</p>
+                  </div>
+                  <p className="text-2xl font-bold text-green-400">{formatCurrency(m.sales)}</p>
                 </div>
-                <p className={`font-bold shrink-0 ${m.direction === "in" ? "text-green-400" : "text-red-400"}`}>
-                  {m.direction === "in" ? "+" : "-"}
-                  {formatCurrency(m.amount)}
-                </p>
+                {(m.to_safe > 0 || m.to_owner > 0) && (
+                  <div className="mt-2 flex gap-4 text-xs text-gray-400 flex-wrap">
+                    {m.to_safe > 0 && <span>Guardado en la caja fuerte: {formatCurrency(m.to_safe)}</span>}
+                    {m.to_owner > 0 && <span>Retirado por el dueño: {formatCurrency(m.to_owner)}</span>}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      <MovementDialog mode={mode} onClose={() => setMode(null)} onSave={handleSave} />
     </div>
-  )
-}
-
-function MovementDialog({
-  mode,
-  onClose,
-  onSave,
-}: {
-  mode: Mode | null
-  onClose: () => void
-  onSave: (p: { mode: Mode; account: Account; to: Account; amount: number; note: string }) => Promise<boolean>
-}) {
-  const [account, setAccount] = useState<Account>("safe")
-  const [amount, setAmount] = useState("")
-  const [note, setNote] = useState("")
-  const [saving, setSaving] = useState(false)
-
-  const to: Account = account === "safe" ? "bank" : "safe"
-  const title = mode === "in" ? "Ingresar plata" : mode === "out" ? "Sacar plata" : "Pasar plata entre cuentas"
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!mode || saving) return
-    setSaving(true)
-    const ok = await onSave({ mode, account, to, amount: Number(amount), note: note.trim() })
-    setSaving(false)
-    if (ok) {
-      setAmount("")
-      setNote("")
-    }
-  }
-
-  return (
-    <Dialog open={mode !== null} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label className="text-gray-300">{mode === "transfer" ? "Desde" : "Cuenta"}</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["safe", "bank"] as const).map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAccount(a)}
-                  className={`py-2 rounded-lg border text-sm transition-colors ${
-                    account === a
-                      ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                      : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
-                  }`}
-                >
-                  {ACCOUNT_LABEL[a]}
-                </button>
-              ))}
-            </div>
-            {mode === "transfer" && <p className="text-xs text-gray-500">Pasa a: {ACCOUNT_LABEL[to]}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-300">Monto</Label>
-            <Input
-              type="number"
-              min="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="$0"
-              autoFocus
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-gray-300">Nota (opcional)</Label>
-            <Input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Ej: depósito de la semana"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={saving || !(Number(amount) > 0)}
-              className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
-            >
-              {saving ? "Guardando..." : "Registrar"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
