@@ -256,6 +256,7 @@ export default function CajaPage() {
       .select("*")
       .eq("kiosko_id", kiosko_id)
       .eq("status", "closed")
+      .not("counted_cash", "is", null)
       .order("closed_at", { ascending: false })
       .limit(15)
 

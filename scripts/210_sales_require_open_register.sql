@@ -11,6 +11,9 @@
 -- - Idempotente: reintentar una venta ya registrada devuelve la misma venta
 --   sin volver a chequear la caja (puede haberse cerrado mientras tanto).
 --
+-- Seguridad (auditoria C1): exige sesion y pertenencia al kiosko
+-- (_assert_kiosko_member, scripts/212), descuenta stock solo de productos de ese
+-- kiosko y ya no esta abierta a usuarios anonimos.
 -- Reversion: volver a correr scripts/204_fix_register_sale_movement_type.sql.
 -- ============================================================================
 
@@ -35,6 +38,8 @@ BEGIN
   IF v_kiosko IS NULL OR (p_sale->>'sale_number') IS NULL THEN
     RAISE EXCEPTION 'register_sale: kiosko_id y sale_number son obligatorios';
   END IF;
+
+  PERFORM _assert_kiosko_member(v_kiosko);
 
   SELECT id INTO v_sale_id
     FROM sales
@@ -114,7 +119,8 @@ BEGIN
       UPDATE products
         SET stock_quantity = GREATEST(0, stock_quantity - (v_item->>'quantity')::int),
             updated_at      = now()
-        WHERE id = (v_item->>'product_id')::uuid;
+        WHERE id = (v_item->>'product_id')::uuid
+          AND kiosko_id = v_kiosko;
 
       INSERT INTO stock_movements (
         product_id, kiosko_id, movement_type, quantity, reason, reference_id
@@ -138,4 +144,5 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION register_sale(jsonb) TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION register_sale(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION register_sale(jsonb) TO authenticated, service_role;
