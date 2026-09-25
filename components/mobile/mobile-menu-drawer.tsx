@@ -98,7 +98,7 @@ const menuSections = [
       { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag, permission: "can_manage_inventory" },
       { href: "/dashboard/pedidos", label: "Pedidos", icon: Bike, permission: "can_sell" },
       { href: "/dashboard/caja", label: "Caja", icon: Wallet, permission: "can_sell" },
-      { href: "/dashboard/caja/plata", label: "Plata (caja fuerte y banco)", icon: PiggyBank, permission: "can_manage_employees" },
+      { href: "/dashboard/caja/plata", label: "Caja fuerte", icon: PiggyBank, permission: "can_manage_employees" },
     ],
   },
   {

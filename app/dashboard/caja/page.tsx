@@ -41,6 +41,7 @@ interface CashRegister {
   withdrawn_amount?: number | null
   withdrawn_destination?: string | null
   left_for_next?: number | null
+  shift_sales_total?: number | null
 }
 
 interface Transaction {
@@ -143,7 +144,7 @@ export default function CajaPage() {
   const [currentRegister, setCurrentRegister] = useState<CashRegister | null>(null)
   const [lastClosed, setLastClosed] = useState<CashRegister | null>(null)
   const [history, setHistory] = useState<CashRegister[]>([])
-  const [treasury, setTreasury] = useState<{ safe: number; bank: number; total: number } | null>(null)
+  const [earnings, setEarnings] = useState<{ today: number; month: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [opening, setOpening] = useState(false)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
@@ -157,7 +158,7 @@ export default function CajaPage() {
   }, [])
 
   useEffect(() => {
-    if (kioskoId && isOwner) loadTreasury(kioskoId)
+    if (kioskoId && isOwner) loadEarnings(kioskoId)
   }, [kioskoId, isOwner])
 
   useEffect(() => {
@@ -266,9 +267,10 @@ export default function CajaPage() {
     }
   }
 
-  const loadTreasury = async (kiosko_id: string) => {
-    const { data, error } = await supabase.rpc("treasury_summary", { p_kiosko: kiosko_id })
-    if (!error && data) setTreasury({ safe: Number(data.safe), bank: Number(data.bank), total: Number(data.total) })
+  // Lo ganado (todas las ventas): hoy y en el mes hasta hoy. Solo lo ve el dueño.
+  const loadEarnings = async (kiosko_id: string) => {
+    const { data, error } = await supabase.rpc("earnings_summary", { p_kiosko: kiosko_id })
+    if (!error && data) setEarnings({ today: Number(data.today), month: Number(data.month) })
   }
 
   const handleOpenCash = async () => {
@@ -376,7 +378,7 @@ export default function CajaPage() {
     )
     await loadCashRegister(kioskoId)
     await loadHistory(kioskoId)
-    if (isOwner) await loadTreasury(kioskoId)
+    if (isOwner) await loadEarnings(kioskoId)
   }
 
   const totalSales = salesByMethod.cash + salesByMethod.card + salesByMethod.qr + salesByMethod.other
@@ -515,19 +517,20 @@ export default function CajaPage() {
         </div>
       </div>
 
-      {/* Plata guardada (solo dueño) */}
-      {isOwner && treasury && (
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+      {/* Ganado (solo dueño) */}
+      {isOwner && earnings && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <PiggyBank className="w-7 h-7 text-amber-400" />
+              <PiggyBank className="w-7 h-7 text-green-400" />
               <div>
-                <p className="text-xs text-gray-500">Guardado en la caja fuerte</p>
-                <p className="text-2xl font-bold text-white">{formatCurrency(treasury.safe)}</p>
+                <p className="text-xs text-gray-300">Ganado este mes (hasta hoy)</p>
+                <p className="text-2xl font-bold text-green-400">{formatCurrency(earnings.month)}</p>
+                <p className="text-xs text-gray-400">Hoy: {formatCurrency(earnings.today)}</p>
               </div>
             </div>
             <Link href="/dashboard/caja/plata" className="text-sm text-cyan-400 hover:text-cyan-300">
-              Ver lo que se ganó por mes →
+              Ver Caja fuerte mes por mes →
             </Link>
           </div>
         </div>
@@ -667,6 +670,7 @@ export default function CajaPage() {
                 <tr className="text-left text-gray-500 border-b border-white/10">
                   <th className="py-2 pr-4 font-medium">Cierre</th>
                   <th className="py-2 pr-4 font-medium">Turno</th>
+                  <th className="py-2 pr-4 font-medium text-right">Ganado</th>
                   <th className="py-2 pr-4 font-medium text-right">Esperado</th>
                   <th className="py-2 pr-4 font-medium text-right">Contado</th>
                   <th className="py-2 pr-4 font-medium text-right">Diferencia</th>
@@ -688,6 +692,9 @@ export default function CajaPage() {
                       <td className="py-3 pr-4 whitespace-nowrap">
                         {h.shift || "-"}
                         {h.cashier_name ? <span className="text-gray-500"> · {h.cashier_name}</span> : null}
+                      </td>
+                      <td className="py-3 pr-4 text-right text-green-400 font-semibold">
+                        {h.shift_sales_total != null ? formatCurrency(Number(h.shift_sales_total)) : "-"}
                       </td>
                       <td className="py-3 pr-4 text-right">{h.expected_cash != null ? formatCurrency(Number(h.expected_cash)) : "-"}</td>
                       <td className="py-3 pr-4 text-right">{h.counted_cash != null ? formatCurrency(Number(h.counted_cash)) : "-"}</td>
@@ -720,6 +727,7 @@ export default function CajaPage() {
         onClose={() => setShowCloseModal(false)}
         expectedCash={currentBalance}
         openingBalance={openingBalance}
+        shiftSales={totalSales}
         onConfirm={handleConfirmCloseCash}
       />
 
@@ -884,12 +892,14 @@ function CloseCashModal({
   onClose,
   expectedCash,
   openingBalance,
+  shiftSales,
   onConfirm,
 }: {
   open: boolean
   onClose: () => void
   expectedCash: number
   openingBalance: number
+  shiftSales: number
   onConfirm: (countedCash: number, notes: string, withdrawn: number, destination: string) => Promise<void> | void
 }) {
   const [counted, setCounted] = useState("")
@@ -928,6 +938,14 @@ function CloseCashModal({
           <DialogTitle className="text-xl font-bold">Cerrar Caja — Arqueo</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="flex justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+            <div>
+              <p className="text-green-300">Ganado en este turno</p>
+              <p className="text-xs text-gray-400">Todas las ventas: se suma completo a la Caja fuerte</p>
+            </div>
+            <span className="text-green-400 font-bold">{formatCurrency(shiftSales)}</span>
+          </div>
+
           <div className="flex justify-between p-4 rounded-lg bg-white/5">
             <span className="text-gray-400">Efectivo esperado (teórico)</span>
             <span className="text-white font-bold">{formatCurrency(expectedCash)}</span>
@@ -976,7 +994,7 @@ function CloseCashModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300">El resto se guarda en</Label>
+              <Label className="text-gray-300">El efectivo que sacás de la caja va a</Label>
               <div className="grid grid-cols-2 gap-2">
                 {(["safe", "owner"] as const).map((d) => (
                   <button
@@ -998,7 +1016,7 @@ function CloseCashModal({
             {counted !== "" && (
               <div className="flex justify-between text-sm pt-1">
                 <span className="text-gray-400">
-                  {destination === "safe" ? "Se guarda en la caja fuerte" : "Retira el dueño"}
+                  {destination === "safe" ? "Efectivo a la caja fuerte" : "Efectivo que retira el dueño"}
                 </span>
                 <span className="text-white font-semibold">{formatCurrency(withdrawnAmount)}</span>
               </div>

@@ -189,7 +189,7 @@ function DashboardSidebar({
       isExpandable: true,
       items: [
         { href: "/dashboard/caja", label: "Caja diaria", icon: Wallet },
-        { href: "/dashboard/caja/plata", label: "Plata (caja fuerte y banco)", icon: PiggyBank },
+        { href: "/dashboard/caja/plata", label: "Caja fuerte", icon: PiggyBank },
       ],
     },
     {
