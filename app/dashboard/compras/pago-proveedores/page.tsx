@@ -21,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { DollarSign, Receipt, TrendingUp, Search, FileText, Building2, Wallet, CheckCircle2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useToast } from "@/components/ui/toast-provider"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface Purchase {
   id: string
@@ -65,6 +67,14 @@ export default function PagoProveedoresPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+  const toast = useToast()
+
+  const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deductFromCash, setDeductFromCash] = useState(true)
+  const [openRegisterId, setOpenRegisterId] = useState<string | null>(null)
+  const [showFreeDialog, setShowFreeDialog] = useState(false)
+  const [freeSupplier, setFreeSupplier] = useState("")
 
   useEffect(() => {
     loadData()
@@ -79,13 +89,47 @@ export default function PagoProveedoresPage() {
     setFilteredPurchases(filtered)
   }, [searchTerm, purchases])
 
+  async function resolveKiosko(): Promise<string | null> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return null
+    const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
+    if (kioscos && kioscos.length > 0) return kioscos[0].id
+    const { data: emp } = await supabase
+      .from("employees")
+      .select("kiosko_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
+    return emp?.kiosko_id ?? null
+  }
+
   async function loadData() {
     setLoading(true)
     setTableError(false)
     try {
+      const kiosko = await resolveKiosko()
+      setKioskoId(kiosko)
+      if (!kiosko) {
+        toast.error("No se encontró tu kiosco", "Tu usuario no figura como dueño ni empleado activo de ningún kiosco.")
+        return
+      }
+
+      const { data: register } = await supabase
+        .from("cash_registers")
+        .select("id")
+        .eq("kiosko_id", kiosko)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      setOpenRegisterId(register?.id ?? null)
+
       const { data: purchasesData, error: purchasesError } = await supabase
         .from("purchases")
         .select("*")
+        .eq("kiosko_id", kiosko)
         .order("created_at", { ascending: false })
 
       if (purchasesError) throw purchasesError
@@ -101,6 +145,7 @@ export default function PagoProveedoresPage() {
             supplier_name
           )
         `)
+        .or(`kiosko_id.eq.${kiosko},kiosko_id.is.null`)
         .order("payment_date", { ascending: false })
 
       if (paymentsError) {
@@ -111,41 +156,95 @@ export default function PagoProveedoresPage() {
         throw paymentsError
       }
       setPayments(paymentsData || [])
-    } catch (error) {
-      console.error("[v0] Error loading data:", error)
+    } catch (error: any) {
+      console.error("[Pagos] Error al cargar los datos:", error)
+      toast.error("No se pudieron cargar los pagos", error?.message || "Probá de nuevo")
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleRegisterPayment() {
-    if (!selectedPurchase) return
+  function resetForm() {
+    setIsDialogOpen(false)
+    setShowFreeDialog(false)
+    setSelectedPurchase(null)
+    setPaymentAmount("")
+    setPaymentMethod("bank_transfer")
+    setReferenceNumber("")
+    setPaymentNotes("")
+    setFreeSupplier("")
+  }
 
+  // Un pago puede ser contra una orden de compra o suelto (sin OC): en ese caso el
+  // proveedor queda anotado al principio de las notas.
+  async function handleRegisterPayment() {
+    if (saving) return
+    const amount = Number.parseFloat(paymentAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Monto inválido", "Ingresá un monto mayor a cero")
+      return
+    }
+    if (!kioskoId) {
+      toast.error("No se encontró tu kiosco", "Recargá la página e intentá de nuevo")
+      return
+    }
+
+    let supplierName = selectedPurchase?.supplier_name ?? freeSupplier.trim()
+    if (!selectedPurchase && !supplierName) {
+      toast.error("Falta el proveedor", "Escribí a quién le pagás")
+      return
+    }
+    if (selectedPurchase) {
+      const pending = selectedPurchase.total_amount - (selectedPurchase.total_paid || 0)
+      if (amount > pending + 0.009) {
+        toast.error("El monto supera lo pendiente", `Lo pendiente de esta OC es ${formatCurrency(pending)}`)
+        return
+      }
+    }
+
+    setSaving(true)
     try {
-      const paymentNumberCount = payments.length + 1
-      const paymentNumber = `PAY-${String(paymentNumberCount).padStart(5, "0")}`
+      const payNumber = `PAY-${Date.now().toString(36).toUpperCase()}`
+      const notes = selectedPurchase
+        ? paymentNotes || null
+        : `Proveedor: ${supplierName}${paymentNotes ? ` — ${paymentNotes}` : ""}`
 
       const { error } = await supabase.from("supplier_payments").insert({
-        purchase_id: selectedPurchase.id,
-        payment_number: paymentNumber,
-        amount: Number.parseFloat(paymentAmount),
+        purchase_id: selectedPurchase?.id ?? null,
+        kiosko_id: kioskoId,
+        payment_number: payNumber,
+        amount,
         payment_method: paymentMethod,
         reference_number: referenceNumber || null,
-        notes: paymentNotes || null,
+        notes,
       })
 
       if (error) throw error
 
-      await loadData()
+      let cashNote = ""
+      if (paymentMethod === "cash" && deductFromCash) {
+        if (openRegisterId) {
+          const { error: cashError } = await supabase.rpc("add_cash_movement", {
+            p_register: openRegisterId,
+            p_type: "supplier_payment",
+            p_direction: "out",
+            p_amount: amount,
+            p_notes: `Pago a proveedor ${supplierName}`,
+          })
+          cashNote = cashError ? " (no se pudo descontar de la caja)" : " y se descontó de la caja"
+        } else {
+          cashNote = " (no hay caja abierta, no se descontó de la caja)"
+        }
+      }
 
-      setIsDialogOpen(false)
-      setSelectedPurchase(null)
-      setPaymentAmount("")
-      setPaymentMethod("bank_transfer")
-      setReferenceNumber("")
-      setPaymentNotes("")
-    } catch (error) {
-      console.error("[v0] Error registering payment:", error)
+      toast.success("Pago registrado", `${formatCurrency(amount)} a ${supplierName}${cashNote}`)
+      resetForm()
+      await loadData()
+    } catch (error: any) {
+      console.error("[Pagos] Error al registrar el pago:", error)
+      toast.error("No se pudo registrar el pago", error?.message || "Probá de nuevo")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -279,7 +378,106 @@ export default function PagoProveedoresPage() {
               Gestiona los pagos de órdenes de compra y mantén tu flujo de caja bajo control
             </p>
           </div>
+          <Button
+            onClick={() => {
+              setSelectedPurchase(null)
+              setPaymentAmount("")
+              setShowFreeDialog(true)
+            }}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+          >
+            <DollarSign className="w-4 h-4 mr-1" />
+            Pagar sin orden de compra
+          </Button>
         </div>
+
+        <Dialog open={showFreeDialog} onOpenChange={(open) => (open ? setShowFreeDialog(true) : resetForm())}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle>Pago a proveedor</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Para pagos que no están asociados a una orden de compra (repartidor, factura suelta, etc.)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="free-supplier">Proveedor</Label>
+                <Input
+                  id="free-supplier"
+                  value={freeSupplier}
+                  onChange={(e) => setFreeSupplier(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  placeholder="Ej: Distribuidora Norte"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="free-amount">Monto</Label>
+                <Input
+                  id="free-amount"
+                  type="number"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Método de pago</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="cash">Efectivo</SelectItem>
+                    <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
+                    <SelectItem value="check">Cheque</SelectItem>
+                    <SelectItem value="debit_card">Tarjeta de Débito</SelectItem>
+                    <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+                    <SelectItem value="mercadopago">Mercado Pago</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {paymentMethod === "cash" && (
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={deductFromCash}
+                    onChange={(e) => setDeductFromCash(e.target.checked)}
+                  />
+                  Descontar de la caja del turno
+                  {!openRegisterId && <span className="text-amber-400">(no hay caja abierta)</span>}
+                </label>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="free-notes">Notas (opcional)</Label>
+                <Textarea
+                  id="free-notes"
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={resetForm}
+                  className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleRegisterPayment}
+                  disabled={saving}
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                >
+                  {saving ? "Guardando..." : "Registrar pago"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
@@ -488,6 +686,18 @@ export default function PagoProveedoresPage() {
                                           </Select>
                                         </div>
 
+                                        {paymentMethod === "cash" && (
+                                          <label className="flex items-center gap-2 text-sm text-gray-300">
+                                            <input
+                                              type="checkbox"
+                                              checked={deductFromCash}
+                                              onChange={(e) => setDeductFromCash(e.target.checked)}
+                                            />
+                                            Descontar de la caja del turno
+                                            {!openRegisterId && <span className="text-amber-400">(no hay caja abierta)</span>}
+                                          </label>
+                                        )}
+
                                         <div className="space-y-2">
                                           <Label htmlFor="reference">Número de Referencia (Opcional)</Label>
                                           <Input
@@ -521,10 +731,10 @@ export default function PagoProveedoresPage() {
                                           </Button>
                                           <Button
                                             onClick={handleRegisterPayment}
-                                            disabled={!paymentAmount || Number.parseFloat(paymentAmount) <= 0}
+                                            disabled={saving}
                                             className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
                                           >
-                                            Registrar Pago
+                                            {saving ? "Guardando..." : "Registrar Pago"}
                                           </Button>
                                         </div>
                                       </div>
@@ -577,11 +787,15 @@ export default function PagoProveedoresPage() {
                                 <span className="text-white font-medium">{payment.payment_number}</span>
                               </div>
                             </td>
-                            <td className="p-4 text-gray-300">{payment.purchases?.purchase_number}</td>
+                            <td className="p-4 text-gray-300">{payment.purchases?.purchase_number || "Sin OC"}</td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
                                 <Building2 className="w-4 h-4 text-gray-400" />
-                                <span className="text-gray-300">{payment.purchases?.supplier_name}</span>
+                                <span className="text-gray-300">
+                                  {payment.purchases?.supplier_name ||
+                                    payment.notes?.match(/^Proveedor: (.*?)(?: — |$)/)?.[1] ||
+                                    "-"}
+                                </span>
                               </div>
                             </td>
                             <td className="p-4 text-gray-400">

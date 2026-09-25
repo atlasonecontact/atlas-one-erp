@@ -821,17 +821,26 @@ function MovementModal({
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState("")
 
   const selected = MOVEMENT_TYPES.find((t) => t.value === type) ?? MOVEMENT_TYPES[0]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (saving) return
+    if (!(Number(amount) > 0)) {
+      setFormError("Ingresá un monto mayor a cero")
+      return
+    }
+    setFormError("")
     setSaving(true)
-    await onSave(selected.value, selected.direction, description.trim(), Number(amount))
-    setSaving(false)
-    setDescription("")
-    setAmount("")
+    try {
+      await onSave(selected.value, selected.direction, description.trim() || selected.label, Number(amount))
+      setDescription("")
+      setAmount("")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -857,7 +866,7 @@ function MovementModal({
             </select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-300">Descripción</Label>
+            <Label className="text-gray-300">Descripción (opcional)</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -875,6 +884,7 @@ function MovementModal({
               placeholder="$0"
               className="bg-[#0d1424] border-cyan-500/20 text-white"
             />
+            {formError && <p className="text-sm text-red-400">{formError}</p>}
           </div>
           <div className="flex gap-3 pt-4">
             <Button
@@ -887,7 +897,7 @@ function MovementModal({
             </Button>
             <Button
               type="submit"
-              disabled={saving || !description.trim() || !(Number(amount) > 0)}
+              disabled={saving}
               className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold"
             >
               {saving ? "Guardando..." : "Registrar"}
