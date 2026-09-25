@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -7,8 +8,14 @@ export async function GET(request: Request) {
   const action = searchParams.get('action'); // 'approve' or 'reject'
   const secret = searchParams.get('secret');
 
-  // Verify secret to prevent unauthorized access
-  if (secret !== (process.env.CRON_SECRET || 'default-secret')) {
+  // El secreto es obligatorio: sin CRON_SECRET configurado el endpoint queda cerrado.
+  const expected = process.env.CRON_SECRET;
+  if (!expected) {
+    return new NextResponse('Not configured', { status: 503 });
+  }
+  const a = Buffer.from(secret ?? '');
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

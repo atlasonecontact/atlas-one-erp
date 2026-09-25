@@ -160,7 +160,7 @@ export default function DashboardPage() {
       {/* Top KPIs Row - Solo en Overview - responsive grid */}
       {view === "overview" && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             <KPICardV2
               title="Total Facturado"
               value={data.monthSales}
@@ -173,9 +173,7 @@ export default function DashboardPage() {
             />
             <KPICardV2
               title="Unidades Vendidas"
-              value={data.unitsSold || 7845}
-              change={9.8}
-              changeLabel="Comparado con el mes pasado"
+              value={data.unitsSold}
               icon={<Package className="w-5 h-5" />}
               isLoading={isLoading}
             />
@@ -188,22 +186,12 @@ export default function DashboardPage() {
               icon={<Receipt className="w-5 h-5" />}
               isLoading={isLoading}
             />
-            <KPICardV2
-              title="Tasa de Conversión"
-              value={12.5}
-              suffix="%"
-              change={8.6}
-              changeLabel="Comparado con el mes pasado"
-              icon={<TrendingUp className="w-5 h-5" />}
-              variant="success"
-              isLoading={isLoading}
-            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Left column - Category Mix */}
             <div className="space-y-4 lg:space-y-6 relative z-0">
-              <CategoryMixChart isLoading={isLoading} />
+              <CategoryMixChart data={data.categoryMix.map((c, i) => ({ ...c, color: ["#22d3ee", "#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444"][i % 6] }))} isLoading={isLoading} />
               <FinancialKPIs isLoading={isLoading} />
             </div>
 

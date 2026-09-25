@@ -8,13 +8,7 @@ interface CategoryMixProps {
   isLoading?: boolean
 }
 
-const defaultData = [
-  { name: "Bebidas", value: 35, color: "#22d3ee" },
-  { name: "Alimentos", value: 42, color: "#3b82f6" },
-  { name: "Tabaco", value: 23, color: "#8b5cf6" },
-]
-
-export function CategoryMixChart({ data = defaultData, title = "Mix de Ventas por Categoría", isLoading = false }: CategoryMixProps) {
+export function CategoryMixChart({ data = [], title = "Mix de Ventas por Categoría", isLoading = false }: CategoryMixProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   if (isLoading) {
@@ -24,6 +18,15 @@ export function CategoryMixChart({ data = defaultData, title = "Mix de Ventas po
         <div className="flex items-center justify-center h-[200px]">
           <div className="w-32 h-32 rounded-full bg-white/10 animate-pulse" />
         </div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 h-full">
+        <h3 className="text-sm font-medium text-white mb-4">{title}</h3>
+        <p className="text-sm text-gray-500 py-10 text-center">Todavía no hay ventas en este período.</p>
       </div>
     )
   }

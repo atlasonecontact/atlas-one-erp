@@ -9,7 +9,7 @@ interface DashboardStats {
   monthSales: number
   monthSalesChange: number
   avgTicket: number
-  avgTicketChange: number
+  avgTicketChange?: number
   topProduct: string
   topProductCount: number
   salesTrend: Array<{ date: string; value: number }>
@@ -18,6 +18,7 @@ interface DashboardStats {
   recentSales: Array<{ id: string; total: number; payment_method: string; created_at: string }>
   margin: number
   unitsSold: number
+  categoryMix: Array<{ name: string; value: number }>
 }
 
 const defaultStats: DashboardStats = {
@@ -35,6 +36,7 @@ const defaultStats: DashboardStats = {
   recentSales: [],
   margin: 0,
   unitsSold: 0,
+  categoryMix: [],
 }
 
 export function useDashboardData(period: string) {
@@ -133,6 +135,19 @@ export function useDashboardData(period: string) {
         .eq("status", "completed")
         .gte("created_at", periodStart)
 
+      const prevPeriodStart = new Date(new Date(periodStart).getTime() - days * 24 * 60 * 60 * 1000).toISOString()
+      const { data: prevSalesData } = await supabase
+        .from("sales")
+        .select("total_amount")
+        .in("kiosko_id", kioskoIds)
+        .eq("status", "completed")
+        .gte("created_at", prevPeriodStart)
+        .lt("created_at", periodStart)
+      const prevAvgTicket =
+        prevSalesData && prevSalesData.length > 0
+          ? prevSalesData.reduce((sum, s) => sum + Number(s.total_amount), 0) / prevSalesData.length
+          : 0
+
       const avgTicket =
         allSalesData && allSalesData.length > 0
           ? allSalesData.reduce((sum, s) => sum + Number(s.total_amount), 0) / allSalesData.length
@@ -143,13 +158,20 @@ export function useDashboardData(period: string) {
         .select(`
           product_id,
           quantity,
-          products!inner(name)
+          subtotal,
+          products!inner(name, category),
+          sales!inner(status, kiosko_id)
         `)
+        .in("sales.kiosko_id", kioskoIds)
+        .neq("sales.status", "cancelled")
         .gte("created_at", periodStart)
 
       const productSales: Record<string, { name: string; quantity: number }> = {}
+      const categoryTotals: Record<string, number> = {}
       let totalUnitsSold = 0
       saleItemsData?.forEach((item: any) => {
+        const category = item.products?.category || "Sin categoría"
+        categoryTotals[category] = (categoryTotals[category] || 0) + Number(item.subtotal || 0)
         const productName = item.products?.name || "Desconocido"
         if (!productSales[item.product_id]) {
           productSales[item.product_id] = { name: productName, quantity: 0 }
@@ -157,6 +179,13 @@ export function useDashboardData(period: string) {
         productSales[item.product_id].quantity += item.quantity
         totalUnitsSold += item.quantity
       })
+
+      const categoryGrand = Object.values(categoryTotals).reduce((a, b) => a + b, 0)
+      const categoryMix = Object.entries(categoryTotals)
+        .filter(([, total]) => total > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([name, total]) => ({ name, value: Math.round((total / categoryGrand) * 100) }))
 
       const topProductData = Object.values(productSales).sort((a, b) => b.quantity - a.quantity)[0]
 
@@ -242,7 +271,7 @@ export function useDashboardData(period: string) {
         monthSales,
         monthSalesChange: Math.round(monthSalesChange),
         avgTicket: Math.round(avgTicket),
-        avgTicketChange: 9.4, // This would need historical comparison
+        avgTicketChange: prevAvgTicket > 0 ? Math.round(((avgTicket - prevAvgTicket) / prevAvgTicket) * 100) : undefined,
         topProduct: topProductData?.name || "-",
         topProductCount: Object.keys(productSales).length,
         salesTrend,
@@ -251,6 +280,7 @@ export function useDashboardData(period: string) {
         recentSales: mappedRecentSales || [],
         margin,
         unitsSold: totalUnitsSold,
+        categoryMix,
       })
     } catch (err) {
       console.error("Error fetching dashboard data:", err)

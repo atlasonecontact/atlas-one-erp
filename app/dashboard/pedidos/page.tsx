@@ -97,7 +97,7 @@ export default function PedidosPage() {
       .select("kiosko_id")
       .eq("user_id", user.id)
       .eq("status", "active")
-      .single()
+      .maybeSingle()
 
     if (employee) {
       setKioskoId(employee.kiosko_id)
@@ -105,7 +105,7 @@ export default function PedidosPage() {
     }
 
     // Check if owner
-    const { data: kiosko } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1).single()
+    const { data: kiosko } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1).maybeSingle()
 
     if (kiosko) {
       setKioskoId(kiosko.id)

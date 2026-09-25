@@ -1,13 +1,26 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@/lib/supabase/server"
 
 // API para configurar el webhook de Telegram
 // POST: Configura el webhook
 // GET: Verifica el estado del webhook
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const ADMIN_EMAIL = "atlasonecontact@gmail.com"
+
+async function requireUser() {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  return user
+}
+
+const unauthorized = () => NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await requireUser())) return unauthorized()
     if (!BOT_TOKEN) {
       return NextResponse.json(
         { error: "TELEGRAM_BOT_TOKEN no está configurado en las variables de entorno" },
@@ -15,9 +28,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get the webhook URL from the request or use the default
-    const body = await request.json().catch(() => ({}))
-    const webhookUrl = body.webhookUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://v0-atlas-one-erp-demo.vercel.app'}/api/telegram/webhook`
+    // El webhook siempre apunta a esta misma app: nadie puede redirigir el bot a otra URL.
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://v0-atlas-one-erp-demo.vercel.app'}/api/telegram/webhook`
 
     // Set the webhook
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
@@ -57,6 +69,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    if (!(await requireUser())) return unauthorized()
     if (!BOT_TOKEN) {
       return NextResponse.json({
         configured: false,
@@ -103,6 +116,11 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireUser()
+    if (!user) return unauthorized()
+    if (user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: "Solo el administrador puede eliminar el webhook" }, { status: 403 })
+    }
     if (!BOT_TOKEN) {
       return NextResponse.json(
         { error: "TELEGRAM_BOT_TOKEN no está configurado" },
