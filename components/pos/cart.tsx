@@ -20,7 +20,7 @@ interface CartProps {
 
 export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, onClear, onCheckout, sellerControl }: CartProps) {
   return (
-    <div className="w-96 flex flex-col rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
+    <div className="w-72 xl:w-80 2xl:w-96 flex flex-col rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
         <div className="flex items-center gap-2">

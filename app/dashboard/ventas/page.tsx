@@ -954,7 +954,7 @@ export default function VentasPage() {
     <>
       <div className="lg:h-[calc(100vh-120px)] flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Left side - Products */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Scanner status - hidden on mobile (we use camera scanner instead) */}
           <div className="hidden lg:flex items-center gap-3 mb-4 p-3 rounded-lg bg-[#0a0f1a]/50 border border-cyan-500/10">
             <div className="flex items-center gap-2">
@@ -1032,14 +1032,14 @@ export default function VentasPage() {
             </Link>
           </div>
 
-          {/* Categories - horizontal scroll on mobile */}
-          <div className="flex gap-2 mb-4 lg:mb-6 overflow-x-auto pb-2 hide-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0">
+          {/* Categorias: se acomodan en varias filas, sin scroll lateral */}
+          <div className="flex flex-wrap gap-2 mb-4 lg:mb-6">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  "px-4 py-2.5 lg:py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors touch-target",
+                  "px-4 py-2.5 lg:py-2 rounded-xl text-sm font-medium transition-colors touch-target max-w-full truncate",
                   selectedCategory === cat
                     ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                     : "bg-[#0a0f1a] text-gray-400 border border-cyan-500/10 hover:text-white active:bg-white/5",
@@ -1068,7 +1068,7 @@ export default function VentasPage() {
         </div>
 
         {/* Right side - Cart (desktop only, hidden on mobile) */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:block shrink-0">
           <Cart
             sellerControl={sellerControl}
             items={cart}

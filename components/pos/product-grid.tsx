@@ -21,7 +21,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3 lg:gap-4">
         {products.map((product) => (
           <button
             key={product.id}
@@ -45,7 +45,7 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
             <h4 className="text-sm font-medium text-white truncate mb-1">{product.name}</h4>
             <p className="text-xs text-gray-500 mb-2">{product.category}</p>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
               <span className="text-lg font-bold text-cyan-400">{formatCurrency(product.price)}</span>
               <div
                 className={cn(
