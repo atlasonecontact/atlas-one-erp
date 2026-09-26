@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { ChartCard, ChartGradients, ChartTooltip, DonutChart, ANIMATION, axisProps, barFill, cursorBar, gridProps } from "@/components/charts/chart-theme"
 
 interface InventoryChartsProps {
   isLoading?: boolean
@@ -41,56 +42,24 @@ export function InventoryRotationChart({ isLoading }: InventoryChartsProps) {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-medium text-white">Rotación de Inventario</h3>
-          <p className="text-xs text-gray-500">Veces/año por mes</p>
-        </div>
-        <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">
-          <span>+18%</span>
-        </div>
-      </div>
-      <div className="h-[200px]">
+    <ChartCard
+      title="Rotación de Inventario"
+      subtitle="Veces/año por mes"
+      action={<span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400">+18%</span>}
+    >
+      <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rotationData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-            <XAxis 
-              dataKey="name" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-            />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              domain={[0, 8]}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#0d1424",
-                border: "1px solid rgba(6, 182, 212, 0.2)",
-                borderRadius: "8px",
-                color: "#fff"
-              }}
-              formatter={(value: number) => [`${value.toFixed(1)}x`, "Rotación"]}
-            />
-            <Bar 
-              dataKey="value" 
-              fill="url(#barGradient)" 
-              radius={[4, 4, 0, 0]}
-            />
-            <defs>
-              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#06b6d4" />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.4} />
-              </linearGradient>
-            </defs>
+          <BarChart data={rotationData} margin={{ top: 8, right: 4, left: -20, bottom: 0 }}>
+            <ChartGradients />
+            <CartesianGrid {...gridProps} />
+            <XAxis dataKey="name" {...axisProps} dy={6} />
+            <YAxis {...axisProps} domain={[0, 8]} />
+            <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => `${v.toFixed(1)}x`} />} />
+            <Bar dataKey="value" name="Rotación" fill={barFill("cyan")} radius={[6, 6, 0, 0]} maxBarSize={28} {...ANIMATION} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </ChartCard>
   )
 }
 
@@ -104,53 +73,16 @@ export function StockBreakdownChart({ isLoading }: InventoryChartsProps) {
     )
   }
 
-  const total = stockBreakdownData.reduce((acc, d) => acc + d.value, 0)
-
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-medium text-white">Porcentaje de Quiebre</h3>
-          <p className="text-xs text-gray-500">Por categoría</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="h-[180px] w-[180px] relative">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={stockBreakdownData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={80}
-                dataKey="value"
-                paddingAngle={2}
-              >
-                {stockBreakdownData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-white">3.2%</span>
-            <span className="text-xs text-gray-500">Total</span>
-          </div>
-        </div>
-        <div className="flex-1 space-y-2">
-          {stockBreakdownData.map((item) => (
-            <div key={item.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm text-gray-400">{item.name}</span>
-              </div>
-              <span className="text-sm font-medium text-white">{item.value}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <ChartCard title="Porcentaje de Quiebre" subtitle="Por categoría">
+      <DonutChart
+        data={stockBreakdownData.map((d) => ({ name: d.name, value: d.value }))}
+        valueFormatter={(v) => `${v}%`}
+        centerLabel="Total"
+        centerValue="3.2%"
+        height={200}
+      />
+    </ChartCard>
   )
 }
 

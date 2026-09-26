@@ -290,9 +290,9 @@ export default function VentasEstadisticasPage() {
                       <span className="text-xs text-gray-500 ml-2">({method.count} op.)</span>
                     </div>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-white/5">
+                  <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-cyan-500 transition-all"
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-500/60 to-indigo-400 transition-all duration-700"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -322,9 +322,9 @@ export default function VentasEstadisticasPage() {
                       <p className="text-white font-medium">{employee.name}</p>
                       <p className="text-sm text-gray-400">{employee.transactions} ventas</p>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-white/5">
+                    <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-cyan-500 transition-all"
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-500/60 to-indigo-400 transition-all duration-700"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

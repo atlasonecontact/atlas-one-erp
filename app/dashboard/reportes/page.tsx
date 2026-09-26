@@ -3,20 +3,22 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-} from "recharts"
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  DonutChart,
+  PALETTE,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  barFillH,
+  cursorBar,
+  cursorLine,
+  gridProps,
+} from "@/components/charts/chart-theme"
 import {
   Download,
   FileText,
@@ -477,168 +479,75 @@ export default function ReportesPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sales by Day */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
-          <CardHeader>
-            <CardTitle className="text-white">Ventas por Día</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={salesByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(34, 211, 238, 0.1)" vertical={false} />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0f1a",
-                      border: "1px solid rgba(34, 211, 238, 0.2)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, "Ventas"]}
-                  />
-                  <Bar dataKey="sales" fill="#22d3ee" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="Ventas por Día" subtitle="Facturación de cada día del período">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesByDay} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="day" {...axisProps} dy={6} />
+                <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />
+                <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => `$${Math.round(v).toLocaleString("es-AR")}`} />} />
+                <Bar dataKey="sales" name="Ventas" fill={barFill("cyan")} radius={[8, 8, 0, 0]} maxBarSize={38} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-        {/* Sales by Category */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
-          <CardHeader>
-            <CardTitle className="text-white">Ventas por Categoría</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center gap-8">
-              <ResponsiveContainer width="60%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={salesByCategory}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {salesByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0f1a",
-                      border: "1px solid rgba(34, 211, 238, 0.2)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number, name, props: any) => [
-                      `${value}% ($${props.payload.amount.toLocaleString()})`,
-                      "",
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2 flex-1">
-                {salesByCategory.map((item, i) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                    <span className="text-sm text-gray-400 flex-1 truncate">{item.name}</span>
-                    <span className="text-sm text-white font-medium">{item.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="Ventas por Categoría" subtitle="Participación en la facturación">
+          <DonutChart
+            data={salesByCategory.map((c: any) => ({ name: c.name, value: Number(c.amount ?? c.value) || 0 }))}
+            valueFormatter={(v) => `$${Math.round(v).toLocaleString("es-AR")}`}
+            centerLabel="Facturado"
+          />
+        </ChartCard>
 
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
-          <CardHeader>
-            <CardTitle className="text-white">Patrón de Ventas por Hora</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={hourlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(34, 211, 238, 0.1)" />
-                  <XAxis
-                    dataKey="hour"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 11 }}
-                    interval={2}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0f1a",
-                      border: "1px solid rgba(34, 211, 238, 0.2)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, "Ventas"]}
-                  />
-                  <Line type="monotone" dataKey="sales" stroke="#22d3ee" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="Patrón de Ventas por Hora" subtitle="Cómo evoluciona el día">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={hourlyData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="hour" {...axisProps} dy={8} interval={2} />
+                <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />
+                <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => `$${Math.round(v).toLocaleString("es-AR")}`} />} />
+                <Area
+                  type="monotone"
+                  dataKey="sales"
+                  name="Ventas"
+                  stroke={PALETTE.violet}
+                  strokeWidth={2.5}
+                  fill={areaFill("violet")}
+                  dot={false}
+                  activeDot={{ r: 6, fill: PALETTE.violet, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  {...ANIMATION}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
-          <CardHeader>
-            <CardTitle className="text-white">Rendimiento de Empleados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={employeePerformance} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(34, 211, 238, 0.1)" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    width={100}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0f1a",
-                      border: "1px solid rgba(34, 211, 238, 0.2)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `$${value.toLocaleString()} (${props.payload.sales} ventas)`,
-                      "Facturación",
-                    ]}
-                  />
-                  <Bar dataKey="revenue" fill="#22d3ee" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="Rendimiento de Empleados" subtitle="Facturación por vendedor">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={employeePerformance} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} horizontal={false} vertical />
+                <XAxis type="number" {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <YAxis type="category" dataKey="name" {...axisProps} width={100} />
+                <Tooltip
+                  cursor={cursorBar}
+                  content={
+                    <ChartTooltip
+                      valueFormatter={(v) => `$${Math.round(v).toLocaleString("es-AR")}`}
+                    />
+                  }
+                />
+                <Bar dataKey="revenue" name="Facturación" fill={barFillH("emerald")} radius={[0, 8, 8, 0]} maxBarSize={28} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

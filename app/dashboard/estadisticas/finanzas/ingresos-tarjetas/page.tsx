@@ -6,6 +6,17 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TrendingUp, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  ANIMATION,
+  axisProps,
+  barFill,
+  cursorBar,
+  gridProps,
+  legendProps,
+} from "@/components/charts/chart-theme"
 
 // Card data
 const cardsData = [
@@ -346,35 +357,23 @@ export default function IngresosTarjetasPage() {
         </Card>
 
         {/* Chart */}
-        <Card className="bg-[#0a0f1a] border-gray-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-white">Ingresos Mensuales por Marca</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1f2937",
-                      border: "1px solid #374151",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "#ffffff" }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
-                  />
-                  <Legend />
-                  <Bar dataKey="visa" name="VISA" fill="#1e40af" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="mastercard" name="Mastercard" fill="#f79e1b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="amex" name="AMEX" fill="#006fcf" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard title="Ingresos Mensuales por Marca" subtitle="VISA, Mastercard y AMEX" className="lg:col-span-2">
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="month" {...axisProps} dy={6} />
+                <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />
+                <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => `$${Math.round(v).toLocaleString("es-AR")}`} />} />
+                <Legend {...legendProps} />
+                <Bar dataKey="visa" name="VISA" fill={barFill("indigo")} radius={[6, 6, 0, 0]} maxBarSize={26} {...ANIMATION} />
+                <Bar dataKey="mastercard" name="Mastercard" fill={barFill("amber")} radius={[6, 6, 0, 0]} maxBarSize={26} {...ANIMATION} />
+                <Bar dataKey="amex" name="AMEX" fill={barFill("sky")} radius={[6, 6, 0, 0]} maxBarSize={26} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
       </div>
 
       {/* Detailed Table */}

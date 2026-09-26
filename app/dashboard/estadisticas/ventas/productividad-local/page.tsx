@@ -7,7 +7,21 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
 import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 import { subDays } from "date-fns"
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { ComposedChart, Area, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  PALETTE,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFillH,
+  cursorBar,
+  cursorLine,
+  gridProps,
+  legendProps,
+} from "@/components/charts/chart-theme"
 
 export const dynamic = "force-dynamic"
 
@@ -140,63 +154,60 @@ export default function ProductividadLocalPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sales per m² Over Time */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Ventas por m² - Tendencia
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salesPerM2OverTime}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Line type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={3} name="Real" />
-              <Line
-                type="monotone"
-                dataKey="benchmark"
-                stroke="#ef4444"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                name="Benchmark"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+        <ChartCard title="Ventas por m² - Tendencia" subtitle="Resultado real frente al benchmark">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={salesPerM2OverTime} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
+                <YAxis {...axisProps} width={52} />
+                <Tooltip cursor={cursorLine} content={<ChartTooltip />} />
+                <Legend {...legendProps} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name="Real"
+                  stroke={PALETTE.cyan}
+                  strokeWidth={2.5}
+                  fill={areaFill("cyan")}
+                  dot={false}
+                  activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  {...ANIMATION}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="benchmark"
+                  name="Benchmark"
+                  stroke={PALETTE.rose}
+                  strokeWidth={2}
+                  strokeDasharray="6 6"
+                  dot={false}
+                  {...ANIMATION}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-        {/* Branch Comparison */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Comparación por Sucursal
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={branchComparison} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" stroke="#9ca3af" />
-              <YAxis dataKey="branch" type="category" stroke="#9ca3af" width={120} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="salesPerM2" radius={[0, 8, 8, 0]}>
-                {branchComparison.map((entry, index) => (
-                  <Bar key={`bar-${index}`} dataKey="salesPerM2" fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <ChartCard title="Comparación por Sucursal" subtitle="Ventas por m² de cada local">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={branchComparison} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} horizontal={false} vertical />
+                <XAxis type="number" {...axisProps} />
+                <YAxis dataKey="branch" type="category" {...axisProps} width={110} />
+                <Tooltip cursor={cursorBar} content={<ChartTooltip />} />
+                <Bar dataKey="salesPerM2" name="Ventas por m²" radius={[0, 8, 8, 0]} maxBarSize={30} {...ANIMATION}>
+                  {branchComparison.map((entry, index) => (
+                    <Cell key={`bar-${index}`} fill={entry.color} fillOpacity={0.92} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
         {/* Performance Gauge */}
         <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 lg:col-span-2">

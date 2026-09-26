@@ -10,20 +10,23 @@ import { createClient } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils/currency"
 import { shiftFromLabel, shiftOf, OWNER_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
 import { format, isSameDay } from "date-fns"
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
-} from "recharts"
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  DonutChart,
+  PALETTE,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  barFillH,
+  cursorBar,
+  cursorLine,
+  gridProps,
+} from "@/components/charts/chart-theme"
+import { moneyTick } from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
@@ -476,110 +479,91 @@ export default function ExecutiveOverviewPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                {data.oneDay ? "Tendencia de Ventas (últimos 14 días)" : "Tendencia de Ventas Diarias"}
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
-                  <Line
-                    type="monotone"
-                    dataKey="sales"
-                    name="Ventas"
-                    stroke="#06b6d4"
-                    strokeWidth={3}
-                    dot={{ fill: "#06b6d4" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Ventas por Categoría
-              </h3>
-              {data.categoryData.length === 0 ? (
-                <p className="text-sm text-gray-500 py-24 text-center">Sin ventas para mostrar.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={data.categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    >
-                      {data.categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} formatter={money} />
-                  </PieChart>
+            <ChartCard
+              title={data.oneDay ? "Tendencia de Ventas (últimos 14 días)" : "Tendencia de Ventas Diarias"}
+              subtitle="Facturación por día"
+            >
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.daily} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
+                    <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                    <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                    <Area
+                      type="monotone"
+                      dataKey="sales"
+                      name="Ventas"
+                      stroke={PALETTE.cyan}
+                      strokeWidth={2.5}
+                      fill={areaFill("cyan")}
+                      dot={false}
+                      activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                      {...ANIMATION}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
-              )}
-            </Card>
+              </div>
+            </ChartCard>
 
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Ventas por Hora
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.hourly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="hour" stroke="#9ca3af" interval={2} />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
-                  <Bar dataKey="sales" name="Ventas" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
+            <ChartCard title="Ventas por Categoría" subtitle="Participación en la facturación">
+              <DonutChart
+                data={data.categoryData.map((c) => ({ name: c.name, value: c.value }))}
+                valueFormatter={(v) => formatCurrency(v)}
+                centerLabel="Facturado"
+                centerValue={formatCurrency(data.categoryData.reduce((a, c) => a + c.value, 0))}
+              />
+            </ChartCard>
 
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Ventas por Turno
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.shiftData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis type="number" stroke="#9ca3af" />
-                  <YAxis dataKey="shift" type="category" stroke="#9ca3af" />
-                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
-                  <Bar dataKey="sales" name="Ventas" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 lg:col-span-2">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Top Vendedores
-              </h3>
-              {data.sellerData.length === 0 ? (
-                <p className="text-sm text-gray-500 py-24 text-center">Sin ventas para mostrar.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={Math.max(200, data.sellerData.length * 48)}>
-                  <BarChart data={data.sellerData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis type="number" stroke="#9ca3af" />
-                    <YAxis dataKey="name" type="category" stroke="#9ca3af" width={150} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={money} />
-                    <Bar dataKey="sales" name="Ventas" fill="#10b981" radius={[0, 8, 8, 0]} />
+            <ChartCard title="Ventas por Hora" subtitle="Cuándo se vende más">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.hourly} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="hour" {...axisProps} dy={6} interval={2} />
+                    <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                    <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                    <Bar dataKey="sales" name="Ventas" fill={barFill("cyan")} radius={[6, 6, 0, 0]} maxBarSize={26} {...ANIMATION} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </ChartCard>
+
+            <ChartCard title="Ventas por Turno" subtitle="Mañana, tarde y noche">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.shiftData} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} horizontal={false} vertical />
+                    <XAxis type="number" {...axisProps} tickFormatter={moneyTick} />
+                    <YAxis dataKey="shift" type="category" {...axisProps} width={70} />
+                    <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                    <Bar dataKey="sales" name="Ventas" fill={barFillH("indigo")} radius={[0, 8, 8, 0]} maxBarSize={30} {...ANIMATION} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
+
+            <ChartCard title="Top Vendedores" subtitle="Ranking por facturación" className="lg:col-span-2">
+              {data.sellerData.length === 0 ? (
+                <p className="py-16 text-center text-sm text-slate-500">Sin ventas para mostrar.</p>
+              ) : (
+                <div style={{ height: Math.max(220, data.sellerData.length * 52) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.sellerData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
+                      <ChartGradients />
+                      <CartesianGrid {...gridProps} horizontal={false} vertical />
+                      <XAxis type="number" {...axisProps} tickFormatter={moneyTick} />
+                      <YAxis dataKey="name" type="category" {...axisProps} width={130} />
+                      <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                      <Bar dataKey="sales" name="Ventas" fill={barFillH("emerald")} radius={[0, 8, 8, 0]} maxBarSize={26} {...ANIMATION} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               )}
-            </Card>
+            </ChartCard>
           </div>
         </>
       )}

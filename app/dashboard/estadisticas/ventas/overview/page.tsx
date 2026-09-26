@@ -3,7 +3,26 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DollarSign, ShoppingCart, TrendingUp, Calendar, Download, RefreshCw, ArrowUp, ArrowDown, Package } from "lucide-react"
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  DonutChart,
+  EmptyChart,
+  PALETTE,
+  COLOR_ORDER,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  barFillH,
+  colorAt,
+  cursorBar,
+  cursorLine,
+  gridProps,
+  legendProps,
+} from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import {
   useTickets,
@@ -206,63 +225,76 @@ export default function VentasOverviewPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Tendencia de Ventas Diarias</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={stats.dailySales}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: 12 }} interval="preserveStartEnd" />
-              <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
-                labelStyle={{ color: "#fff" }}
-                formatter={(value: any) => formatCurrency(Number(value))}
-              />
-              <Line type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={3} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard title="Tendencia de Ventas Diarias" subtitle={`Últimos ${days} días`}>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.dailySales} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name="Ventas"
+                  stroke={PALETTE.cyan}
+                  strokeWidth={2.5}
+                  fill={areaFill("cyan")}
+                  dot={false}
+                  activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  {...ANIMATION}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Ventas por Día de la Semana</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.salesByWeekday}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="day" stroke="#64748b" style={{ fontSize: 12 }} />
-              <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
-                labelStyle={{ color: "#fff" }}
-                formatter={(value: any) => formatCurrency(Number(value))}
-              />
-              <Bar dataKey="value" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard title="Ventas por Día de la Semana" subtitle="Qué días se vende más">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.salesByWeekday} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="day" {...axisProps} dy={6} />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                <Bar dataKey="value" name="Ventas" fill={barFill("indigo")} radius={[8, 8, 0, 0]} maxBarSize={38} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Top Productos por Ventas</h3>
+        <ChartCard title="Top Productos por Ventas" subtitle="Los 5 que más facturan">
           {stats.topProducts.length === 0 ? (
-            <p className="text-sm text-gray-500 py-10 text-center">Sin ventas para mostrar.</p>
+            <EmptyChart />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {stats.topProducts.map((product, i) => {
                 const percentage = stats.topProducts[0].sales > 0 ? (product.sales / stats.topProducts[0].sales) * 100 : 0
                 return (
                   <div key={product.name + i}>
-                    <div className="flex items-center justify-between mb-2 gap-3">
-                      <span className="text-white text-sm font-medium truncate">{product.name}</span>
-                      <div className="text-right shrink-0">
-                        <span className="text-white font-semibold">{formatCurrency(product.sales)}</span>
-                        <span className="text-xs text-gray-500 ml-2">({product.units} un.)</span>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-white">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/5 text-[11px] text-slate-400">
+                          {i + 1}
+                        </span>
+                        <span className="truncate">{product.name}</span>
+                      </span>
+                      <div className="shrink-0 text-right">
+                        <span className="font-semibold text-white">{formatCurrency(product.sales)}</span>
+                        <span className="ml-2 text-xs text-slate-500">({product.units} un.)</span>
                       </div>
                     </div>
-                    <div className="w-full h-3 rounded-full bg-white/5">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
                       <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${percentage}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${percentage}%`,
+                          background: `linear-gradient(90deg, ${colorAt(i)}66, ${colorAt(i)})`,
+                        }}
                       />
                     </div>
                   </div>
@@ -270,40 +302,16 @@ export default function VentasOverviewPage() {
               })}
             </div>
           )}
-        </div>
+        </ChartCard>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Ventas por Categoría</h3>
-          {stats.salesByCategory.length === 0 ? (
-            <p className="text-sm text-gray-500 py-10 text-center">Sin ventas para mostrar.</p>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {stats.salesByCategory.map((cat, i) => (
-                  <div key={cat.name} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-white text-sm font-medium truncate">{cat.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-white font-semibold">{formatCurrency(cat.value)}</span>
-                      <span className="text-sm text-gray-400 w-16 text-right">{cat.percent}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 h-4 rounded-full bg-white/5 overflow-hidden flex">
-                {stats.salesByCategory.map((cat, i) => (
-                  <div
-                    key={cat.name}
-                    style={{ width: `${cat.percent}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                    className="h-full"
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <ChartCard title="Ventas por Categoría" subtitle="Participación en la facturación">
+          <DonutChart
+            data={stats.salesByCategory.map((c) => ({ name: c.name, value: c.value }))}
+            valueFormatter={(v) => formatCurrency(v)}
+            centerLabel="Facturado"
+            centerValue={formatCurrency(stats.totalSales)}
+          />
+        </ChartCard>
       </div>
     </div>
   )

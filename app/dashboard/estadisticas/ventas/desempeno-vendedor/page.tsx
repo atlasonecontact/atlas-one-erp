@@ -4,6 +4,25 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Trophy, TrendingUp, Users, Clock, Download, RefreshCw } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  DonutChart,
+  EmptyChart,
+  PALETTE,
+  COLOR_ORDER,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  barFillH,
+  colorAt,
+  cursorBar,
+  cursorLine,
+  gridProps,
+  legendProps,
+} from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, moneyTick, SHIFT_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
 
@@ -185,25 +204,31 @@ export default function DesempenoVendedorPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Ventas por Vendedor y Turno</h3>
-        <ResponsiveContainer width="100%" height={340}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="seller" stroke="#64748b" style={{ fontSize: 12 }} />
-            <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
-              labelStyle={{ color: "#fff" }}
-              formatter={(value: any) => formatMoney(Number(value))}
-            />
-            <Legend wrapperStyle={{ fontSize: 12, color: "#9ca3af" }} />
-            {SHIFTS.map((shift) => (
-              <Bar key={shift} dataKey={shift} stackId="turno" fill={SHIFT_COLORS[shift]} radius={[4, 4, 0, 0]} />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <ChartCard title="Ventas por Vendedor y Turno" subtitle="Facturación de cada vendedor según el turno de la caja">
+        <div className="h-[340px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+              <ChartGradients />
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="seller" {...axisProps} dy={6} />
+              <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+              <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatMoney(v)} />} />
+              <Legend {...legendProps} />
+              {SHIFTS.map((shift, i) => (
+                <Bar
+                  key={shift}
+                  dataKey={shift}
+                  stackId="turno"
+                  fill={barFill(["cyan", "violet", "amber"][i] as "cyan" | "violet" | "amber")}
+                  radius={i === SHIFTS.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
+                  maxBarSize={56}
+                  {...ANIMATION}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </ChartCard>
 
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Ranking de Vendedores</h3>

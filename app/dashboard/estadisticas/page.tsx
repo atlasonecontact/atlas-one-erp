@@ -352,10 +352,10 @@ export default function EstadisticasPage() {
                       <span className="text-sm text-white">{payment.method}</span>
                       <span className="text-sm text-gray-400">{formatCurrency(payment.amount)}</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-white/5">
+                    <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${payment.percentage}%`, backgroundColor: payment.color }}
+                        style={{ width: `${payment.percentage}%`, background: `linear-gradient(90deg, ${payment.color}66, ${payment.color})` }}
                       />
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function EstadisticasPage() {
                         <p className="text-white font-medium">{employee.name}</p>
                         <p className="text-sm text-gray-400">{employee.transactions} transacciones</p>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-white/5">
+                      <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{

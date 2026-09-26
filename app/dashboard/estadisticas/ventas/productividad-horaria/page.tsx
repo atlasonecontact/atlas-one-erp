@@ -3,7 +3,26 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Clock, TrendingUp, Calendar, Download, RefreshCw } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  DonutChart,
+  EmptyChart,
+  PALETTE,
+  COLOR_ORDER,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  barFillH,
+  colorAt,
+  cursorBar,
+  cursorLine,
+  gridProps,
+  legendProps,
+} from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, WEEKDAYS_SHORT, WEEKDAYS_LONG, WEEK_ORDER, moneyTick } from "@/lib/analytics/tickets"
 
@@ -159,44 +178,42 @@ export default function ProductividadHorariaPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Ventas por Hora</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.salesByHour}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="hour" stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={(hour) => `${hour}h`} interval={1} />
-              <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
-                labelStyle={{ color: "#fff" }}
-                labelFormatter={(hour) => `${hour}:00`}
-                formatter={(value: any) => formatCurrency(Number(value))}
-              />
-              <Bar dataKey="sales" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard title="Ventas por Hora" subtitle="Facturación en cada franja">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="hour" {...axisProps} dy={6} tickFormatter={(hour) => `${hour}h`} interval={1} />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip
+                  cursor={cursorBar}
+                  content={<ChartTooltip labelFormatter={(h) => `${h}:00`} valueFormatter={(v) => formatCurrency(v)} />}
+                />
+                <Bar dataKey="sales" name="Ventas" fill={barFill("cyan")} radius={[6, 6, 0, 0]} maxBarSize={22} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Tickets por Hora</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.salesByHour}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="hour" stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={(hour) => `${hour}h`} interval={1} />
-              <YAxis stroke="#64748b" style={{ fontSize: 12 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #10b981", borderRadius: 8 }}
-                labelStyle={{ color: "#fff" }}
-                labelFormatter={(hour) => `${hour}:00`}
-              />
-              <Bar dataKey="tickets" fill="#10b981" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard title="Tickets por Hora" subtitle="Cantidad de ventas en cada franja">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <ChartGradients />
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="hour" {...axisProps} dy={6} tickFormatter={(hour) => `${hour}h`} interval={1} />
+                <YAxis {...axisProps} allowDecimals={false} />
+                <Tooltip cursor={cursorBar} content={<ChartTooltip labelFormatter={(h) => `${h}:00`} />} />
+                <Bar dataKey="tickets" name="Tickets" fill={barFill("emerald")} radius={[6, 6, 0, 0]} maxBarSize={22} {...ANIMATION} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
       </div>
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Mapa de Calor: Día de Semana vs Hora</h3>
+      <div className="rounded-2xl border border-white/[0.07] bg-gradient-to-b from-[#0e1526] to-[#0a0f1a] p-5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] sm:p-6">
+        <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white"><span className="h-4 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-indigo-400" />Mapa de Calor: Día de Semana vs Hora</h3>
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full">
             <div className="flex gap-1 mb-2">
@@ -234,23 +251,33 @@ export default function ProductividadHorariaPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Tendencia Intradía de Ventas</h3>
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={stats.salesByHour}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="hour" stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={(hour) => `${hour}:00`} interval={1} />
-            <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
-              labelStyle={{ color: "#fff" }}
-              labelFormatter={(hour) => `${hour}:00`}
-              formatter={(value: any) => formatCurrency(Number(value))}
-            />
-            <Line type="monotone" dataKey="sales" stroke="#06b6d4" strokeWidth={3} dot={{ fill: "#06b6d4", r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <ChartCard title="Tendencia Intradía de Ventas" subtitle="Cómo evoluciona la facturación a lo largo del día">
+        <div className="h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+              <ChartGradients />
+              <CartesianGrid {...gridProps} />
+              <XAxis dataKey="hour" {...axisProps} dy={8} tickFormatter={(hour) => `${hour}:00`} interval={1} />
+              <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+              <Tooltip
+                cursor={cursorLine}
+                content={<ChartTooltip labelFormatter={(h) => `${h}:00`} valueFormatter={(v) => formatCurrency(v)} />}
+              />
+              <Area
+                type="monotone"
+                dataKey="sales"
+                name="Ventas"
+                stroke={PALETTE.violet}
+                strokeWidth={2.5}
+                fill={areaFill("violet")}
+                dot={false}
+                activeDot={{ r: 6, fill: PALETTE.violet, stroke: "#0a0f1a", strokeWidth: 3 }}
+                {...ANIMATION}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </ChartCard>
     </div>
   )
 }

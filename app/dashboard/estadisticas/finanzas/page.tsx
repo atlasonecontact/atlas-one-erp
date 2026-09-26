@@ -323,9 +323,9 @@ export default function FinanzasEstadisticasPage() {
                     <span className="text-sm text-white">{cat.category}</span>
                     <span className="text-sm text-gray-400">{formatCurrency(cat.amount)}</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-white/5">
+                  <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-red-500 transition-all"
+                      className="h-full rounded-full bg-gradient-to-r from-rose-500/60 to-rose-400 transition-all duration-700"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

@@ -19,8 +19,8 @@ import {
   type Ticket,
 } from "@/lib/analytics/tickets"
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   Cell,
@@ -33,6 +33,19 @@ import {
   Scatter,
   ZAxis,
 } from "recharts"
+import {
+  ChartCard,
+  ChartGradients,
+  ChartTooltip,
+  PALETTE,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  barFill,
+  cursorBar,
+  cursorLine,
+  gridProps,
+} from "@/components/charts/chart-theme"
 
 export const dynamic = "force-dynamic"
 
@@ -211,78 +224,92 @@ export default function ComportamientoCompraPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Distribución de Valores de Ticket
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.ticketDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="range" stroke="#9ca3af" style={{ fontSize: 12 }} />
-                  <YAxis stroke="#9ca3af" allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [v, "Tickets"]} />
-                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                    {data.ticketDistribution.map((entry, index) => (
-                      <Cell key={`bar-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
+            <ChartCard title="Distribución de Valores de Ticket" subtitle="Cuántos tickets hay en cada tramo de precio">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.ticketDistribution} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="range" {...axisProps} dy={6} />
+                    <YAxis {...axisProps} allowDecimals={false} />
+                    <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => `${v} tickets`} />} />
+                    <Bar dataKey="count" name="Tickets" radius={[8, 8, 0, 0]} maxBarSize={44} {...ANIMATION}>
+                      {data.ticketDistribution.map((entry, index) => (
+                        <Cell key={`bar-${index}`} fill={entry.color} fillOpacity={0.9} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
 
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Unidades por Ticket
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.unitsDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="units" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [v, "Tickets"]} labelFormatter={(l) => `${l} unidades`} />
-                  <Bar dataKey="tickets" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
+            <ChartCard title="Unidades por Ticket" subtitle="Cuántos productos lleva cada cliente">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.unitsDistribution} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="units" {...axisProps} dy={6} />
+                    <YAxis {...axisProps} allowDecimals={false} />
+                    <Tooltip
+                      cursor={cursorBar}
+                      content={<ChartTooltip labelFormatter={(l) => `${l} unidades`} valueFormatter={(v) => `${v} tickets`} />}
+                    />
+                    <Bar dataKey="tickets" name="Tickets" fill={barFill("violet")} radius={[8, 8, 0, 0]} maxBarSize={40} {...ANIMATION} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
 
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Frecuencia de Compra en el Tiempo
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.days}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" stroke="#9ca3af" interval="preserveStartEnd" />
-                  <YAxis stroke="#9ca3af" allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [v, "Tickets"]} />
-                  <Line type="monotone" dataKey="tickets" stroke="#10b981" strokeWidth={3} dot={{ fill: "#10b981" }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
+            <ChartCard title="Frecuencia de Compra en el Tiempo" subtitle="Tickets por día">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.days} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <ChartGradients />
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
+                    <YAxis {...axisProps} allowDecimals={false} />
+                    <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => `${v} tickets`} />} />
+                    <Area
+                      type="monotone"
+                      dataKey="tickets"
+                      name="Tickets"
+                      stroke={PALETTE.emerald}
+                      strokeWidth={2.5}
+                      fill={areaFill("emerald")}
+                      dot={false}
+                      activeDot={{ r: 6, fill: PALETTE.emerald, stroke: "#0a0f1a", strokeWidth: 3 }}
+                      {...ANIMATION}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
 
-            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Valor del Ticket vs Unidades
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <ScatterChart>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis type="number" dataKey="ticketValue" name="Valor" stroke="#9ca3af" tickFormatter={moneyTick} />
-                  <YAxis type="number" dataKey="units" name="Unidades" stroke="#9ca3af" allowDecimals={false} />
-                  <ZAxis type="number" dataKey="size" range={[60, 60]} />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    cursor={{ strokeDasharray: "3 3" }}
-                    formatter={(v: any, name: any) => (name === "Valor" ? formatCurrency(Number(v)) : v)}
-                  />
-                  <Scatter data={data.scatterData} fill="#06b6d4" fillOpacity={0.6} />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </Card>
+            <ChartCard title="Valor del Ticket vs Unidades" subtitle="Cada punto es un ticket">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+                    <CartesianGrid {...gridProps} vertical />
+                    <XAxis type="number" dataKey="ticketValue" name="Valor" {...axisProps} tickFormatter={moneyTick} />
+                    <YAxis type="number" dataKey="units" name="Unidades" {...axisProps} allowDecimals={false} />
+                    <ZAxis type="number" dataKey="size" range={[70, 70]} />
+                    <Tooltip
+                      cursor={{ strokeDasharray: "4 4", stroke: "rgba(148,163,184,0.35)" }}
+                      content={<ChartTooltip valueFormatter={(v, name) => (name === "Valor" ? formatCurrency(v) : String(v))} />}
+                    />
+                    <Scatter
+                      data={data.scatterData}
+                      fill={PALETTE.cyan}
+                      fillOpacity={0.55}
+                      stroke={PALETTE.cyan}
+                      strokeOpacity={0.9}
+                      {...ANIMATION}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
           </div>
 
           <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mt-6">

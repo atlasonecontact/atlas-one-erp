@@ -3,7 +3,8 @@
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { TrendingUp, TrendingDown } from "lucide-react"
-import { LineChart, Line, ResponsiveContainer } from "recharts"
+import { AreaChart, Area, ResponsiveContainer } from "recharts"
+import { PALETTE } from "@/components/charts/chart-theme"
 
 interface KPICardProps {
   title: string
@@ -29,6 +30,8 @@ export function KPICard({
   onClick,
 }: KPICardProps) {
   const isPositive = change && change > 0
+  const sparkColor = change !== undefined && change < 0 ? PALETTE.rose : PALETTE.emerald
+  const sparkId = `spark-${title.replace(/[^a-z0-9]/gi, "")}`
 
   return (
     <div
@@ -77,15 +80,23 @@ export function KPICard({
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3 h-12 -mx-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sparklineData}>
-                <Line
+              <AreaChart data={sparklineData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={sparkId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={sparkColor} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area
                   type="monotone"
                   dataKey="value"
-                  stroke={isPositive ? "#10b981" : "#ef4444"}
+                  stroke={sparkColor}
                   strokeWidth={2}
+                  fill={`url(#${sparkId})`}
                   dot={false}
+                  isAnimationActive={false}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
