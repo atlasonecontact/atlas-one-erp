@@ -77,6 +77,7 @@ export default function HistorialVentasDatasetPage() {
   const [error, setError] = useState<string | null>(null)
   const [truncated, setTruncated] = useState(false)
   const [multiBranch, setMultiBranch] = useState(false)
+  const [staffOptions, setStaffOptions] = useState<Array<{ id: string; name: string }>>([])
 
   const [sortKey, setSortKey] = useState<SortKey>("date")
   const [sortDesc, setSortDesc] = useState(true)
@@ -117,6 +118,13 @@ export default function HistorialVentasDatasetPage() {
 
         const { data: staff } = await supabase.from("employees").select("id, name").in("kiosko_id", ids)
         const staffName = new Map((staff || []).map((e: any) => [e.id, e.name || "Empleado"]))
+        if (!cancelled) {
+          setStaffOptions(
+            (staff || [])
+              .map((e: any) => ({ id: e.id as string, name: (e.name || "Empleado") as string }))
+              .sort((a, b) => a.name.localeCompare(b.name)),
+          )
+        }
 
         const start = new Date(`${dateFrom}T00:00:00-03:00`)
         const end = new Date(new Date(`${dateTo}T00:00:00-03:00`).getTime() + 24 * 60 * 60 * 1000)
@@ -154,7 +162,7 @@ export default function HistorialVentasDatasetPage() {
             subtotal: Number(r.subtotal) || 0,
             payment: s.payment_method,
             sellerId: s.employee_id,
-            seller: s.employee_id ? staffName.get(s.employee_id) || "Empleado" : "Sin asignar",
+            seller: s.employee_id ? staffName.get(s.employee_id) || "Empleado" : "Dueño",
             branchId: s.kiosko_id,
             branch: branchName.get(s.kiosko_id) || "-",
             status: s.status || "completed",
@@ -179,11 +187,11 @@ export default function HistorialVentasDatasetPage() {
     }
   }, [supabase, dateFrom, dateTo])
 
-  const sellers = useMemo(() => {
-    const map = new Map<string, string>()
-    rows.forEach((r) => map.set(r.sellerId || "none", r.seller))
-    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
-  }, [rows])
+  // Vendedores: los empleados cargados en "Empleados" + el dueño (ventas sin empleado asignado).
+  const sellers = useMemo(
+    () => [["none", "Dueño"] as [string, string], ...staffOptions.map((m) => [m.id, m.name] as [string, string])],
+    [staffOptions],
+  )
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()

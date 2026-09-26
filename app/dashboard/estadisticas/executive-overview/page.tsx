@@ -8,6 +8,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils/currency"
+import { shiftFromLabel, shiftOf, OWNER_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
 import { format, isSameDay } from "date-fns"
 import {
   LineChart,
@@ -47,6 +48,7 @@ interface SaleRow {
   payment_method: string | null
   status: string | null
   created_at: string
+  cash_registers?: { shift: string | null } | Array<{ shift: string | null }> | null
 }
 
 interface ItemRow {
@@ -143,7 +145,7 @@ export default function ExecutiveOverviewPage() {
         const singleDay = isSameDay(filters.dateRange.from, filters.dateRange.to)
         const fetchStart = singleDay ? new Date(start.getTime() - 13 * 24 * 60 * 60 * 1000) : start
 
-        const cols = "id, kiosko_id, employee_id, total_amount, payment_method, status, created_at"
+        const cols = "id, kiosko_id, employee_id, total_amount, payment_method, status, created_at, cash_registers(shift)"
         const current = await fetchAllPages<SaleRow>(
           (a, b) =>
             supabase
@@ -196,7 +198,10 @@ export default function ExecutiveOverviewPage() {
 
         if (cancelled) return
         setBranches(kioskos)
-        setSellers((staff || []).map((e: any) => ({ id: e.id, name: e.name || "Empleado" })))
+        setSellers([
+          { id: "none", name: OWNER_LABEL },
+          ...(staff || []).map((e: any) => ({ id: e.id as string, name: (e.name || "Empleado") as string })),
+        ])
         setSales(current.map((s) => ({ ...s, total_amount: Number(s.total_amount) })))
         setPrevSales(previous.map((s) => ({ ...s, total_amount: Number(s.total_amount) })))
         setItems(itemMap)
@@ -221,15 +226,18 @@ export default function ExecutiveOverviewPage() {
 
   const data = useMemo(() => {
     const hr = filters.hourRange
-    const shift = SHIFTS.find((s) => s.key === filters.shift)
+    const shiftOfSale = (s: SaleRow): ShiftKey => {
+      const reg = Array.isArray(s.cash_registers) ? s.cash_registers[0]?.shift : s.cash_registers?.shift
+      return shiftFromLabel(reg) ?? shiftOf(hourOf(s.created_at))
+    }
 
     const passes = (s: SaleRow) => {
       if (filters.branch && s.kiosko_id !== filters.branch) return false
-      if (filters.seller && s.employee_id !== filters.seller) return false
+      if (filters.seller && (filters.seller === "none" ? s.employee_id !== null : s.employee_id !== filters.seller)) return false
       if (filters.paymentMethod && s.payment_method !== filters.paymentMethod) return false
       const h = hourOf(s.created_at)
       if (hr && !inWindow(h, hr.from, hr.to)) return false
-      if (shift && !inWindow(h, shift.from, shift.to)) return false
+      if (filters.shift && shiftOfSale(s) !== filters.shift) return false
       return true
     }
 
@@ -261,6 +269,7 @@ export default function ExecutiveOverviewPage() {
         seller: r.sale.employee_id,
         day: dayOf(r.sale.created_at),
         hour: hourOf(r.sale.created_at),
+        shift: shiftOfSale(r.sale),
         total: r.shaped.total,
         units: r.shaped.units,
       }))
@@ -327,12 +336,12 @@ export default function ExecutiveOverviewPage() {
     })
 
     const shiftData = SHIFTS.map((s) => {
-      const inShift = rows.filter((r) => inWindow(r.hour, s.from, s.to))
+      const inShift = rows.filter((r) => r.shift === s.key)
       return { shift: s.label.split(" ")[0], sales: inShift.reduce((a, r) => a + r.total, 0), tickets: inShift.length }
     })
 
     const sellerMap = new Map<string, { name: string; sales: number; tickets: number }>()
-    const nameOf = (id: string | null) => (id ? sellers.find((s) => s.id === id)?.name || "Empleado" : "Sin asignar")
+    const nameOf = (id: string | null) => (id ? sellers.find((s) => s.id === id)?.name || "Empleado" : OWNER_LABEL)
     rows.forEach((r) => {
       const key = r.seller || "none"
       const cur = sellerMap.get(key) || { name: nameOf(r.seller), sales: 0, tickets: 0 }

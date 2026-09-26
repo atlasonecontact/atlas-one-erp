@@ -135,6 +135,9 @@ export default function VentasPage() {
   const [employeeId, setEmployeeId] = useState<string | null>(null)
   const [employeeName, setEmployeeName] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
+  // Vendedor de la venta: el empleado logueado, o (si vende el dueño) el que elija en el carrito.
+  const [staff, setStaff] = useState<{ id: string; name: string }[]>([])
+  const [sellerId, setSellerId] = useState<string>("")
   const [showMobileCart, setShowMobileCart] = useState(false)
   const [openRegisterId, setOpenRegisterId] = useState<string | null>(null)
   const [showOpenCash, setShowOpenCash] = useState(false)
@@ -307,9 +310,36 @@ export default function VentasPage() {
         loadProducts(kioscos[0].id)
         loadPromotions(kioscos[0].id)
         loadOpenRegister(kioscos[0].id)
+        loadStaff(kioscos[0].id)
       } else {
         setIsLoading(false)
       }
+    }
+  }
+
+  const loadStaff = async (kiosko_id: string) => {
+    const { data } = await supabase
+      .from("employees")
+      .select("id, name")
+      .eq("kiosko_id", kiosko_id)
+      .eq("status", "active")
+      .order("name")
+    const list = (data || []).map((e: any) => ({ id: e.id as string, name: (e.name || "Empleado") as string }))
+    setStaff(list)
+    try {
+      const saved = window.localStorage.getItem(`atlas.pos.seller.${kiosko_id}`) || ""
+      setSellerId(list.some((m) => m.id === saved) ? saved : "")
+    } catch {
+      setSellerId("")
+    }
+  }
+
+  const chooseSeller = (id: string) => {
+    setSellerId(id)
+    try {
+      window.localStorage.setItem(`atlas.pos.seller.${kioskoId}`, id)
+    } catch {
+      // sin localStorage no se recuerda la eleccion
     }
   }
 
@@ -683,6 +713,7 @@ export default function VentasPage() {
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
   const total = subtotal
   const tax = total - total / 1.21
+  const saleSellerId = userRole === "employee" ? employeeId : sellerId || null
 
   // Una promocion no es una fila de products: al armar los items reales de
   // la venta (y al descontar stock localmente) se descompone en sus
@@ -749,7 +780,7 @@ export default function VentasPage() {
           id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
           createdAt: Date.now(),
           kioskoId,
-          employeeId,
+          employeeId: saleSellerId,
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
@@ -777,7 +808,7 @@ export default function VentasPage() {
       const { data: rpcData, error: saleError } = await supabase.rpc("register_sale", {
         p_sale: {
           kiosko_id: kioskoId,
-          employee_id: employeeId,
+          employee_id: saleSellerId,
           sale_number: saleNumber,
           total_amount: total,
           payment_method: method,
@@ -836,7 +867,7 @@ export default function VentasPage() {
           id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
           createdAt: Date.now(),
           kioskoId,
-          employeeId,
+          employeeId: saleSellerId,
           saleNumber,
           totalAmount: total,
           paymentMethod: method,
@@ -1100,6 +1131,33 @@ export default function VentasPage() {
 
             {/* Footer with totals and checkout */}
             <div className="p-4 border-t space-y-3" style={{ borderColor: config.border }}>
+              {userRole === "employee" ? (
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>Vendedor</span>
+                  <span className="text-white">{employeeName || "Empleado"}</span>
+                </div>
+              ) : (
+                staff.length > 0 && (
+                  <label className="flex items-center justify-between gap-3 text-sm text-gray-400">
+                    <span>Vendedor</span>
+                    <select
+                      value={sellerId}
+                      onChange={(e) => chooseSeller(e.target.value)}
+                      className="h-9 max-w-[180px] flex-1 rounded-md border bg-transparent px-2 text-white"
+                      style={{ borderColor: config.border }}
+                    >
+                      <option value="" className="bg-[#0a0f1a]">
+                        Yo (dueño)
+                      </option>
+                      {staff.map((m) => (
+                        <option key={m.id} value={m.id} className="bg-[#0a0f1a]">
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )
+              )}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Subtotal</span>

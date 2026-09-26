@@ -43,6 +43,8 @@ interface SaleItem {
 }
 
 interface SaleDetail extends Sale {
+  employee_id: string | null
+  seller_name: string | null
   register_open: boolean
   items: SaleItem[]
 }
@@ -128,6 +130,9 @@ export default function HistorialVentasPage() {
   const [voidMode, setVoidMode] = useState<null | "void" | "redo">(null)
   const [voidReason, setVoidReason] = useState("")
   const [voiding, setVoiding] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
+  const [staff, setStaff] = useState<Array<{ id: string; name: string }>>([])
+  const [savingSeller, setSavingSeller] = useState(false)
 
   const loadSales = useCallback(
     async (kiosko: string, from: string, to: string) => {
@@ -174,6 +179,9 @@ export default function HistorialVentasPage() {
       const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
       if (kioscos && kioscos.length > 0) {
         target = kioscos[0].id
+        setIsOwner(true)
+        const { data: team } = await supabase.from("employees").select("id, name").eq("kiosko_id", target).order("name")
+        setStaff((team || []).map((e: any) => ({ id: e.id, name: e.name || "Empleado" })))
       } else {
         const { data: emp } = await supabase
           .from("employees")
@@ -230,7 +238,7 @@ export default function HistorialVentasPage() {
   const openDetail = async (sale: Sale) => {
     setVoidMode(null)
     setVoidReason("")
-    setDetail({ ...sale, register_open: false, items: [] })
+    setDetail({ ...sale, employee_id: null, seller_name: null, register_open: false, items: [] })
     setDetailLoading(true)
     const { data, error } = await supabase.rpc("sale_detail", { p_sale: sale.id })
     if (error || !data) {
@@ -247,6 +255,8 @@ export default function HistorialVentasPage() {
         created_at: d.created_at,
         cancel_reason: d.cancel_reason,
         register_open: !!d.register_open,
+        employee_id: d.employee_id ?? null,
+        seller_name: d.seller_name ?? null,
         items: (d.items || []).map((i: any) => ({
           product_id: i.product_id,
           name: i.name,
@@ -257,6 +267,20 @@ export default function HistorialVentasPage() {
       })
     }
     setDetailLoading(false)
+  }
+
+  const changeSeller = async (value: string) => {
+    if (!detail) return
+    setSavingSeller(true)
+    const { error } = await supabase.rpc("set_sale_seller", { p_sale: detail.id, p_employee: value || null })
+    setSavingSeller(false)
+    if (error) {
+      toast.error("No se pudo cambiar el vendedor", error.message)
+      return
+    }
+    const name = value ? staff.find((m) => m.id === value)?.name || "Empleado" : null
+    setDetail({ ...detail, employee_id: value || null, seller_name: name })
+    toast.success("Vendedor actualizado", name || "Dueño")
   }
 
   const closeDetail = () => {
@@ -544,6 +568,27 @@ export default function HistorialVentasPage() {
                 {getMethodLabel(detail.payment_method)}
               </span>
               <span className="text-xl font-bold text-white">{formatCurrency(detail.total_amount)}</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-gray-400">Vendedor</span>
+              {isOwner && !detailLoading && detail.status !== "cancelled" ? (
+                <select
+                  value={detail.employee_id ?? ""}
+                  disabled={savingSeller}
+                  onChange={(e) => changeSeller(e.target.value)}
+                  className="h-9 max-w-[220px] rounded-md border border-cyan-500/20 bg-[#050810] px-2 text-white"
+                >
+                  <option value="">Dueño</option>
+                  {staff.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-white">{detail.seller_name || "Dueño"}</span>
+              )}
             </div>
 
             {detail.status === "cancelled" && detail.cancel_reason && (

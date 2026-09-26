@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils/currency"
+import Link from "next/link"
 import { subDays } from "date-fns"
 import {
   useTickets,
   applyFilters,
   categoryOptions,
+  productsWithoutCost,
   ymdOf,
   paymentLabel,
   SHIFT_LABEL,
@@ -41,6 +43,7 @@ export default function TicketsTablePage() {
   })
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [invoiceFilter, setInvoiceFilter] = useState<"" | "yes" | "no">("")
   const itemsPerPage = 20
 
   const from = ymdOf(filters.dateRange.from)
@@ -52,12 +55,16 @@ export default function TicketsTablePage() {
     const q = searchTerm.trim().toLowerCase()
     return applyFilters(tickets, filters)
       .filter((t) => !q || t.number.toLowerCase().includes(q) || shortId(t.number).toLowerCase().includes(q))
+      .filter((t) => (invoiceFilter === "yes" ? !!t.invoice : invoiceFilter === "no" ? !t.invoice : true))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [tickets, filters, searchTerm])
+  }, [tickets, filters, searchTerm, invoiceFilter])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [filters, searchTerm])
+  }, [filters, searchTerm, invoiceFilter])
+
+  const noCost = useMemo(() => productsWithoutCost(filteredTickets), [filteredTickets])
+  const invoicedCount = filteredTickets.filter((t) => t.invoice).length
 
   const totalPages = Math.max(1, Math.ceil(filteredTickets.length / itemsPerPage))
   const page = Math.min(currentPage, totalPages)
@@ -65,7 +72,7 @@ export default function TicketsTablePage() {
   const marginOf = (total: number, cost: number) => (cost > 0 && total > 0 ? ((total - cost) / total) * 100 : null)
 
   const handleExport = () => {
-    const header = ["ID Ticket", "Fecha", "Hora", "Sucursal", "Turno", "Vendedor", "Total", "Unidades", "Método de pago", "Margen %"]
+    const header = ["ID Ticket", "Fecha", "Hora", "Sucursal", "Turno", "Vendedor", "Total", "Unidades", "Método de pago", "Factura", "Margen %"]
     const rows = filteredTickets.map((t) => {
       const m = marginOf(t.total, t.cost)
       return [
@@ -78,6 +85,7 @@ export default function TicketsTablePage() {
         String(t.total),
         String(t.units),
         paymentLabel(t.payment),
+        t.invoice ? `${t.invoice.type} ${t.invoice.number}` : "Sin factura",
         m === null ? "" : m.toFixed(1),
       ]
     })
@@ -121,6 +129,16 @@ export default function TicketsTablePage() {
               className="pl-10 bg-gray-800/50 border-gray-700 focus:border-cyan-500"
             />
           </div>
+          <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={invoiceFilter}
+            onChange={(e) => setInvoiceFilter(e.target.value as "" | "yes" | "no")}
+            className="h-9 rounded-md border border-gray-700 bg-gray-800/50 px-3 text-sm text-white"
+          >
+            <option value="">Facturación: todos</option>
+            <option value="yes">Solo facturados</option>
+            <option value="no">Sin factura</option>
+          </select>
           <Button
             variant="outline"
             size="sm"
@@ -131,8 +149,25 @@ export default function TicketsTablePage() {
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
           </Button>
+          </div>
         </div>
+        {!loading && filteredTickets.length > 0 && (
+          <p className="mt-3 text-xs text-gray-400">
+            {invoicedCount} de {filteredTickets.length} tickets tienen factura electrónica.
+          </p>
+        )}
       </Card>
+
+      {!loading && noCost.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          {noCost.length === 1 ? "1 producto vendido no tiene" : `${noCost.length} productos vendidos no tienen`} costo cargado, por eso
+          su margen no se calcula: {noCost.slice(0, 4).join(", ")}
+          {noCost.length > 4 ? "…" : ""}.{" "}
+          <Link href="/dashboard/productos" className="underline hover:text-amber-200">
+            Cargar costos en Productos
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -142,7 +177,7 @@ export default function TicketsTablePage() {
 
       <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-800/80 border-b border-gray-700">
               <tr>
                 <th className="text-left p-4 text-cyan-400 font-semibold">ID Ticket</th>
@@ -154,20 +189,21 @@ export default function TicketsTablePage() {
                 <th className="text-right p-4 text-cyan-400 font-semibold">Total</th>
                 <th className="text-center p-4 text-cyan-400 font-semibold">Unidades</th>
                 <th className="text-left p-4 text-cyan-400 font-semibold">Método Pago</th>
+                <th className="text-left p-4 text-cyan-400 font-semibold">Factura</th>
                 <th className="text-right p-4 text-cyan-400 font-semibold">Margen %</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center text-gray-500">
+                  <td colSpan={11} className="p-10 text-center text-gray-500">
                     <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
                     Cargando tickets...
                   </td>
                 </tr>
               ) : paginatedTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center text-gray-500">
+                  <td colSpan={11} className="p-10 text-center text-gray-500">
                     No hay tickets con estos filtros
                   </td>
                 </tr>
@@ -186,7 +222,7 @@ export default function TicketsTablePage() {
                       <td className="p-4 text-gray-300">{dateFmt.format(new Date(ticket.createdAt))}</td>
                       <td className="p-4 text-gray-300">{timeFmt.format(new Date(ticket.createdAt))}</td>
                       <td className="p-4 text-gray-300">{ticket.branch}</td>
-                      <td className="p-4 text-gray-300">{SHIFT_LABEL[ticket.shift]}</td>
+                      <td className="p-4 text-gray-300" title={ticket.shiftFromRegister ? "Según la caja" : "Según la hora"}>{SHIFT_LABEL[ticket.shift]}</td>
                       <td className="p-4 text-gray-300">{ticket.seller}</td>
                       <td className="p-4 text-right text-white font-semibold">{formatCurrency(ticket.total)}</td>
                       <td className="p-4 text-center">
@@ -196,6 +232,22 @@ export default function TicketsTablePage() {
                         <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-gray-300 border-gray-700"}>
                           {paymentLabel(ticket.payment)}
                         </Badge>
+                      </td>
+                      <td className="p-4">
+                        {ticket.invoice ? (
+                          <Badge
+                            className={
+                              ticket.invoice.status === "emitida"
+                                ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                            }
+                            title={ticket.invoice.cae ? `CAE ${ticket.invoice.cae}` : undefined}
+                          >
+                            {ticket.invoice.type} {ticket.invoice.number}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-500 text-sm">Sin factura</span>
+                        )}
                       </td>
                       <td className="p-4 text-right">
                         {margin === null ? (

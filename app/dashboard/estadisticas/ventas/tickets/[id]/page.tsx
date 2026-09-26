@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils/currency"
-import { paymentLabel, shiftOf, SHIFT_LABEL, TZ } from "@/lib/analytics/tickets"
+import { useToast } from "@/components/ui/toast-provider"
+import { paymentLabel, shiftOf, shiftFromLabel, SHIFT_LABEL, OWNER_LABEL, TZ } from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
@@ -37,6 +38,9 @@ interface TicketDetail {
   payment: string | null
   total: number
   lines: Line[]
+  kioskoId: string
+  registerShift: string | null
+  invoice: { type: string; number: string; cae: string | null; status: string } | null
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -50,6 +54,10 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<TicketDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isOwner, setIsOwner] = useState(false)
+  const [staff, setStaff] = useState<Array<{ id: string; name: string }>>([])
+  const [savingSeller, setSavingSeller] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     let cancelled = false
@@ -63,7 +71,7 @@ export default function TicketDetailPage() {
         }
         const { data: sale, error: saleError } = await supabase
           .from("sales")
-          .select("id, sale_number, kiosko_id, employee_id, total_amount, payment_method, status, created_at")
+          .select("id, sale_number, kiosko_id, employee_id, total_amount, payment_method, status, created_at, cash_registers(shift)")
           .eq("id", ticketId)
           .maybeSingle()
         if (saleError) throw saleError
@@ -72,7 +80,10 @@ export default function TicketDetailPage() {
           return
         }
 
-        const [{ data: items, error: itemsError }, { data: branch }, { data: staff }] = await Promise.all([
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        const [{ data: items, error: itemsError }, { data: branch }, { data: staffRow }, { data: allStaff }, { data: inv }, { data: ownerRow }] = await Promise.all([
           supabase
             .from("sale_items")
             .select("product_name, quantity, unit_price, cost_price, subtotal, products(name, category, cost)")
@@ -80,6 +91,17 @@ export default function TicketDetailPage() {
           supabase.from("kioscos").select("name").eq("id", sale.kiosko_id).maybeSingle(),
           sale.employee_id
             ? supabase.from("employees").select("name").eq("id", sale.employee_id).maybeSingle()
+            : Promise.resolve({ data: null }),
+          supabase.from("employees").select("id, name").eq("kiosko_id", sale.kiosko_id).order("name"),
+          supabase
+            .from("invoices")
+            .select("tipo_comprobante, punto_venta, numero_comprobante, cae, status")
+            .eq("sale_id", sale.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          user
+            ? supabase.from("kioscos").select("id").eq("id", sale.kiosko_id).eq("owner_id", user.id).maybeSingle()
             : Promise.resolve({ data: null }),
         ])
         if (itemsError) throw itemsError
@@ -103,12 +125,24 @@ export default function TicketDetailPage() {
           status: sale.status || "completed",
           createdAt: sale.created_at,
           branch: branch?.name || "-",
-          seller: sale.employee_id ? (staff as any)?.name || "Empleado" : "Sin asignar",
+          seller: sale.employee_id ? (staffRow as any)?.name || "Empleado" : OWNER_LABEL,
           sellerId: sale.employee_id,
           payment: sale.payment_method,
           total: Number(sale.total_amount) || 0,
           lines,
+          kioskoId: sale.kiosko_id,
+          registerShift: (Array.isArray((sale as any).cash_registers) ? (sale as any).cash_registers[0]?.shift : (sale as any).cash_registers?.shift) ?? null,
+          invoice: inv
+            ? {
+                type: ({ 1: "Factura A", 6: "Factura B", 11: "Factura C" } as Record<number, string>)[Number((inv as any).tipo_comprobante)] || "Factura",
+                number: `${String((inv as any).punto_venta ?? 0).padStart(4, "0")}-${String((inv as any).numero_comprobante ?? 0).padStart(8, "0")}`,
+                cae: (inv as any).cae ?? null,
+                status: (inv as any).status || "emitida",
+              }
+            : null,
         })
+        setIsOwner(!!ownerRow)
+        setStaff((allStaff || []).map((e: any) => ({ id: e.id, name: e.name || "Empleado" })))
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "No se pudo cargar el ticket")
       } finally {
@@ -157,6 +191,20 @@ export default function TicketDetailPage() {
   const totalMargin = hasCost && subtotal > 0 ? ((subtotal - totalCost) / subtotal) * 100 : null
   const hour = Number.parseInt(hourFmt.format(new Date(ticket.createdAt)), 10) % 24
   const voided = ticket.status === "cancelled"
+
+  const changeSeller = async (value: string) => {
+    if (!ticket) return
+    setSavingSeller(true)
+    const { error: rpcError } = await supabase.rpc("set_sale_seller", { p_sale: ticket.id, p_employee: value || null })
+    setSavingSeller(false)
+    if (rpcError) {
+      toast.error("No se pudo cambiar el vendedor", rpcError.message)
+      return
+    }
+    const name = value ? staff.find((m) => m.id === value)?.name || "Empleado" : OWNER_LABEL
+    setTicket({ ...ticket, sellerId: value || null, seller: name })
+    toast.success("Vendedor actualizado", name)
+  }
 
   const handleDownload = () => {
     const rows = [
@@ -239,14 +287,33 @@ export default function TicketDetailPage() {
               <Clock className="w-4 h-4" />
               <span className="text-sm">Turno</span>
             </div>
-            <div className="text-white font-semibold">{SHIFT_LABEL[shiftOf(hour)]}</div>
+            <div className="text-white font-semibold">
+              {SHIFT_LABEL[shiftFromLabel(ticket.registerShift) ?? shiftOf(hour)]}
+            </div>
+            <div className="text-xs text-gray-500">{shiftFromLabel(ticket.registerShift) ? "Según la caja" : "Según la hora"}</div>
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
               <User className="w-4 h-4" />
               <span className="text-sm">Vendedor</span>
             </div>
-            <div className="text-white font-semibold">{ticket.seller}</div>
+            {isOwner ? (
+              <select
+                value={ticket.sellerId ?? ""}
+                disabled={savingSeller}
+                onChange={(e) => changeSeller(e.target.value)}
+                className="h-9 w-full rounded-md border border-gray-700 bg-gray-800 px-2 text-sm font-semibold text-white"
+              >
+                <option value="">{OWNER_LABEL}</option>
+                {staff.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-white font-semibold">{ticket.seller}</div>
+            )}
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
@@ -306,6 +373,35 @@ export default function TicketDetailPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <Separator className="my-8 bg-gray-700" />
+
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-white mb-4">Facturación</h2>
+          {ticket.invoice ? (
+            <div className="bg-gray-800/50 p-4 rounded-lg flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-white font-semibold">
+                  {ticket.invoice.type} {ticket.invoice.number}
+                </div>
+                {ticket.invoice.cae && <div className="text-xs text-gray-400 font-mono">CAE {ticket.invoice.cae}</div>}
+              </div>
+              <Badge
+                className={
+                  ticket.invoice.status === "emitida"
+                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                }
+              >
+                {ticket.invoice.status === "emitida" ? "Emitida" : ticket.invoice.status}
+              </Badge>
+            </div>
+          ) : (
+            <div className="bg-gray-800/50 p-4 rounded-lg text-sm text-gray-400">
+              Esta venta no tiene factura electrónica emitida.
+            </div>
+          )}
         </div>
 
         <Separator className="my-8 bg-gray-700" />
