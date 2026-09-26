@@ -14,6 +14,7 @@ interface ProductOption {
   name: string
   price: number
   stock: number
+  category?: string
 }
 
 export default function PromocionesPage() {
@@ -37,7 +38,7 @@ export default function PromocionesPage() {
     while (hasMore) {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, stock_quantity")
+        .select("id, name, price, stock_quantity, category")
         .eq("kiosko_id", kiosko_id)
         .order("name")
         .range(from, from + pageSize - 1)
@@ -55,13 +56,19 @@ export default function PromocionesPage() {
       }
     }
 
-    setProducts(allProducts.map((p) => ({ id: p.id, name: p.name, price: p.price || 0, stock: p.stock_quantity || 0 })))
+    setProducts(allProducts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price || 0,
+        stock: p.stock_quantity || 0,
+        category: p.category || undefined,
+      })))
   }
 
   const loadPromotions = async (kiosko_id: string) => {
     const { data, error } = await supabase
       .from("promotions")
-      .select("id, name, price, promotion_items(product_id, quantity, products(name))")
+      .select("id, name, price, choice_slots, promotion_items(product_id, quantity, products(name))")
       .eq("kiosko_id", kiosko_id)
       .order("name")
 
@@ -75,6 +82,13 @@ export default function PromocionesPage() {
         id: promo.id,
         name: promo.name,
         price: promo.price,
+        choice:
+          Array.isArray(promo.choice_slots) && promo.choice_slots.length > 0
+            ? {
+                quantity: Number(promo.choice_slots[0].quantity) || 1,
+                categories: promo.choice_slots[0].categories || [],
+              }
+            : null,
         items: (promo.promotion_items || []).map((it: any) => ({
           product_id: it.product_id,
           quantity: it.quantity,
@@ -118,17 +132,20 @@ export default function PromocionesPage() {
   }, [])
 
   const handleSavePromotion = async (
-    promo: { id?: string; name: string; price: number },
+    promo: { id?: string; name: string; price: number; choice: { quantity: number; categories: string[] } | null },
     items: PromotionItemInput[],
   ) => {
     if (!kioskoId) return
 
     let promotionId = promo.id
+    const choiceSlots = promo.choice
+      ? [{ label: "Bebida a elección", quantity: promo.choice.quantity, categories: promo.choice.categories }]
+      : []
 
     if (promotionId) {
       const { error } = await supabase
         .from("promotions")
-        .update({ name: promo.name, price: promo.price, updated_at: new Date().toISOString() })
+        .update({ name: promo.name, price: promo.price, choice_slots: choiceSlots, updated_at: new Date().toISOString() })
         .eq("id", promotionId)
       if (error) {
         toast.error("Error al guardar la promoción", error.message)
@@ -138,7 +155,7 @@ export default function PromocionesPage() {
     } else {
       const { data, error } = await supabase
         .from("promotions")
-        .insert({ kiosko_id: kioskoId, name: promo.name, price: promo.price })
+        .insert({ kiosko_id: kioskoId, name: promo.name, price: promo.price, choice_slots: choiceSlots })
         .select("id")
         .single()
       if (error || !data) {
@@ -148,7 +165,9 @@ export default function PromocionesPage() {
       promotionId = data.id
     }
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = items.length === 0
+      ? { error: null }
+      : await supabase
       .from("promotion_items")
       .insert(items.map((i) => ({ promotion_id: promotionId, product_id: i.product_id, quantity: i.quantity })))
 
@@ -241,7 +260,10 @@ export default function PromocionesPage() {
                   <Pencil className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {promo.items.map((i) => `${i.quantity}x ${i.product_name || "?"}`).join(" + ")}
+                  {[
+                    ...promo.items.map((i) => `${i.quantity}x ${i.product_name || "?"}`),
+                    ...(promo.choice ? [`${promo.choice.quantity}x Bebida a elección`] : []),
+                  ].join(" + ")}
                 </p>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-lg font-bold text-primary">${promo.price.toLocaleString("es-AR")}</span>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { Cart } from "@/components/pos/cart"
+import { ChoiceModal, type ChoiceOption } from "@/components/pos/choice-modal"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
 import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X } from "lucide-react"
@@ -127,7 +128,17 @@ export default function VentasPage() {
     offline?: boolean
   } | null>(null)
   const [products, setProducts] = useState<any[]>([])
-  const [promotions, setPromotions] = useState<{ id: string; name: string; price: number; items: { product_id: string; quantity: number }[] }[]>([])
+  const [promotions, setPromotions] = useState<
+    {
+      id: string
+      name: string
+      price: number
+      items: { product_id: string; quantity: number }[]
+      choice: { quantity: number; categories: string[] } | null
+    }[]
+  >([])
+  // Promocion con "bebida a eleccion" esperando que se elija la bebida antes de entrar al carrito.
+  const [choicePromo, setChoicePromo] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string>("")
   const [kioskoName, setKioskoName] = useState<string>("ATLAS ONE")
@@ -346,7 +357,7 @@ export default function VentasPage() {
   const loadPromotions = async (kiosko_id: string) => {
     const { data, error } = await supabase
       .from("promotions")
-      .select("id, name, price, promotion_items(product_id, quantity)")
+      .select("id, name, price, choice_slots, promotion_items(product_id, quantity)")
       .eq("kiosko_id", kiosko_id)
       .order("name")
 
@@ -361,6 +372,13 @@ export default function VentasPage() {
         name: p.name,
         price: p.price,
         items: (p.promotion_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity })),
+        choice:
+          Array.isArray(p.choice_slots) && p.choice_slots.length > 0
+            ? {
+                quantity: Number(p.choice_slots[0].quantity) || 1,
+                categories: p.choice_slots[0].categories || [],
+              }
+            : null,
       })),
     )
   }
@@ -589,41 +607,56 @@ export default function VentasPage() {
   const promotionProducts = useMemo(
     () =>
       promotions
-    .map((promo) => {
-      const components = promo.items
-        .map((it) => {
-          const p = products.find((pr) => pr.id === it.product_id)
-          if (!p) return null
-          return { productId: p.id, productName: p.name, quantity: it.quantity, price: p.price, stock: p.stock }
+        .map((promo) => {
+          const components = promo.items
+            .map((it) => {
+              const p = products.find((pr) => pr.id === it.product_id)
+              if (!p) return null
+              return { productId: p.id, productName: p.name, quantity: it.quantity, price: p.price, stock: p.stock }
+            })
+            .filter((c): c is NonNullable<typeof c> => c !== null)
+
+          if (components.length === 0 && !promo.choice) return null
+
+          const fixedAvailable = components.length > 0 ? Math.min(...components.map((c) => Math.floor(c.stock / c.quantity))) : Infinity
+
+          // "Bebida a eleccion": el precio de cada componente se prorratea recien cuando se elige la bebida.
+          let choiceAvailable = Infinity
+          if (promo.choice) {
+            const eligible = products.filter((pr) => promo.choice!.categories.includes(pr.category))
+            choiceAvailable = eligible.reduce((best, pr) => Math.max(best, Math.floor(pr.stock / promo.choice!.quantity)), 0)
+          }
+          const availableStock = Math.min(fixedAvailable, choiceAvailable)
+
+          const normalTotal = components.reduce((sum, c) => sum + c.price * c.quantity, 0)
+          const promotionComponents = promo.choice
+            ? []
+            : components.map((c) => ({
+                productId: c.productId,
+                productName: c.productName,
+                quantity: c.quantity,
+                unitPrice:
+                  normalTotal > 0
+                    ? ((c.price * c.quantity) / normalTotal) * (promo.price / c.quantity)
+                    : promo.price / components.length / c.quantity,
+              }))
+
+          return {
+            id: promo.id,
+            name: promo.choice ? `${promo.name} (bebida a elección)` : promo.name,
+            category: "Promociones",
+            price: promo.price,
+            stock: Math.max(0, Number.isFinite(availableStock) ? availableStock : 0),
+            status: availableStock > 0 ? "active" : "low_stock",
+            isPromotion: true,
+            promotionComponents,
+            needsChoice: !!promo.choice,
+            choice: promo.choice,
+            fixedComponents: components,
+            promoName: promo.name,
+          }
         })
-        .filter((c): c is NonNullable<typeof c> => c !== null)
-
-      if (components.length === 0) return null
-
-      const availableStock = Math.min(...components.map((c) => Math.floor(c.stock / c.quantity)))
-      const normalTotal = components.reduce((sum, c) => sum + c.price * c.quantity, 0)
-      const promotionComponents = components.map((c) => ({
-        productId: c.productId,
-        productName: c.productName,
-        quantity: c.quantity,
-        unitPrice:
-          normalTotal > 0
-            ? ((c.price * c.quantity) / normalTotal) * (promo.price / c.quantity)
-            : promo.price / components.length / c.quantity,
-      }))
-
-      return {
-        id: promo.id,
-        name: promo.name,
-        category: "Promociones",
-        price: promo.price,
-        stock: Math.max(0, availableStock),
-        status: availableStock > 0 ? "active" : "low_stock",
-        isPromotion: true,
-        promotionComponents,
-      }
-    })
-    .filter((p): p is NonNullable<typeof p> => p !== null),
+        .filter((p): p is NonNullable<typeof p> => p !== null),
     [promotions, products],
   )
 
@@ -670,6 +703,10 @@ export default function VentasPage() {
   const hasMoreProducts = filteredProducts.length > visibleProducts.length
 
   const addToCart = (product: any) => {
+    if (product.needsChoice) {
+      setChoicePromo(product)
+      return
+    }
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id)
       if (existing) {
@@ -692,6 +729,66 @@ export default function VentasPage() {
     if (window.innerWidth < 1024) {
       // Don't auto-show, just update the count
     }
+  }
+
+  // Bebidas que se pueden elegir para la promocion (con stock, descontando lo que ya esta en el carrito).
+  const getChoiceOptions = (): ChoiceOption[] => {
+    if (!choicePromo?.choice) return []
+    const used = new Map<string, number>()
+    for (const si of buildSaleItems(cart)) used.set(si.productId, (used.get(si.productId) || 0) + si.quantity)
+    return products
+      .filter(
+        (pr) =>
+          choicePromo.choice.categories.includes(pr.category) &&
+          pr.stock - (used.get(pr.id) || 0) >= choicePromo.choice.quantity,
+      )
+      .map((pr) => ({ id: pr.id, name: pr.name, price: pr.price, stock: pr.stock - (used.get(pr.id) || 0), category: pr.category }))
+  }
+
+  const handleChoiceSelected = (drink: ChoiceOption) => {
+    const promo = choicePromo
+    if (!promo?.choice) return
+    const qty: number = promo.choice.quantity
+    const fixed: { productId: string; productName: string; quantity: number; price: number; stock: number }[] = promo.fixedComponents
+    const normalTotal = fixed.reduce((sum, c) => sum + c.price * c.quantity, 0) + drink.price * qty
+    const share = (price: number, quantity: number) =>
+      normalTotal > 0 ? ((price * quantity) / normalTotal) * (promo.price / quantity) : promo.price / (fixed.length + 1) / quantity
+
+    const promotionComponents = [
+      ...fixed.map((c) => ({
+        productId: c.productId,
+        productName: c.productName,
+        quantity: c.quantity,
+        unitPrice: share(c.price, c.quantity),
+      })),
+      { productId: drink.id, productName: drink.name, quantity: qty, unitPrice: share(drink.price, qty) },
+    ]
+    const stock = Math.min(
+      ...fixed.map((c) => Math.floor(c.stock / c.quantity)),
+      Math.floor(drink.stock / qty),
+    )
+    const cartId = `${promo.id}::${drink.id}`
+
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === cartId)
+      if (existing) {
+        if (existing.quantity >= stock) return prev
+        return prev.map((item) => (item.id === cartId ? { ...item, quantity: item.quantity + 1 } : item))
+      }
+      return [
+        ...prev,
+        {
+          id: cartId,
+          name: `${promo.promoName} · ${drink.name}`,
+          price: promo.price,
+          quantity: 1,
+          stock,
+          isPromotion: true,
+          promotionComponents,
+        },
+      ]
+    })
+    setChoicePromo(null)
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -1249,6 +1346,15 @@ export default function VentasPage() {
       )}
 
       {/* Payment Modal */}
+      <ChoiceModal
+        open={!!choicePromo}
+        promoName={choicePromo?.promoName || ""}
+        quantity={choicePromo?.choice?.quantity || 1}
+        options={getChoiceOptions()}
+        onSelect={handleChoiceSelected}
+        onClose={() => setChoicePromo(null)}
+      />
+
       <PaymentModal
         open={showPayment}
         onClose={() => setShowPayment(false)}

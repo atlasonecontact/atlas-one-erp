@@ -11,6 +11,12 @@ interface ProductOption {
   name: string
   price: number
   stock: number
+  category?: string
+}
+
+export interface PromotionChoice {
+  quantity: number
+  categories: string[]
 }
 
 export interface PromotionItemInput {
@@ -23,6 +29,7 @@ export interface Promotion {
   name: string
   price: number
   items: (PromotionItemInput & { product_name?: string })[]
+  choice?: PromotionChoice | null
 }
 
 interface PromotionModalProps {
@@ -30,7 +37,10 @@ interface PromotionModalProps {
   onClose: () => void
   promotion: Promotion | null
   products: ProductOption[]
-  onSave: (promotion: { id?: string; name: string; price: number }, items: PromotionItemInput[]) => void
+  onSave: (
+    promotion: { id?: string; name: string; price: number; choice: PromotionChoice | null },
+    items: PromotionItemInput[],
+  ) => void
   onDelete?: (id: string) => void
 }
 
@@ -39,6 +49,15 @@ export function PromotionModal({ open, onClose, promotion, products, onSave, onD
   const [price, setPrice] = useState("")
   const [items, setItems] = useState<{ product_id: string; quantity: number }[]>([])
   const [search, setSearch] = useState("")
+  const [choiceOn, setChoiceOn] = useState(false)
+  const [choiceQty, setChoiceQty] = useState(1)
+  const [choiceCats, setChoiceCats] = useState<string[]>([])
+
+  const allCategories = Array.from(new Set(products.map((p) => p.category).filter((c): c is string => !!c))).sort()
+  const defaultChoiceCats = () => {
+    const drinks = allCategories.filter((c) => /bebida|gaseosa|cerveza|agua|jugo/i.test(c))
+    return drinks.length > 0 ? drinks : allCategories
+  }
 
   useEffect(() => {
     if (!open) return
@@ -46,10 +65,16 @@ export function PromotionModal({ open, onClose, promotion, products, onSave, onD
       setName(promotion.name)
       setPrice(String(promotion.price))
       setItems(promotion.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })))
+      setChoiceOn(!!promotion.choice)
+      setChoiceQty(promotion.choice?.quantity || 1)
+      setChoiceCats(promotion.choice?.categories || [])
     } else {
       setName("")
       setPrice("")
       setItems([])
+      setChoiceOn(false)
+      setChoiceQty(1)
+      setChoiceCats([])
     }
     setSearch("")
   }, [open, promotion])
@@ -86,11 +111,20 @@ export function PromotionModal({ open, onClose, promotion, products, onSave, onD
       ? []
       : products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
 
-  const canSave = name.trim().length > 0 && items.length > 0 && promoPrice > 0
+  const canSave =
+    name.trim().length > 0 && (items.length > 0 || choiceOn) && promoPrice > 0 && (!choiceOn || choiceCats.length > 0)
 
   const handleSubmit = () => {
     if (!canSave) return
-    onSave({ id: promotion?.id, name: name.trim(), price: promoPrice }, items)
+    onSave(
+      {
+        id: promotion?.id,
+        name: name.trim(),
+        price: promoPrice,
+        choice: choiceOn ? { quantity: choiceQty, categories: choiceCats } : null,
+      },
+      items,
+    )
   }
 
   return (
@@ -195,6 +229,79 @@ export function PromotionModal({ open, onClose, promotion, products, onSave, onD
             </div>
           )}
 
+          <div className="space-y-3 rounded-lg border border-cyan-500/10 bg-white/5 p-4">
+            <label className="flex cursor-pointer items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-white">Bebida a elección</p>
+                <p className="text-xs text-gray-500">
+                  En el punto de venta se elige a mano qué bebida del catálogo lleva el combo, y se descuenta del
+                  stock esa bebida.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={choiceOn}
+                onChange={(e) => {
+                  setChoiceOn(e.target.checked)
+                  if (e.target.checked && choiceCats.length === 0) setChoiceCats(defaultChoiceCats())
+                }}
+                className="mt-1 h-5 w-5 shrink-0 accent-cyan-500"
+              />
+            </label>
+
+            {choiceOn && (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-300">Cantidad de bebidas</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setChoiceQty((q) => Math.max(1, q - 1))}
+                      className="w-7 h-7 rounded-md bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="w-6 text-center text-sm text-white">{choiceQty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChoiceQty((q) => q + 1)}
+                      className="w-7 h-7 rounded-md bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm text-gray-300">Categorías que se pueden elegir</span>
+                  <div className="flex flex-wrap gap-2">
+                    {allCategories.map((cat) => {
+                      const on = choiceCats.includes(cat)
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() =>
+                            setChoiceCats((prev) => (on ? prev.filter((c) => c !== cat) : [...prev, cat]))
+                          }
+                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                            on
+                              ? "border-cyan-500/50 bg-cyan-500/20 text-cyan-300"
+                              : "border-white/10 text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {choiceCats.length === 0 && (
+                    <p className="text-xs text-amber-400">Elegí al menos una categoría.</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label className="text-gray-300">Precio de la promoción</Label>
             <Input
@@ -206,10 +313,10 @@ export function PromotionModal({ open, onClose, promotion, products, onSave, onD
             />
           </div>
 
-          {items.length > 0 && promoPrice > 0 && (
+          {(items.length > 0 || choiceOn) && promoPrice > 0 && (
             <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10 space-y-1 text-sm">
               <div className="flex justify-between text-gray-400">
-                <span>Precio normal sumado</span>
+                <span>Precio normal sumado{choiceOn ? " (sin la bebida)" : ""}</span>
                 <span>${normalTotal.toLocaleString("es-AR")}</span>
               </div>
               <div className="flex justify-between text-gray-400">
