@@ -79,7 +79,7 @@ export function GlobalFiltersComponent({
         <h2 className="text-lg font-bold text-white">Filtros Globales</h2>
       </div>
 
-      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
         {/* Fecha: un solo dia */}
         <Popover open={isDateOpen} onOpenChange={setIsDateOpen}>
           <PopoverTrigger asChild>
