@@ -17,6 +17,8 @@ export interface GlobalFilters {
   seller?: string
   paymentMethod?: string
   category?: string
+  /** Franja horaria del dia: desde (0-23) hasta (1-24, exclusivo). Si desde > hasta cruza la medianoche. */
+  hourRange?: { from: number; to: number }
 }
 
 interface GlobalFiltersProps {
@@ -25,6 +27,7 @@ interface GlobalFiltersProps {
   branches?: Array<{ id: string; name: string }>
   sellers?: Array<{ id: string; name: string }>
   categories?: Array<{ id: string; name: string }>
+  showHourFilter?: boolean
 }
 
 export function GlobalFiltersComponent({
@@ -33,10 +36,13 @@ export function GlobalFiltersComponent({
   branches = [],
   sellers = [],
   categories = [],
+  showHourFilter = false,
 }: GlobalFiltersProps) {
   const [isDateOpen, setIsDateOpen] = useState(false)
 
   const quickDatePresets = [
+    { label: "Hoy", days: 0 },
+    { label: "Ayer", days: 1 },
     { label: "Últimos 7 días", days: 7 },
     { label: "Últimos 30 días", days: 30 },
     { label: "Últimos 90 días", days: 90 },
@@ -47,11 +53,22 @@ export function GlobalFiltersComponent({
       ...filters,
       dateRange: {
         from: subDays(new Date(), days),
-        to: new Date(),
+        // "Ayer" es solo ese dia; el resto llega hasta hoy.
+        to: days === 1 ? subDays(new Date(), 1) : new Date(),
       },
     })
     setIsDateOpen(false)
   }
+
+  const hourFrom = filters.hourRange?.from
+  const hourTo = filters.hourRange?.to
+  const setHour = (part: "from" | "to", value: string) => {
+    const current = filters.hourRange ?? { from: 0, to: 24 }
+    const next = { ...current, [part]: value === "all" ? (part === "from" ? 0 : 24) : Number(value) }
+    const isWholeDay = next.from === 0 && next.to === 24
+    onChange({ ...filters, hourRange: isWholeDay ? undefined : next })
+  }
+  const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00`
 
   return (
     <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-cyan-500/20 rounded-xl p-6 shadow-2xl">
@@ -215,6 +232,51 @@ export function GlobalFiltersComponent({
           </SelectContent>
         </Select>
       </div>
+
+      {showHourFilter && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-700/60 pt-4">
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <Clock className="h-4 w-4 text-cyan-400" />
+            Franja horaria
+          </div>
+          <Select value={hourFrom === undefined ? "all" : String(hourFrom)} onValueChange={(v) => setHour("from", v)}>
+            <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50">
+              <SelectValue placeholder="Desde" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700 max-h-64">
+              <SelectItem value="all">Desde: 00:00</SelectItem>
+              {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
+                <SelectItem key={h} value={String(h)}>
+                  Desde: {hourLabel(h)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={hourTo === undefined ? "all" : String(hourTo)} onValueChange={(v) => setHour("to", v)}>
+            <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50">
+              <SelectValue placeholder="Hasta" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700 max-h-64">
+              <SelectItem value="all">Hasta: 24:00</SelectItem>
+              {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
+                <SelectItem key={h} value={String(h)}>
+                  Hasta: {hourLabel(h)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filters.hourRange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white"
+              onClick={() => onChange({ ...filters, hourRange: undefined })}
+            >
+              Todo el día
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

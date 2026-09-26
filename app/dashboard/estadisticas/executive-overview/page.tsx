@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { DollarSign, ShoppingCart, Package, Clock, TrendingUp, BarChart3, ShoppingBag } from "lucide-react"
+import { DollarSign, ShoppingCart, Package, Clock, TrendingUp, BarChart3, ShoppingBag, Ban } from "lucide-react"
 import { GlobalFiltersComponent, type GlobalFilters } from "@/components/dashboard/global-filters"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
-import { DemoDataBanner } from "@/components/ui/demo-data-banner"
-import { subDays } from "date-fns"
+import { createClient } from "@/lib/supabase/client"
+import { formatCurrency } from "@/lib/utils/currency"
+import { format, subDays } from "date-fns"
 import {
   LineChart,
   Line,
@@ -25,308 +26,534 @@ import {
 
 export const dynamic = "force-dynamic"
 
+const TZ = "America/Argentina/Buenos_Aires"
+const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false })
+const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ })
+const PAGE = 1000
+const ID_CHUNK = 120
+const CATEGORY_COLORS = ["#06b6d4", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#ec4899", "#84cc16"]
+
+const SHIFTS = [
+  { key: "morning", label: "Mañana (6-14h)", from: 6, to: 14 },
+  { key: "afternoon", label: "Tarde (14-22h)", from: 14, to: 22 },
+  { key: "night", label: "Noche (22-6h)", from: 22, to: 6 },
+]
+
+interface SaleRow {
+  id: string
+  kiosko_id: string
+  employee_id: string | null
+  total_amount: number
+  payment_method: string | null
+  status: string | null
+  created_at: string
+}
+
+interface ItemRow {
+  sale_id: string
+  quantity: number
+  subtotal: number
+  category: string
+}
+
+const hourOf = (iso: string) => {
+  const h = Number.parseInt(hourFmt.format(new Date(iso)), 10)
+  return h === 24 ? 0 : h
+}
+const dayOf = (iso: string) => dayFmt.format(new Date(iso))
+
+// Franja [from, to): si from > to cruza la medianoche; from === to significa todo el dia.
+const inWindow = (h: number, from: number, to: number) => {
+  if (from === to) return true
+  return from < to ? h >= from && h < to : h >= from || h < to
+}
+
+const toRangeStart = (d: Date) => new Date(`${format(d, "yyyy-MM-dd")}T00:00:00-03:00`)
+const toRangeEndExclusive = (d: Date) => new Date(toRangeStart(d).getTime() + 24 * 60 * 60 * 1000)
+
+async function fetchAllPages<T>(
+  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>,
+): Promise<T[]> {
+  const out: T[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await run(from, from + PAGE - 1)
+    if (error) throw error
+    out.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return out
+}
+
 export default function ExecutiveOverviewPage() {
   const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
   const [filters, setFilters] = useState<GlobalFilters>({
-    dateRange: {
-      from: subDays(new Date(), 30),
-      to: new Date(),
-    },
+    dateRange: { from: subDays(new Date(), 30), to: new Date() },
   })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([])
+  const [sellers, setSellers] = useState<Array<{ id: string; name: string }>>([])
+  const [sales, setSales] = useState<SaleRow[]>([])
+  const [prevSales, setPrevSales] = useState<SaleRow[]>([])
+  const [items, setItems] = useState<Map<string, ItemRow[]>>(new Map())
 
-  // Mock data - En producción, esto vendría de Supabase con los filtros aplicados
-  const kpis = {
-    totalSales: {
-      value: "$1,234,567",
-      change: 12.5,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 50000 + Math.random() * 20000 })),
-    },
-    totalTickets: {
-      value: "8,432",
-      change: 8.3,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 1000 + Math.random() * 200 })),
-    },
-    avgTicket: {
-      value: "$146",
-      change: 3.8,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 140 + Math.random() * 15 })),
-    },
-    unitsSold: {
-      value: "24,567",
-      change: 15.2,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 3000 + Math.random() * 500 })),
-    },
-    ticketsPerHour: {
-      value: "35.2",
-      change: 5.4,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 30 + Math.random() * 8 })),
-    },
-    salesPerHour: {
-      value: "$5,144",
-      change: 9.7,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 4500 + Math.random() * 1000 })),
-    },
-    unitsPerTicket: {
-      value: "2.91",
-      change: 6.1,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 2.5 + Math.random() * 0.6 })),
-    },
-    salesPerM2: {
-      value: "$2,847",
-      change: -2.3,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 2700 + Math.random() * 300 })),
-    },
-  }
+  const rangeKey = `${format(filters.dateRange.from, "yyyy-MM-dd")}|${format(filters.dateRange.to, "yyyy-MM-dd")}`
 
-  const dailySalesData = Array.from({ length: 30 }, (_, i) => ({
-    date: `${i + 1}/12`,
-    sales: 35000 + Math.random() * 15000,
-  }))
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) return
 
-  const hourlyData = Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}:00`,
-    sales: Math.random() * 8000 + 2000,
-    tickets: Math.random() * 50 + 10,
-  }))
+        let kioskos: Array<{ id: string; name: string }> = []
+        const { data: owned } = await supabase.from("kioscos").select("id, name").eq("owner_id", user.id)
+        if (owned && owned.length > 0) {
+          kioskos = owned.map((k: any) => ({ id: k.id, name: k.name || "Sucursal" }))
+        } else {
+          const { data: emp } = await supabase
+            .from("employees")
+            .select("kiosko_id")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle()
+          if (emp?.kiosko_id) kioskos = [{ id: emp.kiosko_id, name: "Mi sucursal" }]
+        }
+        if (kioskos.length === 0) {
+          if (!cancelled) {
+            setSales([])
+            setPrevSales([])
+            setItems(new Map())
+          }
+          return
+        }
+        const kioskoIds = kioskos.map((k) => k.id)
 
-  const shiftData = [
-    { shift: "Mañana", sales: 345000, tickets: 2450 },
-    { shift: "Tarde", sales: 567000, tickets: 3890 },
-    { shift: "Noche", sales: 234000, tickets: 2093 },
-  ]
+        const { data: staff } = await supabase.from("employees").select("id, name").in("kiosko_id", kioskoIds)
 
-  const sellerData = [
-    { name: "Juan Pérez", sales: 187000, tickets: 1245 },
-    { name: "María García", sales: 156000, tickets: 1089 },
-    { name: "Carlos Rodríguez", sales: 134000, tickets: 978 },
-    { name: "Ana Martínez", sales: 123000, tickets: 867 },
-    { name: "Luis González", sales: 98000, tickets: 743 },
-  ]
+        const start = toRangeStart(filters.dateRange.from)
+        const end = toRangeEndExclusive(filters.dateRange.to)
+        const span = end.getTime() - start.getTime()
+        const prevStart = new Date(start.getTime() - span)
 
-  const categoryData = [
-    { name: "Bebidas", value: 456000, color: "#06b6d4" },
-    { name: "Snacks", value: 289000, color: "#8b5cf6" },
-    { name: "Cigarrillos", value: 234000, color: "#f59e0b" },
-    { name: "Golosinas", value: 167000, color: "#10b981" },
-    { name: "Otros", value: 88000, color: "#ef4444" },
-  ]
+        const cols = "id, kiosko_id, employee_id, total_amount, payment_method, status, created_at"
+        const current = await fetchAllPages<SaleRow>(
+          (a, b) =>
+            supabase
+              .from("sales")
+              .select(cols)
+              .in("kiosko_id", kioskoIds)
+              .gte("created_at", start.toISOString())
+              .lt("created_at", end.toISOString())
+              .order("created_at", { ascending: true })
+              .range(a, b) as any,
+        )
+        const previous = await fetchAllPages<SaleRow>(
+          (a, b) =>
+            supabase
+              .from("sales")
+              .select(cols)
+              .in("kiosko_id", kioskoIds)
+              .neq("status", "cancelled")
+              .gte("created_at", prevStart.toISOString())
+              .lt("created_at", start.toISOString())
+              .order("created_at", { ascending: true })
+              .range(a, b) as any,
+        )
+
+        const ids = current.filter((s) => s.status !== "cancelled").map((s) => s.id)
+        const itemMap = new Map<string, ItemRow[]>()
+        for (let i = 0; i < ids.length; i += ID_CHUNK) {
+          const chunk = ids.slice(i, i + ID_CHUNK)
+          const rows = await fetchAllPages<any>(
+            (a, b) =>
+              supabase
+                .from("sale_items")
+                .select("sale_id, quantity, subtotal, products(category)")
+                .in("sale_id", chunk)
+                .range(a, b) as any,
+          )
+          rows.forEach((r) => {
+            const list = itemMap.get(r.sale_id) || []
+            list.push({
+              sale_id: r.sale_id,
+              quantity: Number(r.quantity) || 0,
+              subtotal: Number(r.subtotal) || 0,
+              category: r.products?.category || "Sin categoría",
+            })
+            itemMap.set(r.sale_id, list)
+          })
+        }
+
+        if (cancelled) return
+        setBranches(kioskos)
+        setSellers((staff || []).map((e: any) => ({ id: e.id, name: e.name || "Empleado" })))
+        setSales(current.map((s) => ({ ...s, total_amount: Number(s.total_amount) })))
+        setPrevSales(previous.map((s) => ({ ...s, total_amount: Number(s.total_amount) })))
+        setItems(itemMap)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "No se pudieron cargar las ventas")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeKey, supabase])
+
+  const categories = useMemo(() => {
+    const set = new Set<string>()
+    items.forEach((list) => list.forEach((i) => set.add(i.category)))
+    return [...set].sort().map((c) => ({ id: c, name: c }))
+  }, [items])
+
+  const data = useMemo(() => {
+    const hr = filters.hourRange
+    const shift = SHIFTS.find((s) => s.key === filters.shift)
+
+    const passes = (s: SaleRow) => {
+      if (filters.branch && s.kiosko_id !== filters.branch) return false
+      if (filters.seller && s.employee_id !== filters.seller) return false
+      if (filters.paymentMethod && s.payment_method !== filters.paymentMethod) return false
+      const h = hourOf(s.created_at)
+      if (hr && !inWindow(h, hr.from, hr.to)) return false
+      if (shift && !inWindow(h, shift.from, shift.to)) return false
+      return true
+    }
+
+    // Cada venta pasa a ser {total, unidades} ya considerando el filtro de categoria.
+    const shape = (s: SaleRow) => {
+      const its = items.get(s.id) || []
+      if (!filters.category) {
+        return { total: s.total_amount, units: its.reduce((a, i) => a + i.quantity, 0) }
+      }
+      const mine = its.filter((i) => i.category === filters.category)
+      if (mine.length === 0) return null
+      return { total: mine.reduce((a, i) => a + i.subtotal, 0), units: mine.reduce((a, i) => a + i.quantity, 0) }
+    }
+
+    const active = sales.filter((s) => s.status !== "cancelled" && passes(s))
+    const voided = sales.filter((s) => s.status === "cancelled" && passes(s)).length
+
+    const rows = active
+      .map((s) => ({ sale: s, shaped: shape(s) }))
+      .filter((r): r is { sale: SaleRow; shaped: { total: number; units: number } } => r.shaped !== null)
+      .map((r) => ({
+        id: r.sale.id,
+        seller: r.sale.employee_id,
+        day: dayOf(r.sale.created_at),
+        hour: hourOf(r.sale.created_at),
+        total: r.shaped.total,
+        units: r.shaped.units,
+      }))
+
+    const totalSales = rows.reduce((a, r) => a + r.total, 0)
+    const tickets = rows.length
+    const units = rows.reduce((a, r) => a + r.units, 0)
+    const avgTicket = tickets > 0 ? totalSales / tickets : 0
+
+    const bucketSet = new Set(rows.map((r) => `${r.day}|${r.hour}`))
+    const activeHours = bucketSet.size
+    const ticketsPerHour = activeHours > 0 ? tickets / activeHours : 0
+    const salesPerHour = activeHours > 0 ? totalSales / activeHours : 0
+    const unitsPerTicket = tickets > 0 ? units / tickets : 0
+
+    // Comparacion con el periodo anterior (ventas, tickets y ticket promedio; sin filtro de categoria).
+    let change: { sales?: number; tickets?: number; avg?: number } = {}
+    if (!filters.category) {
+      const prev = prevSales.filter(passes)
+      const prevTotal = prev.reduce((a, s) => a + s.total_amount, 0)
+      const pct = (now: number, before: number) => (before > 0 ? ((now - before) / before) * 100 : undefined)
+      change = {
+        sales: pct(totalSales, prevTotal),
+        tickets: pct(tickets, prev.length),
+        avg: pct(avgTicket, prev.length > 0 ? prevTotal / prev.length : 0),
+      }
+    }
+
+    // Serie diaria (rellena los dias sin ventas con 0).
+    const daily: Array<{ date: string; sales: number; tickets: number; units: number }> = []
+    const cursor = new Date(filters.dateRange.from)
+    const last = new Date(filters.dateRange.to)
+    cursor.setHours(12, 0, 0, 0)
+    last.setHours(12, 0, 0, 0)
+    const dayIndex = new Map<string, number>()
+    while (cursor <= last && daily.length < 400) {
+      const ymd = format(cursor, "yyyy-MM-dd")
+      dayIndex.set(ymd, daily.length)
+      daily.push({ date: format(cursor, "dd/MM"), sales: 0, tickets: 0, units: 0 })
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    rows.forEach((r) => {
+      const idx = dayIndex.get(r.day)
+      if (idx !== undefined) {
+        daily[idx].sales += r.total
+        daily[idx].tickets += 1
+        daily[idx].units += r.units
+      }
+    })
+
+    const hourly = Array.from({ length: 24 }, (_, h) => ({ hour: `${h}:00`, sales: 0, tickets: 0 }))
+    rows.forEach((r) => {
+      hourly[r.hour].sales += r.total
+      hourly[r.hour].tickets += 1
+    })
+
+    const shiftData = SHIFTS.map((s) => {
+      const inShift = rows.filter((r) => inWindow(r.hour, s.from, s.to))
+      return { shift: s.label.split(" ")[0], sales: inShift.reduce((a, r) => a + r.total, 0), tickets: inShift.length }
+    })
+
+    const sellerMap = new Map<string, { name: string; sales: number; tickets: number }>()
+    const nameOf = (id: string | null) => (id ? sellers.find((s) => s.id === id)?.name || "Empleado" : "Sin asignar")
+    rows.forEach((r) => {
+      const key = r.seller || "none"
+      const cur = sellerMap.get(key) || { name: nameOf(r.seller), sales: 0, tickets: 0 }
+      cur.sales += r.total
+      cur.tickets += 1
+      sellerMap.set(key, cur)
+    })
+    const sellerData = [...sellerMap.values()].sort((a, b) => b.sales - a.sales).slice(0, 8)
+
+    const categoryMap = new Map<string, number>()
+    active.forEach((s) => {
+      ;(items.get(s.id) || []).forEach((i) => {
+        if (filters.category && i.category !== filters.category) return
+        categoryMap.set(i.category, (categoryMap.get(i.category) || 0) + i.subtotal)
+      })
+    })
+    const categoryData = [...categoryMap.entries()]
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, value], i) => ({ name, value, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+
+    const spark = (pick: (d: (typeof daily)[number]) => number) => daily.slice(-7).map((d) => ({ value: pick(d) }))
+
+    return {
+      totalSales,
+      tickets,
+      units,
+      avgTicket,
+      ticketsPerHour,
+      salesPerHour,
+      unitsPerTicket,
+      voided,
+      change,
+      daily,
+      hourly,
+      shiftData,
+      sellerData,
+      categoryData,
+      spark,
+    }
+  }, [filters, sales, prevSales, items, sellers])
+
+  const tooltipStyle = { backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px" }
+  const money = (v: any) => formatCurrency(Number(v))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
-      <DemoDataBanner />
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Executive Overview</h1>
-        <p className="text-gray-400">Vista ejecutiva de rendimiento y eficiencia del negocio</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Resumen Ejecutivo</h1>
+        <p className="text-gray-400">Vista ejecutiva de rendimiento y eficiencia del negocio, con tus ventas reales</p>
       </div>
 
-      {/* Global Filters */}
       <div className="mb-8">
-        <GlobalFiltersComponent filters={filters} onChange={setFilters} />
-      </div>
-
-      {/* KPIs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KPICard
-          title="Ventas Totales"
-          value={kpis.totalSales.value}
-          change={kpis.totalSales.change}
-          changeLabel="vs período anterior"
-          icon={DollarSign}
-          sparklineData={kpis.totalSales.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/overview")}
-        />
-        <KPICard
-          title="Total Tickets"
-          value={kpis.totalTickets.value}
-          change={kpis.totalTickets.change}
-          changeLabel="vs período anterior"
-          icon={ShoppingCart}
-          sparklineData={kpis.totalTickets.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/tickets")}
-        />
-        <KPICard
-          title="Ticket Promedio"
-          value={kpis.avgTicket.value}
-          change={kpis.avgTicket.change}
-          changeLabel="vs período anterior"
-          icon={BarChart3}
-          sparklineData={kpis.avgTicket.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/comportamiento-compra")}
-        />
-        <KPICard
-          title="Unidades Vendidas"
-          value={kpis.unitsSold.value}
-          change={kpis.unitsSold.change}
-          changeLabel="vs período anterior"
-          icon={Package}
-          sparklineData={kpis.unitsSold.sparkline}
-        />
-        <KPICard
-          title="Tickets por Hora"
-          value={kpis.ticketsPerHour.value}
-          change={kpis.ticketsPerHour.change}
-          changeLabel="vs período anterior"
-          icon={Clock}
-          sparklineData={kpis.ticketsPerHour.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/productividad-horaria")}
-        />
-        <KPICard
-          title="Ventas por Hora"
-          value={kpis.salesPerHour.value}
-          change={kpis.salesPerHour.change}
-          changeLabel="vs período anterior"
-          icon={TrendingUp}
-          sparklineData={kpis.salesPerHour.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/productividad-horaria")}
-        />
-        <KPICard
-          title="Unidades por Ticket"
-          value={kpis.unitsPerTicket.value}
-          change={kpis.unitsPerTicket.change}
-          changeLabel="vs período anterior"
-          icon={ShoppingBag}
-          sparklineData={kpis.unitsPerTicket.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/comportamiento-compra")}
-        />
-        <KPICard
-          title="Ventas por m²"
-          value={kpis.salesPerM2.value}
-          change={kpis.salesPerM2.change}
-          changeLabel="vs período anterior"
-          icon={BarChart3}
-          sparklineData={kpis.salesPerM2.sparkline}
-          onClick={() => router.push("/dashboard/estadisticas/ventas/productividad-local")}
+        <GlobalFiltersComponent
+          filters={filters}
+          onChange={setFilters}
+          branches={branches}
+          sellers={sellers}
+          categories={categories}
+          showHourFilter
         />
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Sales Trend */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Tendencia de Ventas Diarias
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailySalesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Line type="monotone" dataKey="sales" stroke="#06b6d4" strokeWidth={3} dot={{ fill: "#06b6d4" }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
 
-        {/* Sales by Category */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Ventas por Categoría
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
+      {loading ? (
+        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-10 text-center text-gray-400">
+          Cargando ventas...
+        </div>
+      ) : (
+        <>
+          {data.tickets === 0 && (
+            <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+              No hay ventas con estos filtros. Probá con otra fecha, otra franja horaria o quitá algún filtro.
+            </div>
+          )}
 
-        {/* Sales by Hour */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Ventas por Hora
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={hourlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="hour" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="sales" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <KPICard
+              title="Ventas Totales"
+              value={formatCurrency(data.totalSales)}
+              change={data.change.sales}
+              changeLabel="vs período anterior"
+              icon={DollarSign}
+              sparklineData={data.spark((d) => d.sales)}
+              onClick={() => router.push("/dashboard/ventas/historial")}
+            />
+            <KPICard
+              title="Total Tickets"
+              value={String(data.tickets)}
+              change={data.change.tickets}
+              changeLabel="vs período anterior"
+              icon={ShoppingCart}
+              sparklineData={data.spark((d) => d.tickets)}
+              onClick={() => router.push("/dashboard/ventas/historial")}
+            />
+            <KPICard
+              title="Ticket Promedio"
+              value={formatCurrency(data.avgTicket)}
+              change={data.change.avg}
+              changeLabel="vs período anterior"
+              icon={BarChart3}
+            />
+            <KPICard
+              title="Unidades Vendidas"
+              value={String(data.units)}
+              icon={Package}
+              sparklineData={data.spark((d) => d.units)}
+            />
+            <KPICard
+              title="Tickets por Hora"
+              value={data.ticketsPerHour.toFixed(1)}
+              subtitle="Por hora con ventas"
+              icon={Clock}
+              onClick={() => router.push("/dashboard/estadisticas/ventas/productividad-horaria")}
+            />
+            <KPICard
+              title="Ventas por Hora"
+              value={formatCurrency(data.salesPerHour)}
+              subtitle="Por hora con ventas"
+              icon={TrendingUp}
+              onClick={() => router.push("/dashboard/estadisticas/ventas/productividad-horaria")}
+            />
+            <KPICard title="Unidades por Ticket" value={data.unitsPerTicket.toFixed(2)} icon={ShoppingBag} />
+            <KPICard title="Ventas Anuladas" value={String(data.voided)} icon={Ban} />
+          </div>
 
-        {/* Sales by Shift */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Ventas por Turno
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={shiftData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" stroke="#9ca3af" />
-              <YAxis dataKey="shift" type="category" stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="sales" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
+                Tendencia de Ventas Diarias
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.daily}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="date" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
+                  <Line
+                    type="monotone"
+                    dataKey="sales"
+                    name="Ventas"
+                    stroke="#06b6d4"
+                    strokeWidth={3}
+                    dot={{ fill: "#06b6d4" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
 
-        {/* Top Sellers */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Top Vendedores
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={sellerData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" stroke="#9ca3af" />
-              <YAxis dataKey="name" type="category" stroke="#9ca3af" width={150} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                }}
-              />
-              <Bar dataKey="sales" fill="#10b981" radius={[0, 8, 8, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
+                Ventas por Categoría
+              </h3>
+              {data.categoryData.length === 0 ? (
+                <p className="text-sm text-gray-500 py-24 text-center">Sin ventas para mostrar.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={data.categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                    >
+                      {data.categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} formatter={money} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+
+            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
+                Ventas por Hora
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.hourly}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="hour" stroke="#9ca3af" interval={2} />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
+                  <Bar dataKey="sales" name="Ventas" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
+                Ventas por Turno
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.shiftData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis type="number" stroke="#9ca3af" />
+                  <YAxis dataKey="shift" type="category" stroke="#9ca3af" />
+                  <Tooltip contentStyle={tooltipStyle} formatter={money} />
+                  <Bar dataKey="sales" name="Ventas" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 lg:col-span-2">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
+                Top Vendedores
+              </h3>
+              {data.sellerData.length === 0 ? (
+                <p className="text-sm text-gray-500 py-24 text-center">Sin ventas para mostrar.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(200, data.sellerData.length * 48)}>
+                  <BarChart data={data.sellerData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis type="number" stroke="#9ca3af" />
+                    <YAxis dataKey="name" type="category" stroke="#9ca3af" width={150} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={money} />
+                    <Bar dataKey="sales" name="Ventas" fill="#10b981" radius={[0, 8, 8, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }
