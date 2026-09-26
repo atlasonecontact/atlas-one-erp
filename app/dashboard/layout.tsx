@@ -34,6 +34,7 @@ import {
   Wifi,
   WifiOff,
   Clock,
+  History,
   Plug,
   Menu,
   X,
@@ -103,6 +104,7 @@ function DashboardSidebar({
               icon: Users,
             },
             { href: "/dashboard/estadisticas/ventas/tickets", label: "Tickets y Facturación", icon: FileText },
+            { href: "/dashboard/estadisticas/ventas/historial", label: "Historial", icon: History },
           ],
         },
         {

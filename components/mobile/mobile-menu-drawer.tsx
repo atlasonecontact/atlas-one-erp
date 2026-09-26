@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Gift,
   PiggyBank,
+  History,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
@@ -65,6 +66,7 @@ const menuSections = [
         permission: "can_view_reports",
       },
       { href: "/dashboard/estadisticas/finanzas", label: "Finanzas", icon: Wallet, permission: "can_view_reports" },
+      { href: "/dashboard/estadisticas/ventas/historial", label: "Historial", icon: History },
     ],
   },
   {
