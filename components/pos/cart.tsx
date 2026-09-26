@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Minus, Plus, X } from "lucide-react"
 import type { CartItem } from "@/app/dashboard/ventas/page"
@@ -14,9 +15,10 @@ interface CartProps {
   onRemove: (id: string) => void
   onClear: () => void
   onCheckout: () => void
+  sellerControl?: ReactNode
 }
 
-export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, onClear, onCheckout }: CartProps) {
+export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, onClear, onCheckout, sellerControl }: CartProps) {
   return (
     <div className="w-96 flex flex-col rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
       {/* Header */}
@@ -88,6 +90,7 @@ export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, 
       {/* Summary */}
       {items.length > 0 && (
         <div className="p-4 border-t border-cyan-500/10 space-y-3">
+          {sellerControl}
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Subtotal</span>
             <span className="text-white">{formatCurrency(subtotal)}</span>

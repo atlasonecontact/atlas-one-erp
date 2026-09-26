@@ -715,6 +715,39 @@ export default function VentasPage() {
   const tax = total - total / 1.21
   const saleSellerId = userRole === "employee" ? employeeId : sellerId || null
 
+  const sellerControl = (
+    <>
+    {userRole === "employee" ? (
+      <div className="flex justify-between text-sm text-gray-400">
+        <span>Vendedor</span>
+        <span className="text-white">{employeeName || "Empleado"}</span>
+      </div>
+    ) : (
+      staff.length > 0 && (
+        <label className="flex items-center justify-between gap-3 text-sm text-gray-400">
+          <span>Vendedor</span>
+          <select
+            value={sellerId}
+            onChange={(e) => chooseSeller(e.target.value)}
+            className="h-9 max-w-[180px] flex-1 rounded-md border bg-transparent px-2 text-white"
+            style={{ borderColor: config.border }}
+          >
+            <option value="" className="bg-[#0a0f1a]">
+              Yo (dueño)
+            </option>
+            {staff.map((m) => (
+              <option key={m.id} value={m.id} className="bg-[#0a0f1a]">
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )
+    )}
+    </>
+  )
+
+
   // Una promocion no es una fila de products: al armar los items reales de
   // la venta (y al descontar stock localmente) se descompone en sus
   // productos componentes, para que tanto register_sale como el stock
@@ -1037,6 +1070,7 @@ export default function VentasPage() {
         {/* Right side - Cart (desktop only, hidden on mobile) */}
         <div className="hidden lg:block">
           <Cart
+            sellerControl={sellerControl}
             items={cart}
             subtotal={subtotal}
             tax={tax}
@@ -1131,33 +1165,7 @@ export default function VentasPage() {
 
             {/* Footer with totals and checkout */}
             <div className="p-4 border-t space-y-3" style={{ borderColor: config.border }}>
-              {userRole === "employee" ? (
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>Vendedor</span>
-                  <span className="text-white">{employeeName || "Empleado"}</span>
-                </div>
-              ) : (
-                staff.length > 0 && (
-                  <label className="flex items-center justify-between gap-3 text-sm text-gray-400">
-                    <span>Vendedor</span>
-                    <select
-                      value={sellerId}
-                      onChange={(e) => chooseSeller(e.target.value)}
-                      className="h-9 max-w-[180px] flex-1 rounded-md border bg-transparent px-2 text-white"
-                      style={{ borderColor: config.border }}
-                    >
-                      <option value="" className="bg-[#0a0f1a]">
-                        Yo (dueño)
-                      </option>
-                      {staff.map((m) => (
-                        <option key={m.id} value={m.id} className="bg-[#0a0f1a]">
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )
-              )}
+              {sellerControl}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-400">
                   <span>Subtotal</span>
