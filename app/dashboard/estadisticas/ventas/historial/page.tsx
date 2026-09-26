@@ -443,84 +443,151 @@ export default function HistorialVentasDatasetPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
-        <table className="w-full min-w-[900px]">
-          <thead>
-            <tr className="border-b border-cyan-500/10">
-              <th className={thSort} onClick={() => toggleSort("date")}>
-                Fecha
-                <SortIcon k="date" />
-              </th>
-              <th className={th}>Hora</th>
-              <th className={th}>N° venta</th>
-              <th className={thSort} onClick={() => toggleSort("product")}>
-                Producto
-                <SortIcon k="product" />
-              </th>
-              <th className={th}>Categoría</th>
-              <th className={`${thSort} text-right`} onClick={() => toggleSort("quantity")}>
-                Cant.
-                <SortIcon k="quantity" />
-              </th>
-              <th className={`${th} text-right`}>Precio unit.</th>
-              <th className={`${thSort} text-right`} onClick={() => toggleSort("subtotal")}>
-                Subtotal
-                <SortIcon k="subtotal" />
-              </th>
-              <th className={th}>Método de pago</th>
-              <th className={th}>Vendedor</th>
-              {multiBranch && <th className={th}>Sucursal</th>}
-              <th className={th}>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={multiBranch ? 12 : 11} className="p-10 text-center text-gray-500">
-                  <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
-                  Cargando ventas...
-                </td>
-              </tr>
-            ) : visible.length === 0 ? (
-              <tr>
-                <td colSpan={multiBranch ? 12 : 11} className="p-10 text-center text-gray-500">
-                  No hay ventas con estos filtros
-                </td>
-              </tr>
-            ) : (
-              visible.map((r) => {
+      <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
+        {loading ? (
+          <div className="p-10 text-center text-gray-500">
+            <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
+            Cargando ventas...
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="p-10 text-center text-gray-500">No hay ventas con estos filtros</div>
+        ) : (
+          <>
+            {/* Pantallas medianas y chicas: una tarjeta por producto vendido */}
+            <div className="divide-y divide-cyan-500/10 xl:hidden">
+              {visible.map((r) => {
                 const voided = r.status === "cancelled"
-                const muted = voided ? "text-gray-500 line-through" : "text-white"
                 return (
-                  <tr key={r.id} className="border-b border-cyan-500/5 text-sm transition-colors hover:bg-white/5">
-                    <td className={`whitespace-nowrap px-2.5 py-3 ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</td>
-                    <td className={`whitespace-nowrap px-2.5 py-3 font-mono ${muted}`}>{timeFmt.format(new Date(r.createdAt))}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3 font-mono text-cyan-400" title={r.saleNumber}>
-                      #{r.saleNumber.slice(-6).toUpperCase()}
-                    </td>
-                    <td className={`min-w-[170px] px-2.5 py-3 ${muted}`}>{r.product}</td>
-                    <td className="px-2.5 py-3 text-gray-400">{r.category}</td>
-                    <td className={`px-2.5 py-3 text-right ${muted}`}>{r.quantity}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3 text-right text-gray-300">{formatCurrency(r.unitPrice)}</td>
-                    <td className={`whitespace-nowrap px-2.5 py-3 text-right font-medium ${muted}`}>{formatCurrency(r.subtotal)}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{paymentLabel(r.payment)}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{r.seller}</td>
-                    {multiBranch && <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{r.branch}</td>}
-                    <td className="px-2.5 py-3">
-                      <span
-                        className={`whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium ${
-                          voided ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"
-                        }`}
-                      >
-                        {voided ? "Anulada" : "Completada"}
-                      </span>
-                    </td>
-                  </tr>
+                  <div key={r.id} className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className={`font-medium break-words ${voided ? "text-gray-500 line-through" : "text-white"}`}>{r.product}</p>
+                        <p className="text-xs text-gray-500">{r.category}</p>
+                      </div>
+                      <p className={`shrink-0 font-semibold ${voided ? "text-gray-500 line-through" : "text-white"}`}>
+                        {formatCurrency(r.subtotal)}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
+                      <div>
+                        <span className="text-gray-500">Fecha </span>
+                        <span className="text-gray-200">{dateFmt.format(new Date(r.createdAt))}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Hora </span>
+                        <span className="font-mono text-gray-200">{timeFmt.format(new Date(r.createdAt))}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Cant. </span>
+                        <span className="text-gray-200">
+                          {r.quantity} × {formatCurrency(r.unitPrice)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Pago </span>
+                        <span className="text-gray-200">{paymentLabel(r.payment)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Vendedor </span>
+                        <span className="text-gray-200">{r.seller}</span>
+                      </div>
+                      {multiBranch && (
+                        <div>
+                          <span className="text-gray-500">Sucursal </span>
+                          <span className="text-gray-200">{r.branch}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-gray-500">Venta </span>
+                        <span className="font-mono text-cyan-400" title={r.saleNumber}>
+                          #{r.saleNumber.slice(-6).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-medium ${
+                            voided ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"
+                          }`}
+                        >
+                          {voided ? "Anulada" : "Completada"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 )
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </div>
+
+            {/* Computadoras: tabla que se ajusta al ancho, sin scroll lateral */}
+            <table className="hidden w-full table-fixed xl:table">
+              <thead>
+                <tr className="border-b border-cyan-500/10">
+                  <th className={`${thSort} w-[118px]`} onClick={() => toggleSort("date")}>
+                    Fecha / Hora
+                    <SortIcon k="date" />
+                  </th>
+                  <th className={thSort} onClick={() => toggleSort("product")}>
+                    Producto
+                    <SortIcon k="product" />
+                  </th>
+                  <th className={`${thSort} w-[64px] text-right`} onClick={() => toggleSort("quantity")}>
+                    Cant.
+                    <SortIcon k="quantity" />
+                  </th>
+                  <th className={`${th} hidden w-[104px] text-right 2xl:table-cell`}>Precio unit.</th>
+                  <th className={`${thSort} w-[110px] text-right`} onClick={() => toggleSort("subtotal")}>
+                    Subtotal
+                    <SortIcon k="subtotal" />
+                  </th>
+                  <th className={`${th} w-[120px]`}>Pago</th>
+                  <th className={`${th} w-[130px]`}>Vendedor</th>
+                  {multiBranch && <th className={`${th} w-[120px]`}>Sucursal</th>}
+                  <th className={`${th} w-[112px]`}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((r) => {
+                  const voided = r.status === "cancelled"
+                  const muted = voided ? "text-gray-500 line-through" : "text-white"
+                  return (
+                    <tr key={r.id} className="border-b border-cyan-500/5 align-top text-sm transition-colors hover:bg-white/5">
+                      <td className="px-2.5 py-3">
+                        <p className={`whitespace-nowrap ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</p>
+                        <p className="font-mono text-xs text-gray-400">{timeFmt.format(new Date(r.createdAt))}</p>
+                      </td>
+                      <td className="px-2.5 py-3">
+                        <p className={`break-words ${muted}`}>{r.product}</p>
+                        <p className="text-xs text-gray-500">
+                          {r.category} ·{" "}
+                          <span className="font-mono text-cyan-400" title={r.saleNumber}>
+                            #{r.saleNumber.slice(-6).toUpperCase()}
+                          </span>
+                        </p>
+                      </td>
+                      <td className={`px-2.5 py-3 text-right ${muted}`}>{r.quantity}</td>
+                      <td className="hidden whitespace-nowrap px-2.5 py-3 text-right text-gray-300 2xl:table-cell">
+                        {formatCurrency(r.unitPrice)}
+                      </td>
+                      <td className={`whitespace-nowrap px-2.5 py-3 text-right font-medium ${muted}`}>{formatCurrency(r.subtotal)}</td>
+                      <td className="px-2.5 py-3 text-gray-300">{paymentLabel(r.payment)}</td>
+                      <td className="px-2.5 py-3 text-gray-300 break-words">{r.seller}</td>
+                      {multiBranch && <td className="px-2.5 py-3 text-gray-300 break-words">{r.branch}</td>}
+                      <td className="px-2.5 py-3">
+                        <span
+                          className={`whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium ${
+                            voided ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"
+                          }`}
+                        >
+                          {voided ? "Anulada" : "Completada"}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-400">

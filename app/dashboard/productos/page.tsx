@@ -585,6 +585,11 @@ export default function ProductosPage() {
     )
   }
 
+  const formatMoney = (n: number) => `$${Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
+  const lowStockCount = products.filter((p) => p.stock <= 10).length
+  const inventoryValue = products.reduce((sum, p) => sum + (Number(p.cost) || 0) * (Number(p.stock) || 0), 0)
+  const noCostCount = products.filter((p) => !(Number(p.cost) > 0)).length
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -596,7 +601,7 @@ export default function ProductosPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <Button
             variant="outline"
-            onClick={fetchProducts}
+            onClick={() => fetchProducts()}
             disabled={loading || syncing}
             className="border-primary/30 text-muted-foreground hover:text-foreground bg-transparent"
           >
@@ -645,17 +650,37 @@ export default function ProductosPage() {
         </div>
       </div>
 
+      {/* Resumen del catálogo */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-primary/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Productos</p>
+          <p className="text-2xl font-bold text-foreground">{products.length}</p>
+        </div>
+        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+          <p className="text-xs text-muted-foreground">Stock bajo o agotado</p>
+          <p className="text-2xl font-bold text-yellow-400">{lowStockCount}</p>
+        </div>
+        <div className="rounded-xl border border-primary/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Valor del inventario (a costo)</p>
+          <p className="text-2xl font-bold text-foreground truncate">{formatMoney(inventoryValue)}</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${noCostCount > 0 ? "border-amber-500/30 bg-amber-500/10" : "border-primary/10 bg-card"}`}>
+          <p className="text-xs text-muted-foreground">Sin costo cargado</p>
+          <p className={`text-2xl font-bold ${noCostCount > 0 ? "text-amber-400" : "text-foreground"}`}>{noCostCount}</p>
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
+      <div className="rounded-xl border border-primary/10 bg-card p-4 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Buscar productos..."
+              placeholder="Buscar por nombre, marca o código..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-card border-primary/10 text-foreground placeholder:text-muted-foreground"
+              className="pl-10 bg-background border-primary/10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
           {selectedProducts.length > 0 && (
@@ -671,8 +696,8 @@ export default function ProductosPage() {
           )}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 mb-3">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-primary" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categorías</span>
             {selectedCategory !== "all" && (
@@ -688,23 +713,21 @@ export default function ProductosPage() {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
                 setSelectedCategory("all")
                 setSelectedSubcategory(null)
               }}
-              className={`group p-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2 ${
+              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 selectedCategory === "all"
-                  ? "bg-gradient-to-br from-primary/30 to-primary/20 text-primary border-2 border-primary/50 shadow-lg shadow-primary/20 scale-105"
-                  : "bg-card text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:scale-102 hover:shadow-md"
+                  ? "bg-primary/20 text-primary border-primary/50"
+                  : "bg-background text-muted-foreground border-primary/10 hover:text-foreground hover:border-primary/30"
               }`}
             >
-              <Package
-                className={`w-6 h-6 transition-transform group-hover:scale-110 ${selectedCategory === "all" ? "text-primary" : "text-muted-foreground"}`}
-              />
-              <span className="text-xs">Todas</span>
-              <span className="text-xs font-bold">{products.length}</span>
+              <Package className="w-4 h-4" />
+              Todas
+              <span className="rounded-full bg-primary/10 px-2 text-xs font-bold">{products.length}</span>
             </button>
             {categories
               .filter((cat) => cat !== "all")
@@ -720,19 +743,15 @@ export default function ProductosPage() {
                       setSelectedCategory(cat)
                       setSelectedSubcategory(null)
                     }}
-                    className={`group p-4 rounded-xl text-sm font-medium transition-all duration-200 flex flex-col items-center gap-2 ${
+                    className={`inline-flex max-w-full items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                       isSelected
-                        ? `bg-gradient-to-br ${getCategoryColor(cat)} border-2 shadow-lg scale-105`
-                        : "bg-card text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:scale-102 hover:shadow-md"
+                        ? `bg-gradient-to-r ${getCategoryColor(cat)}`
+                        : "bg-background text-muted-foreground border-primary/10 hover:text-foreground hover:border-primary/30"
                     }`}
                   >
-                    <Icon
-                      className={`w-6 h-6 transition-transform group-hover:scale-110 ${isSelected ? "" : "text-muted-foreground group-hover:text-primary"}`}
-                    />
-                    <span className="text-xs text-center line-clamp-2 leading-tight">{cat}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${isSelected ? "bg-white/20" : "bg-primary/10"}`}
-                    >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate max-w-[220px]">{cat}</span>
+                    <span className={`rounded-full px-2 text-xs font-bold ${isSelected ? "bg-white/20" : "bg-primary/10"}`}>
                       {count}
                     </span>
                   </button>
@@ -742,27 +761,21 @@ export default function ProductosPage() {
         </div>
 
         {subcategories.length > 0 && (
-          <div className="animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-1 h-4 rounded-full bg-gradient-to-b ${getCategoryColor(selectedCategory)}`} />
-              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                Subcategorías de {selectedCategory}
-              </span>
-            </div>
-            <div className="flex gap-2 flex-wrap">
+          <div className="space-y-2 border-t border-primary/10 pt-3">
+            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+              Subcategorías de {selectedCategory}
+            </span>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedSubcategory(null)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-2 ${
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                   !selectedSubcategory
-                    ? `bg-gradient-to-r ${getCategoryColor(selectedCategory)} border shadow-md`
-                    : "bg-card/50 text-muted-foreground border border-primary/10 hover:text-foreground hover:border-primary/30 hover:shadow-sm"
+                    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                    : "bg-background text-muted-foreground border-primary/10 hover:text-foreground hover:border-cyan-500/30"
                 }`}
               >
-                <Package className="w-4 h-4" />
-                Todas las subcategorías
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${!selectedSubcategory ? "bg-white/20" : "bg-primary/10"}`}
-                >
+                Todas
+                <span className="rounded-full bg-primary/10 px-2 text-xs font-bold">
                   {products.filter((p) => p.category === selectedCategory).length}
                 </span>
               </button>
@@ -774,18 +787,14 @@ export default function ProductosPage() {
                   <button
                     key={subcat}
                     onClick={() => setSelectedSubcategory(subcat)}
-                    className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-2 ${
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                       isSelected
-                        ? "bg-gradient-to-r from-cyan-500/30 to-teal-500/20 text-cyan-400 border border-cyan-500/50 shadow-md shadow-cyan-500/10"
-                        : "bg-card/50 text-muted-foreground border border-primary/10 hover:text-foreground hover:border-cyan-500/30 hover:shadow-sm"
+                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                        : "bg-background text-muted-foreground border-primary/10 hover:text-foreground hover:border-cyan-500/30"
                     }`}
                   >
                     {subcat}
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${isSelected ? "bg-cyan-500/20" : "bg-primary/10"}`}
-                    >
-                      {count}
-                    </span>
+                    <span className="rounded-full bg-primary/10 px-2 text-xs font-bold">{count}</span>
                   </button>
                 )
               })}
@@ -800,10 +809,10 @@ export default function ProductosPage() {
           <RefreshCw className="w-8 h-8 text-primary animate-spin" />
         </div>
       ) : (
-        /* Products table */
+        /* Lista de productos: sin scroll lateral en ninguna pantalla */
         <div className="rounded-xl border border-primary/10 bg-card overflow-hidden">
-          {/* Vista de tarjetas para pantallas chicas: editar/eliminar siempre visibles */}
-          <div className="lg:hidden divide-y divide-primary/10">
+          {/* Celulares: tarjetas */}
+          <div className="md:hidden divide-y divide-primary/10">
             {filteredProducts.length === 0 ? (
               <p className="p-8 text-center text-muted-foreground">
                 No hay productos. Agrega uno o importa desde CSV.
@@ -823,63 +832,67 @@ export default function ProductosPage() {
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className="text-foreground font-medium break-words">{product.name}</p>
-                      {product.barcode && <p className="text-xs text-muted-foreground">{product.barcode}</p>}
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground">
+                      <p className="text-foreground font-semibold break-words">{product.name}</p>
+                      {product.barcode && <p className="text-xs text-muted-foreground font-mono">{product.barcode}</p>}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className={`rounded-full border bg-gradient-to-r px-2 py-0.5 text-xs ${getCategoryColor(product.category)}`}>
                           {product.category}
                         </span>
-                        {product.brand && <span className="text-xs text-muted-foreground">{product.brand}</span>}
+                        {product.brand && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">{product.brand}</span>}
+                        {product.subcategory && (
+                          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">
+                            {product.subcategory}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-primary font-semibold">${product.price.toLocaleString()}</span>
-                      <span
-                        className={`flex items-center gap-1 text-sm ${
-                          product.stock <= 10 ? "text-yellow-400" : "text-foreground"
-                        }`}
-                      >
-                        {product.stock <= 10 && <AlertTriangle className="w-4 h-4" />}
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Precio</p>
+                      <p className="text-primary font-semibold">{formatMoney(product.price)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Costo</p>
+                      {product.cost > 0 ? (
+                        <p className="text-foreground">{formatMoney(product.cost)}</p>
+                      ) : (
+                        <p className="text-amber-400">Sin costo</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Stock</p>
+                      <p className={product.stock <= 0 ? "text-red-400" : product.stock <= 10 ? "text-yellow-400" : "text-foreground"}>
                         {product.stock} un.
-                      </span>
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(product)}
-                        className="border-primary/30 gap-1.5"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(product.id)}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(product)} className="flex-1 border-primary/30 gap-1.5">
+                      <Edit2 className="w-4 h-4" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(product.id)}
+                      className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar
+                    </Button>
                   </div>
                 </div>
               ))
             )}
           </div>
 
-          <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full">
+          {/* Tablet y computadora: tabla que se ajusta al ancho (nunca scroll lateral) */}
+          <table className="hidden md:table w-full table-fixed">
             <thead>
-              <tr className="border-b border-primary/10">
-                <th className="text-left text-sm font-medium text-muted-foreground p-4 w-10">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
+              <tr className="border-b border-primary/10 bg-muted/30">
+                <th className="w-12 p-3 text-left">
+                  <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-foreground transition-colors">
                     {selectedProducts.length === filteredProducts.length && filteredProducts.length > 0 ? (
                       <CheckSquare className="w-4 h-4 text-primary" />
                     ) : (
@@ -887,136 +900,122 @@ export default function ProductosPage() {
                     )}
                   </button>
                 </th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Marca</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
-                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Subcategoría</th>
-                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Línea</th>
-                <th className="hidden 2xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Costo</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Precio</th>
-                <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
-                <th className="hidden xl:table-cell text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
-                <th className="text-right text-sm font-medium text-muted-foreground p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
-                  Acciones
-                </th>
+                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Producto</th>
+                <th className="hidden xl:table-cell w-28 p-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Costo</th>
+                <th className="w-28 p-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Precio</th>
+                <th className="hidden xl:table-cell w-24 p-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Margen</th>
+                <th className="w-32 p-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stock</th>
+                <th className="w-24 p-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
                     No hay productos. Agrega uno o importa desde CSV.
                   </td>
                 </tr>
               ) : (
-                paginatedProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-primary/5 hover:bg-muted/50 transition-colors">
-                    <td className="p-4">
-                      <button
-                        onClick={() => toggleProductSelection(product.id)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {selectedProducts.includes(product.id) ? (
-                          <CheckSquare className="w-4 h-4 text-primary" />
+                paginatedProducts.map((product) => {
+                  const margin = product.price > 0 && product.cost > 0 ? ((product.price - product.cost) / product.price) * 100 : null
+                  const out = product.stock <= 0
+                  const low = !out && product.stock <= 10
+                  return (
+                    <tr key={product.id} className="border-b border-primary/5 align-middle transition-colors hover:bg-muted/40">
+                      <td className="p-3">
+                        <button
+                          onClick={() => toggleProductSelection(product.id)}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {selectedProducts.includes(product.id) ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-gradient-to-br ${getCategoryColor(product.category)}`}>
+                            {(() => {
+                              const Icon = getCategoryIcon(product.category)
+                              return <Icon className="h-5 w-5" />
+                            })()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground break-words leading-snug">{product.name}</p>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{product.category}</span>
+                              {product.subcategory && (
+                                <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">
+                                  {product.subcategory}
+                                </span>
+                              )}
+                              {product.brand && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">{product.brand}</span>}
+                              {product.line && <span className="text-xs text-muted-foreground">{product.line}</span>}
+                              {product.supplier && <span className="text-xs text-muted-foreground">· Prov. {product.supplier}</span>}
+                              {product.barcode && <span className="font-mono text-xs text-muted-foreground">· {product.barcode}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden xl:table-cell p-3 text-right">
+                        {product.cost > 0 ? (
+                          <span className="text-muted-foreground">{formatMoney(product.cost)}</span>
                         ) : (
-                          <Square className="w-4 h-4" />
+                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">Sin costo</span>
                         )}
-                      </button>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                          <Package className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <span className="text-foreground font-medium">{product.name}</span>
-                          {product.barcode && <p className="text-xs text-muted-foreground">{product.barcode}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="hidden xl:table-cell p-4">
-                      {product.brand ? (
-                        <span className="text-sm text-foreground font-medium">{product.brand}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="hidden 2xl:table-cell p-4">
-                      {product.subcategory ? (
-                        <span className="px-2 py-1 rounded-full text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                          {product.subcategory}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="hidden 2xl:table-cell p-4">
-                      {product.line ? (
-                        <span className="text-sm text-muted-foreground">{product.line}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="hidden 2xl:table-cell p-4">
-                      {product.supplier ? (
-                        <span className="text-sm text-muted-foreground">{product.supplier}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </td>
-                    <td className="hidden xl:table-cell p-4 text-muted-foreground">${product.cost.toLocaleString()}</td>
-                    <td className="p-4 text-primary font-medium">${product.price.toLocaleString()}</td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {product.stock <= 10 && <AlertTriangle className="w-4 h-4 text-yellow-400" />}
-                        <span className={product.stock <= 10 ? "text-yellow-400" : "text-foreground"}>
-                          {product.stock} un.
-                        </span>
-                      </div>
-                    </td>
-                    <td className="hidden xl:table-cell p-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          product.status === "active"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-yellow-500/20 text-yellow-400"
-                        }`}
-                      >
-                        {product.status === "active" ? "Activo" : "Bajo stock"}
-                      </span>
-                    </td>
-                    <td className="p-4 sticky right-0 bg-card shadow-[-8px_0_8px_-4px_rgba(0,0,0,0.15)]">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(product)}
-                          className="text-muted-foreground hover:text-foreground"
+                      </td>
+                      <td className="p-3 text-right font-semibold text-primary">{formatMoney(product.price)}</td>
+                      <td className="hidden xl:table-cell p-3 text-right">
+                        {margin === null ? (
+                          <span className="text-muted-foreground">-</span>
+                        ) : (
+                          <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(0)}%</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                            out
+                              ? "bg-red-500/15 text-red-400"
+                              : low
+                                ? "bg-yellow-500/15 text-yellow-400"
+                                : "bg-green-500/15 text-green-400"
+                          }`}
                         >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-muted-foreground hover:text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {(out || low) && <AlertTriangle className="h-3.5 w-3.5" />}
+                          {out ? "Sin stock" : `${product.stock} un.`}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(product)}
+                            title="Editar"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(product.id)}
+                            title="Eliminar"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
-          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (

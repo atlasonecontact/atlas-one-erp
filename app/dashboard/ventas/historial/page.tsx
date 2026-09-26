@@ -448,14 +448,14 @@ export default function HistorialVentasPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-x-auto">
-        <table className="w-full min-w-[640px]">
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+        <table className="w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className="text-left text-sm font-medium text-gray-400 p-4">ID</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Items</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Método</th>
+              <th className="hidden lg:table-cell text-left text-sm font-medium text-gray-400 p-3 sm:p-4">Items</th>
+              <th className="hidden md:table-cell text-left text-sm font-medium text-gray-400 p-3 sm:p-4">Método</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Total</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
               <th className="text-right text-sm font-medium text-gray-400 p-4">Ver</th>
@@ -478,14 +478,17 @@ export default function HistorialVentasPage() {
             ) : (
               filteredSales.map((sale) => (
                 <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                  <td className="p-4">
-                    <span className={`font-mono ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-cyan-400"}`}>
-                      {sale.sale_number}
+                  <td className="p-3 sm:p-4">
+                    <span
+                      title={sale.sale_number}
+                      className={`font-mono ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-cyan-400"}`}
+                    >
+                      #{sale.sale_number.slice(-6).toUpperCase()}
                     </span>
                   </td>
                   <td className="p-4 text-white whitespace-nowrap">{formatDate(sale.created_at)}</td>
-                  <td className="p-4 text-gray-400">{sale.items_count} productos</td>
-                  <td className="p-4">
+                  <td className="hidden lg:table-cell p-4 text-gray-400">{sale.items_count} productos</td>
+                  <td className="hidden md:table-cell p-4">
                     <div className="flex items-center gap-2 text-gray-400">
                       {getMethodIcon(sale.payment_method)}
                       {getMethodLabel(sale.payment_method)}
