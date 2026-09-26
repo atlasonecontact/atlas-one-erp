@@ -8,7 +8,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils/currency"
-import { format, subDays } from "date-fns"
+import { format, isSameDay } from "date-fns"
 import {
   LineChart,
   Line,
@@ -88,7 +88,7 @@ export default function ExecutiveOverviewPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [filters, setFilters] = useState<GlobalFilters>({
-    dateRange: { from: subDays(new Date(), 30), to: new Date() },
+    dateRange: { from: new Date(), to: new Date() },
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -140,6 +140,8 @@ export default function ExecutiveOverviewPage() {
         const end = toRangeEndExclusive(filters.dateRange.to)
         const span = end.getTime() - start.getTime()
         const prevStart = new Date(start.getTime() - span)
+        const singleDay = isSameDay(filters.dateRange.from, filters.dateRange.to)
+        const fetchStart = singleDay ? new Date(start.getTime() - 13 * 24 * 60 * 60 * 1000) : start
 
         const cols = "id, kiosko_id, employee_id, total_amount, payment_method, status, created_at"
         const current = await fetchAllPages<SaleRow>(
@@ -148,7 +150,7 @@ export default function ExecutiveOverviewPage() {
               .from("sales")
               .select(cols)
               .in("kiosko_id", kioskoIds)
-              .gte("created_at", start.toISOString())
+              .gte("created_at", fetchStart.toISOString())
               .lt("created_at", end.toISOString())
               .order("created_at", { ascending: true })
               .range(a, b) as any,
@@ -166,7 +168,9 @@ export default function ExecutiveOverviewPage() {
               .range(a, b) as any,
         )
 
-        const ids = current.filter((s) => s.status !== "cancelled").map((s) => s.id)
+        const ids = current
+          .filter((s) => s.status !== "cancelled" && new Date(s.created_at) >= start)
+          .map((s) => s.id)
         const itemMap = new Map<string, ItemRow[]>()
         for (let i = 0; i < ids.length; i += ID_CHUNK) {
           const chunk = ids.slice(i, i + ID_CHUNK)
@@ -240,8 +244,14 @@ export default function ExecutiveOverviewPage() {
       return { total: mine.reduce((a, i) => a + i.subtotal, 0), units: mine.reduce((a, i) => a + i.quantity, 0) }
     }
 
-    const active = sales.filter((s) => s.status !== "cancelled" && passes(s))
-    const voided = sales.filter((s) => s.status === "cancelled" && passes(s)).length
+    const rangeStartMs = toRangeStart(filters.dateRange.from).getTime()
+    const rangeEndMs = toRangeEndExclusive(filters.dateRange.to).getTime()
+    const inRange = (s: SaleRow) => {
+      const t = new Date(s.created_at).getTime()
+      return t >= rangeStartMs && t < rangeEndMs
+    }
+    const active = sales.filter((s) => s.status !== "cancelled" && inRange(s) && passes(s))
+    const voided = sales.filter((s) => s.status === "cancelled" && inRange(s) && passes(s)).length
 
     const rows = active
       .map((s) => ({ sale: s, shaped: shape(s) }))
@@ -280,8 +290,10 @@ export default function ExecutiveOverviewPage() {
     }
 
     // Serie diaria (rellena los dias sin ventas con 0).
+    const oneDay = isSameDay(filters.dateRange.from, filters.dateRange.to)
     const daily: Array<{ date: string; sales: number; tickets: number; units: number }> = []
     const cursor = new Date(filters.dateRange.from)
+    if (oneDay) cursor.setDate(cursor.getDate() - 13)
     const last = new Date(filters.dateRange.to)
     cursor.setHours(12, 0, 0, 0)
     last.setHours(12, 0, 0, 0)
@@ -292,7 +304,14 @@ export default function ExecutiveOverviewPage() {
       daily.push({ date: format(cursor, "dd/MM"), sales: 0, tickets: 0, units: 0 })
       cursor.setDate(cursor.getDate() + 1)
     }
-    rows.forEach((r) => {
+    // Con un solo dia se muestran los 14 dias previos: alli no se cargan items, asi que el
+    // filtro de categoria no aplica a la tendencia.
+    const trendRows = oneDay
+      ? sales
+          .filter((s) => s.status !== "cancelled" && passes(s))
+          .map((s) => ({ day: dayOf(s.created_at), total: s.total_amount, units: 0 }))
+      : rows.map((r) => ({ day: r.day, total: r.total, units: r.units }))
+    trendRows.forEach((r) => {
       const idx = dayIndex.get(r.day)
       if (idx !== undefined) {
         daily[idx].sales += r.total
@@ -349,6 +368,7 @@ export default function ExecutiveOverviewPage() {
       voided,
       change,
       daily,
+      oneDay,
       hourly,
       shiftData,
       sellerData,
@@ -450,7 +470,7 @@ export default function ExecutiveOverviewPage() {
             <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-                Tendencia de Ventas Diarias
+                {data.oneDay ? "Tendencia de Ventas (últimos 14 días)" : "Tendencia de Ventas Diarias"}
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data.daily}>
