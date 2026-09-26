@@ -487,7 +487,9 @@ export default function HistorialVentasDatasetPage() {
                   <tr key={r.id} className="border-b border-cyan-500/5 text-sm transition-colors hover:bg-white/5">
                     <td className={`whitespace-nowrap px-2.5 py-3 ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</td>
                     <td className={`whitespace-nowrap px-2.5 py-3 font-mono ${muted}`}>{timeFmt.format(new Date(r.createdAt))}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3 font-mono text-cyan-400">{r.saleNumber}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 font-mono text-cyan-400" title={r.saleNumber}>
+                      #{r.saleNumber.slice(-6).toUpperCase()}
+                    </td>
                     <td className={`min-w-[170px] px-2.5 py-3 ${muted}`}>{r.product}</td>
                     <td className="px-2.5 py-3 text-gray-400">{r.category}</td>
                     <td className={`px-2.5 py-3 text-right ${muted}`}>{r.quantity}</td>
