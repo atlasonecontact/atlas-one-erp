@@ -284,7 +284,7 @@ export default function HistorialVentasDatasetPage() {
   const SortIcon = ({ k }: { k: SortKey }) =>
     sortKey === k ? sortDesc ? <ArrowDown className="ml-1 inline h-3 w-3" /> : <ArrowUp className="ml-1 inline h-3 w-3" /> : null
 
-  const th = "whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
+  const th = "whitespace-nowrap px-2.5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
   const thSort = `${th} cursor-pointer select-none hover:text-white`
 
   return (
@@ -436,7 +436,7 @@ export default function HistorialVentasDatasetPage() {
       )}
 
       <div className="overflow-x-auto rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
-        <table className="w-full min-w-[980px]">
+        <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className={thSort} onClick={() => toggleSort("date")}>
@@ -485,18 +485,18 @@ export default function HistorialVentasDatasetPage() {
                 const muted = voided ? "text-gray-500 line-through" : "text-white"
                 return (
                   <tr key={r.id} className="border-b border-cyan-500/5 text-sm transition-colors hover:bg-white/5">
-                    <td className={`whitespace-nowrap p-3 ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</td>
-                    <td className={`whitespace-nowrap p-3 font-mono ${muted}`}>{timeFmt.format(new Date(r.createdAt))}</td>
-                    <td className="whitespace-nowrap p-3 font-mono text-cyan-400">{r.saleNumber}</td>
-                    <td className={`p-3 ${muted}`}>{r.product}</td>
-                    <td className="p-3 text-gray-400">{r.category}</td>
-                    <td className={`p-3 text-right ${muted}`}>{r.quantity}</td>
-                    <td className="whitespace-nowrap p-3 text-right text-gray-300">{formatCurrency(r.unitPrice)}</td>
-                    <td className={`whitespace-nowrap p-3 text-right font-medium ${muted}`}>{formatCurrency(r.subtotal)}</td>
-                    <td className="whitespace-nowrap p-3 text-gray-300">{paymentLabel(r.payment)}</td>
-                    <td className="whitespace-nowrap p-3 text-gray-300">{r.seller}</td>
-                    {multiBranch && <td className="whitespace-nowrap p-3 text-gray-300">{r.branch}</td>}
-                    <td className="p-3">
+                    <td className={`whitespace-nowrap px-2.5 py-3 ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</td>
+                    <td className={`whitespace-nowrap px-2.5 py-3 font-mono ${muted}`}>{timeFmt.format(new Date(r.createdAt))}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 font-mono text-cyan-400">{r.saleNumber}</td>
+                    <td className={`min-w-[170px] px-2.5 py-3 ${muted}`}>{r.product}</td>
+                    <td className="px-2.5 py-3 text-gray-400">{r.category}</td>
+                    <td className={`px-2.5 py-3 text-right ${muted}`}>{r.quantity}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 text-right text-gray-300">{formatCurrency(r.unitPrice)}</td>
+                    <td className={`whitespace-nowrap px-2.5 py-3 text-right font-medium ${muted}`}>{formatCurrency(r.subtotal)}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{paymentLabel(r.payment)}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{r.seller}</td>
+                    {multiBranch && <td className="whitespace-nowrap px-2.5 py-3 text-gray-300">{r.branch}</td>}
+                    <td className="px-2.5 py-3">
                       <span
                         className={`whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium ${
                           voided ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"
