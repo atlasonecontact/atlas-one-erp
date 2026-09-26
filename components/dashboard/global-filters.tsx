@@ -28,6 +28,8 @@ interface GlobalFiltersProps {
   sellers?: Array<{ id: string; name: string }>
   categories?: Array<{ id: string; name: string }>
   showHourFilter?: boolean
+  /** Agrega atajos de rango (7 dias, 30 dias, este mes) ademas de elegir un solo dia. */
+  allowRange?: boolean
 }
 
 // Todos los controles ocupan su celda completa y recortan el texto largo: nada se superpone.
@@ -42,6 +44,7 @@ export function GlobalFiltersComponent({
   sellers = [],
   categories = [],
   showHourFilter = false,
+  allowRange = false,
 }: GlobalFiltersProps) {
   const [isDateOpen, setIsDateOpen] = useState(false)
 
@@ -51,6 +54,11 @@ export function GlobalFiltersComponent({
 
   const pickDay = (day: Date) => {
     onChange({ ...filters, dateRange: { from: day, to: day } })
+    setIsDateOpen(false)
+  }
+
+  const pickRange = (fromDate: Date, toDate: Date) => {
+    onChange({ ...filters, dateRange: { from: fromDate, to: toDate } })
     setIsDateOpen(false)
   }
 
@@ -113,6 +121,24 @@ export function GlobalFiltersComponent({
                 Ayer
               </Button>
             </div>
+            {allowRange && (
+              <div className="flex flex-wrap gap-2 border-b border-gray-700 p-3">
+                <Button variant="outline" size="sm" className="flex-1 border-gray-700 bg-transparent" onClick={() => pickRange(subDays(new Date(), 6), new Date())}>
+                  7 días
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 border-gray-700 bg-transparent" onClick={() => pickRange(subDays(new Date(), 29), new Date())}>
+                  30 días
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-gray-700 bg-transparent"
+                  onClick={() => pickRange(new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date())}
+                >
+                  Este mes
+                </Button>
+              </div>
+            )}
             <CalendarComponent
               mode="single"
               locale={es}

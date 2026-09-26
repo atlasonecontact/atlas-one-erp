@@ -1,129 +1,148 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Download, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Download, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { GlobalFiltersComponent, type GlobalFilters } from "@/components/dashboard/global-filters"
 import { Card } from "@/components/ui/card"
-import { DemoDataBanner } from "@/components/ui/demo-data-banner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { subDays, format } from "date-fns"
-import { es } from "date-fns/locale"
+import { formatCurrency } from "@/lib/utils/currency"
+import { subDays } from "date-fns"
+import {
+  useTickets,
+  applyFilters,
+  categoryOptions,
+  ymdOf,
+  paymentLabel,
+  SHIFT_LABEL,
+  TZ,
+} from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
-interface Ticket {
-  id: string
-  date: Date
-  branch: string
-  shift: string
-  seller: string
-  total: number
-  units: number
-  paymentMethod: string
-  margin: number
+const dateFmt = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" })
+const timeFmt = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false })
+
+const paymentColors: Record<string, string> = {
+  cash: "bg-green-500/20 text-green-400 border-green-500/30",
+  card: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  qr: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  transfer: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
 }
+
+const shortId = (number: string) => `#${number.slice(-6).toUpperCase()}`
 
 export default function TicketsTablePage() {
   const router = useRouter()
   const [filters, setFilters] = useState<GlobalFilters>({
-    dateRange: {
-      from: subDays(new Date(), 30),
-      to: new Date(),
-    },
+    dateRange: { from: subDays(new Date(), 29), to: new Date() },
   })
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
 
-  // Mock data - En producción vendría de Supabase
-  const mockTickets: Ticket[] = Array.from({ length: 150 }, (_, i) => ({
-    id: `#V-${17000 + i}`,
-    date: subDays(new Date(), Math.floor(Math.random() * 30)),
-    branch: ["Central", "Sucursal Norte", "Sucursal Sur"][Math.floor(Math.random() * 3)],
-    shift: ["Mañana", "Tarde", "Noche"][Math.floor(Math.random() * 3)],
-    seller: ["Juan Pérez", "María García", "Carlos Rodríguez", "Ana Martínez"][Math.floor(Math.random() * 4)],
-    total: Math.floor(Math.random() * 300) + 50,
-    units: Math.floor(Math.random() * 8) + 1,
-    paymentMethod: ["Efectivo", "Tarjeta", "QR", "Transferencia"][Math.floor(Math.random() * 4)],
-    margin: Math.floor(Math.random() * 40) + 10,
-  }))
+  const from = ymdOf(filters.dateRange.from)
+  const to = ymdOf(filters.dateRange.to)
+  const { tickets, branches, sellers, loading, error } = useTickets(from, to, true)
+  const categories = useMemo(() => categoryOptions(tickets), [tickets])
 
-  const filteredTickets = mockTickets.filter((ticket) => ticket.id.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredTickets = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase()
+    return applyFilters(tickets, filters)
+      .filter((t) => !q || t.number.toLowerCase().includes(q) || shortId(t.number).toLowerCase().includes(q))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [tickets, filters, searchTerm])
 
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage)
-  const paginatedTickets = filteredTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters, searchTerm])
 
-  const handleExport = (format: "csv" | "excel") => {
-    console.log(`Exporting to ${format}...`)
-    // Implementar lógica de exportación
-  }
+  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / itemsPerPage))
+  const page = Math.min(currentPage, totalPages)
+  const paginatedTickets = filteredTickets.slice((page - 1) * itemsPerPage, page * itemsPerPage)
+  const marginOf = (total: number, cost: number) => (cost > 0 && total > 0 ? ((total - cost) / total) * 100 : null)
 
-  const paymentMethodColors = {
-    Efectivo: "bg-green-500/20 text-green-400 border-green-500/30",
-    Tarjeta: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    QR: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    Transferencia: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+  const handleExport = () => {
+    const header = ["ID Ticket", "Fecha", "Hora", "Sucursal", "Turno", "Vendedor", "Total", "Unidades", "Método de pago", "Margen %"]
+    const rows = filteredTickets.map((t) => {
+      const m = marginOf(t.total, t.cost)
+      return [
+        t.number,
+        dateFmt.format(new Date(t.createdAt)),
+        timeFmt.format(new Date(t.createdAt)),
+        t.branch,
+        SHIFT_LABEL[t.shift],
+        t.seller,
+        String(t.total),
+        String(t.units),
+        paymentLabel(t.payment),
+        m === null ? "" : m.toFixed(1),
+      ]
+    })
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n")
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `tickets_${from}_${to}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
-      <DemoDataBanner />
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Tickets de Venta</h1>
-        <p className="text-gray-400">Tabla detallada de todas las transacciones</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Tickets de Venta</h1>
+        <p className="text-gray-400">Tabla detallada de todas las transacciones reales</p>
       </div>
 
-      {/* Global Filters */}
       <div className="mb-8">
-        <GlobalFiltersComponent filters={filters} onChange={setFilters} />
+        <GlobalFiltersComponent
+          filters={filters}
+          onChange={setFilters}
+          branches={branches}
+          sellers={sellers}
+          categories={categories}
+          showHourFilter
+          allowRange
+        />
       </div>
 
-      {/* Table Controls */}
       <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Buscar por ID de ticket..."
+              placeholder="Buscar por número de ticket..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-gray-800/50 border-gray-700 focus:border-cyan-500"
             />
           </div>
-
-          {/* Export Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("csv")}
-              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("excel")}
-              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Excel
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={filteredTickets.length === 0}
+            className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
         </div>
       </Card>
 
-      {/* Data Table */}
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
+
       <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-800/80 border-b border-gray-700">
               <tr>
                 <th className="text-left p-4 text-cyan-400 font-semibold">ID Ticket</th>
@@ -139,60 +158,84 @@ export default function TicketsTablePage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedTickets.map((ticket, index) => (
-                <tr
-                  key={ticket.id}
-                  onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
-                  className="border-b border-gray-800/50 hover:bg-gray-800/50 cursor-pointer transition-colors"
-                >
-                  <td className="p-4 text-white font-mono">{ticket.id}</td>
-                  <td className="p-4 text-gray-300">{format(ticket.date, "dd/MM/yyyy", { locale: es })}</td>
-                  <td className="p-4 text-gray-300">{format(ticket.date, "HH:mm", { locale: es })}</td>
-                  <td className="p-4 text-gray-300">{ticket.branch}</td>
-                  <td className="p-4 text-gray-300">{ticket.shift}</td>
-                  <td className="p-4 text-gray-300">{ticket.seller}</td>
-                  <td className="p-4 text-right text-white font-semibold">${ticket.total.toFixed(2)}</td>
-                  <td className="p-4 text-center">
-                    <Badge className="bg-gray-800 text-gray-300 border-gray-700">{ticket.units}</Badge>
-                  </td>
-                  <td className="p-4">
-                    <Badge className={paymentMethodColors[ticket.paymentMethod as keyof typeof paymentMethodColors]}>
-                      {ticket.paymentMethod}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-right">
-                    <span className={ticket.margin >= 30 ? "text-green-400" : "text-yellow-400"}>{ticket.margin}%</span>
+              {loading ? (
+                <tr>
+                  <td colSpan={10} className="p-10 text-center text-gray-500">
+                    <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    Cargando tickets...
                   </td>
                 </tr>
-              ))}
+              ) : paginatedTickets.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="p-10 text-center text-gray-500">
+                    No hay tickets con estos filtros
+                  </td>
+                </tr>
+              ) : (
+                paginatedTickets.map((ticket) => {
+                  const margin = marginOf(ticket.total, ticket.cost)
+                  return (
+                    <tr
+                      key={ticket.id}
+                      onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
+                      className="border-b border-gray-800/50 hover:bg-gray-800/50 cursor-pointer transition-colors"
+                    >
+                      <td className="p-4 text-white font-mono" title={ticket.number}>
+                        {shortId(ticket.number)}
+                      </td>
+                      <td className="p-4 text-gray-300">{dateFmt.format(new Date(ticket.createdAt))}</td>
+                      <td className="p-4 text-gray-300">{timeFmt.format(new Date(ticket.createdAt))}</td>
+                      <td className="p-4 text-gray-300">{ticket.branch}</td>
+                      <td className="p-4 text-gray-300">{SHIFT_LABEL[ticket.shift]}</td>
+                      <td className="p-4 text-gray-300">{ticket.seller}</td>
+                      <td className="p-4 text-right text-white font-semibold">{formatCurrency(ticket.total)}</td>
+                      <td className="p-4 text-center">
+                        <Badge className="bg-gray-800 text-gray-300 border-gray-700">{ticket.units}</Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-gray-300 border-gray-700"}>
+                          {paymentLabel(ticket.payment)}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-right">
+                        {margin === null ? (
+                          <span className="text-gray-500">-</span>
+                        ) : (
+                          <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(1)}%</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="flex items-center justify-between p-4 border-t border-gray-800">
           <div className="text-sm text-gray-400">
-            Mostrando {(currentPage - 1) * itemsPerPage + 1} a{" "}
-            {Math.min(currentPage * itemsPerPage, filteredTickets.length)} de {filteredTickets.length} tickets
+            {filteredTickets.length === 0
+              ? "0 tickets"
+              : `Mostrando ${(page - 1) * itemsPerPage + 1} a ${Math.min(page * itemsPerPage, filteredTickets.length)} de ${filteredTickets.length} tickets`}
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              disabled={page === 1}
               className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-white font-semibold">
-              Página {currentPage} de {totalPages}
+              Página {page} de {totalPages}
             </span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              disabled={page === totalPages}
               className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
             >
               <ChevronRight className="w-4 h-4" />

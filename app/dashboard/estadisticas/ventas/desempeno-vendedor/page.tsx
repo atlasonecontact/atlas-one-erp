@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Trophy, TrendingUp, Users, Clock, Download, RefreshCw } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
-import { DemoDataBanner } from "@/components/ui/demo-data-banner"
+import { formatCurrency } from "@/lib/utils/currency"
+import { useTickets, ymdToday, shiftYmd, moneyTick, SHIFT_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
-const SELLERS = ["Juan Pérez", "María García", "Carlos Rodríguez", "Ana Martínez", "Lucía Fernández"]
-const SHIFTS = ["Mañana", "Tarde", "Noche"] as const
+const SHIFT_KEYS: ShiftKey[] = ["morning", "afternoon", "night"]
+const SHIFTS = SHIFT_KEYS.map((k) => SHIFT_LABEL[k])
 
 const SHIFT_COLORS: Record<string, string> = {
   Mañana: "#06b6d4",
@@ -32,46 +33,60 @@ interface SellerStats {
 
 export default function DesempenoVendedorPage() {
   const [period, setPeriod] = useState("7d")
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<{ sellers: SellerStats[]; byShiftTotals: ShiftSales[] } | null>(null)
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90
+  const today = ymdToday()
+  const from = shiftYmd(today, -(days - 1))
+  const { tickets, loading, error } = useTickets(from, today, false)
 
-  useEffect(() => {
-    loadStats()
-  }, [period])
-
-  const loadStats = async () => {
-    setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Mock data - En producción vendría de Supabase (sales.employee_id + cash_registers como turno)
-    const sellers: SellerStats[] = SELLERS.map((seller) => {
-      const byShift = SHIFTS.map((shift) => ({
-        shift,
-        sales: Math.floor(Math.random() * 60000) + 15000,
-        tickets: Math.floor(Math.random() * 40) + 5,
-      }))
-      return {
-        seller,
-        total: byShift.reduce((sum, s) => sum + s.sales, 0),
-        tickets: byShift.reduce((sum, s) => sum + s.tickets, 0),
-        byShift,
+  // El turno se deduce de la hora de cada venta: mañana 6-14h, tarde 14-22h, noche 22-6h.
+  const stats = useMemo(() => {
+    const bySeller = new Map<string, SellerStats>()
+    tickets.forEach((t) => {
+      const key = t.sellerId || "none"
+      let s = bySeller.get(key)
+      if (!s) {
+        s = {
+          seller: t.seller,
+          total: 0,
+          tickets: 0,
+          byShift: SHIFTS.map((shift) => ({ shift, sales: 0, tickets: 0 })),
+        }
+        bySeller.set(key, s)
       }
-    }).sort((a, b) => b.total - a.total)
-
+      const shiftLabel = SHIFT_LABEL[t.shift]
+      const b = s.byShift.find((x) => x.shift === shiftLabel)!
+      b.sales += t.total
+      b.tickets += 1
+      s.total += t.total
+      s.tickets += 1
+    })
+    const sellers = [...bySeller.values()].sort((a, b) => b.total - a.total)
     const byShiftTotals: ShiftSales[] = SHIFTS.map((shift) => ({
       shift,
       sales: sellers.reduce((sum, s) => sum + (s.byShift.find((b) => b.shift === shift)?.sales ?? 0), 0),
       tickets: sellers.reduce((sum, s) => sum + (s.byShift.find((b) => b.shift === shift)?.tickets ?? 0), 0),
     }))
+    return { sellers, byShiftTotals }
+  }, [tickets])
 
-    setStats({ sellers, byShiftTotals })
-    setLoading(false)
+  const formatMoney = (value: number) => formatCurrency(value)
+
+  const exportCsv = () => {
+    const rows = [
+      ["Vendedor", ...SHIFTS, "Total", "Tickets"],
+      ...stats.sellers.map((s) => [s.seller, ...s.byShift.map((b) => String(b.sales)), String(s.total), String(s.tickets)]),
+    ]
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(";")).join("\r\n")
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `desempeno_vendedores_${from}_${today}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value)
-
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
@@ -93,13 +108,11 @@ export default function DesempenoVendedorPage() {
   })
 
   return (
-    <div className="space-y-6 p-8">
-      <DemoDataBanner />
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-white">Desempeño por Vendedor</h1>
-          <p className="text-gray-400 mt-1">Cuánto vendió cada vendedor, turno por turno</p>
+          <p className="text-gray-400 mt-1">Cuánto vendió cada vendedor, turno por turno, con tus ventas reales</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
@@ -117,6 +130,8 @@ export default function DesempenoVendedorPage() {
           </div>
           <Button
             variant="outline"
+            onClick={exportCsv}
+            disabled={stats.sellers.length === 0}
             className="gap-2 border-cyan-500/20 text-cyan-400 bg-transparent hover:bg-cyan-500/10"
           >
             <Download className="w-4 h-4" />
@@ -125,21 +140,31 @@ export default function DesempenoVendedorPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
+      {!error && stats.sellers.length === 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          No hay ventas en los últimos {days} días.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
-          <p className="text-2xl font-bold text-white mb-1 truncate">{topSeller.seller}</p>
-          <p className="text-sm text-gray-400">Vendedor Top ({formatCurrency(topSeller.total)})</p>
+          <p className="text-2xl font-bold text-white mb-1 truncate">{topSeller ? topSeller.seller : "-"}</p>
+          <p className="text-sm text-gray-400">Vendedor Top {topSeller ? `(${formatMoney(topSeller.total)})` : ""}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-cyan-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(avgTicket)}</p>
+          <p className="text-3xl font-bold text-white mb-1">{formatMoney(avgTicket)}</p>
           <p className="text-sm text-gray-400">Ticket Promedio</p>
         </div>
 
@@ -155,23 +180,22 @@ export default function DesempenoVendedorPage() {
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Clock className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{bestShift.shift}</p>
+          <p className="text-3xl font-bold text-white mb-1">{bestShift && bestShift.sales > 0 ? bestShift.shift : "-"}</p>
           <p className="text-sm text-gray-400">Turno Más Productivo</p>
         </div>
       </div>
 
-      {/* Chart: ventas por vendedor y turno */}
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Ventas por Vendedor y Turno</h3>
         <ResponsiveContainer width="100%" height={340}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="seller" stroke="#64748b" style={{ fontSize: 12 }} />
-            <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
             <Tooltip
               contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
               labelStyle={{ color: "#fff" }}
-              formatter={(value: any) => formatCurrency(Number(value))}
+              formatter={(value: any) => formatMoney(Number(value))}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#9ca3af" }} />
             {SHIFTS.map((shift) => (
@@ -181,7 +205,6 @@ export default function DesempenoVendedorPage() {
         </ResponsiveContainer>
       </div>
 
-      {/* Leaderboard */}
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Ranking de Vendedores</h3>
         <div className="overflow-x-auto">
@@ -200,35 +223,43 @@ export default function DesempenoVendedorPage() {
               </tr>
             </thead>
             <tbody>
-              {stats.sellers.map((s, i) => (
-                <tr key={s.seller} className="border-b border-gray-800/50 last:border-0">
-                  <td className="py-3 pr-4">
-                    {i === 0 ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">
-                        1
-                      </span>
-                    ) : i === 1 ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-400/20 text-gray-300 text-xs font-bold">
-                        2
-                      </span>
-                    ) : i === 2 ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-700/20 text-orange-400 text-xs font-bold">
-                        3
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 text-xs pl-1.5">{i + 1}</span>
-                    )}
+              {stats.sellers.length === 0 ? (
+                <tr>
+                  <td colSpan={SHIFTS.length + 4} className="py-8 text-center text-gray-500">
+                    Sin ventas para mostrar.
                   </td>
-                  <td className="py-3 pr-4 text-white font-medium">{s.seller}</td>
-                  {s.byShift.map((b) => (
-                    <td key={b.shift} className="py-3 pr-4 text-right text-gray-300">
-                      {formatCurrency(b.sales)}
-                    </td>
-                  ))}
-                  <td className="py-3 pr-4 text-right text-cyan-400 font-semibold">{formatCurrency(s.total)}</td>
-                  <td className="py-3 text-right text-gray-300">{s.tickets}</td>
                 </tr>
-              ))}
+              ) : (
+                stats.sellers.map((s, i) => (
+                  <tr key={s.seller + i} className="border-b border-gray-800/50 last:border-0">
+                    <td className="py-3 pr-4">
+                      {i === 0 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">
+                          1
+                        </span>
+                      ) : i === 1 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-400/20 text-gray-300 text-xs font-bold">
+                          2
+                        </span>
+                      ) : i === 2 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-700/20 text-orange-400 text-xs font-bold">
+                          3
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-xs pl-1.5">{i + 1}</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 text-white font-medium">{s.seller}</td>
+                    {s.byShift.map((b) => (
+                      <td key={b.shift} className="py-3 pr-4 text-right text-gray-300">
+                        {formatMoney(b.sales)}
+                      </td>
+                    ))}
+                    <td className="py-3 pr-4 text-right text-cyan-400 font-semibold">{formatMoney(s.total)}</td>
+                    <td className="py-3 text-right text-gray-300">{s.tickets}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

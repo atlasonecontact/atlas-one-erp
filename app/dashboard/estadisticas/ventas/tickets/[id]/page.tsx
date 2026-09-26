@@ -1,105 +1,187 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, Printer, Calendar, Clock, User, Building2, CreditCard } from "lucide-react"
+import { ArrowLeft, Download, Printer, Calendar, Clock, User, Building2, CreditCard, RefreshCw } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { createClient } from "@/lib/supabase/client"
+import { formatCurrency } from "@/lib/utils/currency"
+import { paymentLabel, shiftOf, SHIFT_LABEL, TZ } from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
+
+const dateFmt = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" })
+const timeFmt = new Intl.DateTimeFormat("es-AR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false })
+const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false })
+
+interface Line {
+  name: string
+  category: string
+  quantity: number
+  unitPrice: number
+  subtotal: number
+  cost: number
+}
+
+interface TicketDetail {
+  id: string
+  number: string
+  status: string
+  createdAt: string
+  branch: string
+  seller: string
+  sellerId: string | null
+  payment: string | null
+  total: number
+  lines: Line[]
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default function TicketDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const ticketId = params.id as string
+  const ticketId = decodeURIComponent(params.id as string)
+  const supabase = useMemo(() => createClient(), [])
 
-  // Mock data - En producción vendría de Supabase
-  const ticket = {
-    id: ticketId,
-    date: new Date(),
-    branch: "Sucursal Centro",
-    shift: "Tarde",
-    seller: "María García",
-    sellerId: "EMP-001",
-    paymentMethod: "Tarjeta de Crédito",
-    products: [
-      {
-        id: 1,
-        name: "Coca Cola 2L",
-        category: "Bebidas",
-        quantity: 2,
-        unitPrice: 350,
-        subtotal: 700,
-        cost: 250,
-        margin: 28.6,
-      },
-      {
-        id: 2,
-        name: "Papas Lays 150g",
-        category: "Snacks",
-        quantity: 3,
-        unitPrice: 280,
-        subtotal: 840,
-        cost: 180,
-        margin: 35.7,
-      },
-      {
-        id: 3,
-        name: "Marlboro Box 20u",
-        category: "Cigarrillos",
-        quantity: 1,
-        unitPrice: 890,
-        subtotal: 890,
-        cost: 720,
-        margin: 19.1,
-      },
-      {
-        id: 4,
-        name: "Alfajor Milka Oreo",
-        category: "Golosinas",
-        quantity: 5,
-        unitPrice: 180,
-        subtotal: 900,
-        cost: 110,
-        margin: 38.9,
-      },
-    ],
+  const [ticket, setTicket] = useState<TicketDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        if (!UUID.test(ticketId)) {
+          if (!cancelled) setTicket(null)
+          return
+        }
+        const { data: sale, error: saleError } = await supabase
+          .from("sales")
+          .select("id, sale_number, kiosko_id, employee_id, total_amount, payment_method, status, created_at")
+          .eq("id", ticketId)
+          .maybeSingle()
+        if (saleError) throw saleError
+        if (!sale) {
+          if (!cancelled) setTicket(null)
+          return
+        }
+
+        const [{ data: items, error: itemsError }, { data: branch }, { data: staff }] = await Promise.all([
+          supabase
+            .from("sale_items")
+            .select("product_name, quantity, unit_price, cost_price, subtotal, products(name, category, cost)")
+            .eq("sale_id", sale.id),
+          supabase.from("kioscos").select("name").eq("id", sale.kiosko_id).maybeSingle(),
+          sale.employee_id
+            ? supabase.from("employees").select("name").eq("id", sale.employee_id).maybeSingle()
+            : Promise.resolve({ data: null }),
+        ])
+        if (itemsError) throw itemsError
+
+        const lines: Line[] = (items || []).map((r: any) => {
+          const qty = Number(r.quantity) || 0
+          return {
+            name: r.product_name || r.products?.name || "Producto",
+            category: r.products?.category || "Sin categoría",
+            quantity: qty,
+            unitPrice: Number(r.unit_price) || 0,
+            subtotal: Number(r.subtotal) || 0,
+            cost: (Number(r.cost_price ?? r.products?.cost ?? 0) || 0) * qty,
+          }
+        })
+
+        if (cancelled) return
+        setTicket({
+          id: sale.id,
+          number: sale.sale_number,
+          status: sale.status || "completed",
+          createdAt: sale.created_at,
+          branch: branch?.name || "-",
+          seller: sale.employee_id ? (staff as any)?.name || "Empleado" : "Sin asignar",
+          sellerId: sale.employee_id,
+          payment: sale.payment_method,
+          total: Number(sale.total_amount) || 0,
+          lines,
+        })
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "No se pudo cargar el ticket")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase, ticketId])
+
+  const back = (
+    <Button variant="ghost" onClick={() => router.back()} className="text-gray-400 hover:text-white hover:bg-white/5">
+      <ArrowLeft className="w-4 h-4 mr-2" />
+      Volver a Tickets
+    </Button>
+  )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+        <div className="flex h-64 items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
+        </div>
+      </div>
+    )
   }
 
-  const totalQuantity = ticket.products.reduce((sum, p) => sum + p.quantity, 0)
-  const subtotal = ticket.products.reduce((sum, p) => sum + p.subtotal, 0)
-  const totalCost = ticket.products.reduce((sum, p) => sum + p.cost * p.quantity, 0)
-  const totalMargin = ((subtotal - totalCost) / subtotal) * 100
-
-  const handlePrint = () => {
-    window.print()
+  if (error || !ticket) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+        <div className="mb-8">{back}</div>
+        <Card className="bg-gray-900/60 border-cyan-500/20 p-8 max-w-xl mx-auto text-center">
+          <p className="text-white font-semibold mb-2">{error ? "No se pudo cargar el ticket" : "Ticket no encontrado"}</p>
+          <p className="text-sm text-gray-400">{error || "Puede que haya sido eliminado o que no tengas acceso."}</p>
+        </Card>
+      </div>
+    )
   }
+
+  const totalQuantity = ticket.lines.reduce((sum, p) => sum + p.quantity, 0)
+  const subtotal = ticket.lines.reduce((sum, p) => sum + p.subtotal, 0)
+  const totalCost = ticket.lines.reduce((sum, p) => sum + p.cost, 0)
+  const hasCost = totalCost > 0
+  const totalMargin = hasCost && subtotal > 0 ? ((subtotal - totalCost) / subtotal) * 100 : null
+  const hour = Number.parseInt(hourFmt.format(new Date(ticket.createdAt)), 10) % 24
+  const voided = ticket.status === "cancelled"
 
   const handleDownload = () => {
-    console.log("Downloading ticket...")
-    // Implementar descarga de PDF
+    const rows = [
+      ["Producto", "Categoría", "Cantidad", "Precio unitario", "Subtotal"],
+      ...ticket.lines.map((l) => [l.name, l.category, String(l.quantity), String(l.unitPrice), String(l.subtotal)]),
+    ]
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n")
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `ticket_${ticket.number}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
-      {/* Header Actions */}
-      <div className="flex items-center justify-between mb-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="text-gray-400 hover:text-white hover:bg-white/5"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver a Tickets
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
+      <div className="flex items-center justify-between mb-8 print:hidden">
+        {back}
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={handlePrint}
+            onClick={() => window.print()}
             className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
           >
             <Printer className="w-4 h-4 mr-2" />
@@ -112,37 +194,38 @@ export default function TicketDetailPage() {
             className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
           >
             <Download className="w-4 h-4 mr-2" />
-            Descargar PDF
+            Descargar CSV
           </Button>
         </div>
       </div>
 
-      {/* Ticket Detail Card */}
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-8 max-w-4xl mx-auto">
-        {/* Header */}
+      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-4 md:p-8 max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Detalle de Venta</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-mono text-cyan-400">{ticket.id}</span>
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Completado</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-2xl font-mono text-cyan-400 break-all">{ticket.number}</span>
+            {voided ? (
+              <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Anulada</Badge>
+            ) : (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Completado</Badge>
+            )}
           </div>
         </div>
 
-        {/* Metadata Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
               <Calendar className="w-4 h-4" />
               <span className="text-sm">Fecha</span>
             </div>
-            <div className="text-white font-semibold">{format(ticket.date, "dd/MM/yyyy", { locale: es })}</div>
+            <div className="text-white font-semibold">{dateFmt.format(new Date(ticket.createdAt))}</div>
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
               <Clock className="w-4 h-4" />
               <span className="text-sm">Hora</span>
             </div>
-            <div className="text-white font-semibold">{format(ticket.date, "HH:mm", { locale: es })}</div>
+            <div className="text-white font-semibold">{timeFmt.format(new Date(ticket.createdAt))}</div>
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
@@ -156,7 +239,7 @@ export default function TicketDetailPage() {
               <Clock className="w-4 h-4" />
               <span className="text-sm">Turno</span>
             </div>
-            <div className="text-white font-semibold">{ticket.shift}</div>
+            <div className="text-white font-semibold">{SHIFT_LABEL[shiftOf(hour)]}</div>
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
@@ -164,24 +247,22 @@ export default function TicketDetailPage() {
               <span className="text-sm">Vendedor</span>
             </div>
             <div className="text-white font-semibold">{ticket.seller}</div>
-            <div className="text-xs text-gray-500">{ticket.sellerId}</div>
           </div>
           <div className="bg-gray-800/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-gray-400 mb-2">
               <CreditCard className="w-4 h-4" />
               <span className="text-sm">Método de Pago</span>
             </div>
-            <div className="text-white font-semibold">{ticket.paymentMethod}</div>
+            <div className="text-white font-semibold">{paymentLabel(ticket.payment)}</div>
           </div>
         </div>
 
         <Separator className="my-8 bg-gray-700" />
 
-        {/* Products Table */}
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-4">Productos</h2>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[560px]">
               <thead className="bg-gray-800/80 border-b border-gray-700">
                 <tr>
                   <th className="text-left p-3 text-cyan-400 font-semibold">Producto</th>
@@ -193,22 +274,35 @@ export default function TicketDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {ticket.products.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-800/50">
-                    <td className="p-3 text-white font-medium">{product.name}</td>
-                    <td className="p-3 text-gray-400">{product.category}</td>
-                    <td className="p-3 text-center">
-                      <Badge className="bg-gray-800 text-gray-300 border-gray-700">{product.quantity}</Badge>
-                    </td>
-                    <td className="p-3 text-right text-gray-300">${product.unitPrice.toFixed(2)}</td>
-                    <td className="p-3 text-right text-white font-semibold">${product.subtotal.toFixed(2)}</td>
-                    <td className="p-3 text-right">
-                      <span className={product.margin >= 30 ? "text-green-400" : "text-yellow-400"}>
-                        {product.margin.toFixed(1)}%
-                      </span>
+                {ticket.lines.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-gray-500">
+                      Esta venta no tiene productos registrados.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  ticket.lines.map((line, i) => {
+                    const margin = line.cost > 0 && line.subtotal > 0 ? ((line.subtotal - line.cost) / line.subtotal) * 100 : null
+                    return (
+                      <tr key={i} className="border-b border-gray-800/50">
+                        <td className="p-3 text-white font-medium">{line.name}</td>
+                        <td className="p-3 text-gray-400">{line.category}</td>
+                        <td className="p-3 text-center">
+                          <Badge className="bg-gray-800 text-gray-300 border-gray-700">{line.quantity}</Badge>
+                        </td>
+                        <td className="p-3 text-right text-gray-300">{formatCurrency(line.unitPrice)}</td>
+                        <td className="p-3 text-right text-white font-semibold">{formatCurrency(line.subtotal)}</td>
+                        <td className="p-3 text-right">
+                          {margin === null ? (
+                            <span className="text-gray-500">-</span>
+                          ) : (
+                            <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(1)}%</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -216,7 +310,6 @@ export default function TicketDetailPage() {
 
         <Separator className="my-8 bg-gray-700" />
 
-        {/* Summary */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white mb-4">Resumen</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -226,29 +319,34 @@ export default function TicketDetailPage() {
             </div>
             <div className="bg-gray-800/50 p-4 rounded-lg">
               <div className="text-gray-400 text-sm mb-1">Subtotal</div>
-              <div className="text-2xl font-bold text-white">${subtotal.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-white">{formatCurrency(subtotal)}</div>
             </div>
             <div className="bg-gray-800/50 p-4 rounded-lg">
               <div className="text-gray-400 text-sm mb-1">Costo Total</div>
-              <div className="text-2xl font-bold text-gray-400">${totalCost.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-gray-400">{hasCost ? formatCurrency(totalCost) : "-"}</div>
             </div>
             <div className="bg-gray-800/50 p-4 rounded-lg">
               <div className="text-gray-400 text-sm mb-1">Margen Total</div>
-              <div className="text-2xl font-bold text-green-400">{totalMargin.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-green-400">{totalMargin === null ? "-" : `${totalMargin.toFixed(1)}%`}</div>
             </div>
           </div>
 
           <div className="bg-gradient-to-r from-cyan-500/10 to-cyan-600/10 p-6 rounded-lg border border-cyan-500/30 mt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="text-gray-400 text-sm mb-1">Total de la Venta</div>
-                <div className="text-4xl font-bold text-white">${subtotal.toFixed(2)}</div>
+                <div className="text-4xl font-bold text-white">{formatCurrency(ticket.total)}</div>
               </div>
               <div className="text-right">
                 <div className="text-gray-400 text-sm mb-1">Ganancia Neta</div>
-                <div className="text-3xl font-bold text-green-400">${(subtotal - totalCost).toFixed(2)}</div>
+                <div className="text-3xl font-bold text-green-400">{hasCost ? formatCurrency(subtotal - totalCost) : "-"}</div>
               </div>
             </div>
+            {!hasCost && (
+              <p className="mt-3 text-xs text-gray-500">
+                Los productos de esta venta no tienen costo cargado, por eso no se calcula el margen.
+              </p>
+            )}
           </div>
         </div>
       </Card>

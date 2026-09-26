@@ -1,71 +1,104 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { DollarSign, ShoppingCart, TrendingUp, Calendar, Download, RefreshCw, ArrowUp, Package } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { DollarSign, ShoppingCart, TrendingUp, Calendar, Download, RefreshCw, ArrowUp, ArrowDown, Package } from "lucide-react"
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { DemoDataBanner } from "@/components/ui/demo-data-banner"
+import { formatCurrency } from "@/lib/utils/currency"
+import {
+  useTickets,
+  ymdToday,
+  shiftYmd,
+  WEEKDAYS_SHORT,
+  WEEK_ORDER,
+  moneyTick,
+  pct,
+} from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
+const COLORS = ["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#64748b"]
+
 export default function VentasOverviewPage() {
   const [period, setPeriod] = useState("30d")
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<any>(null)
-  const supabase = createClient()
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90
+  const today = ymdToday()
+  const from = shiftYmd(today, -(days - 1))
+  const prevTo = shiftYmd(from, -1)
+  const prevFrom = shiftYmd(prevTo, -(days - 1))
 
-  useEffect(() => {
-    loadStats()
-  }, [period])
+  const current = useTickets(from, today, true)
+  const previous = useTickets(prevFrom, prevTo, false)
+  const loading = current.loading || previous.loading
+  const error = current.error || previous.error
 
-  const loadStats = async () => {
-    setLoading(true)
-    // Mock data - replace with real Supabase queries
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  const stats = useMemo(() => {
+    const tickets = current.tickets
+    const totalSales = tickets.reduce((a, t) => a + t.total, 0)
+    const unitsSold = tickets.reduce((a, t) => a + t.units, 0)
+    const avgTicket = tickets.length > 0 ? totalSales / tickets.length : 0
+    const prevTotal = previous.tickets.reduce((a, t) => a + t.total, 0)
 
-    setStats({
-      totalSales: 2450000,
-      avgDailySales: 81666,
-      avgWeeklySales: 571666,
-      avgTicket: 12250,
-      unitsSold: 1543,
-      previousComparison: 12.5,
-      dailySales: Array.from({ length: 30 }, (_, i) => ({
-        date: `Día ${i + 1}`,
-        value: Math.floor(Math.random() * 150000) + 50000,
-      })),
-      salesByWeekday: [
-        { day: "Lun", value: 320000 },
-        { day: "Mar", value: 380000 },
-        { day: "Mié", value: 420000 },
-        { day: "Jue", value: 390000 },
-        { day: "Vie", value: 510000 },
-        { day: "Sáb", value: 280000 },
-        { day: "Dom", value: 150000 },
-      ],
-      topProducts: [
-        { name: "Coca Cola 2.25L", sales: 185000, units: 340 },
-        { name: "Pan Lactal", sales: 142000, units: 280 },
-        { name: "Galletitas Oreo", sales: 128000, units: 210 },
-        { name: "Cigarrillos Marlboro", sales: 115000, units: 95 },
-        { name: "Cerveza Quilmes", sales: 98000, units: 180 },
-      ],
-      salesByCategory: [
-        { name: "Bebidas", value: 820000, percent: 33.5 },
-        { name: "Almacén", value: 612500, percent: 25 },
-        { name: "Cigarrillos", value: 490000, percent: 20 },
-        { name: "Snacks", value: 367500, percent: 15 },
-        { name: "Otros", value: 160000, percent: 6.5 },
-      ],
+    const dayIndex = new Map<string, number>()
+    const dailySales = Array.from({ length: days }, (_, i) => {
+      const ymd = shiftYmd(from, i)
+      dayIndex.set(ymd, i)
+      const [, m, d] = ymd.split("-")
+      return { date: `${d}/${m}`, value: 0 }
     })
-    setLoading(false)
-  }
+    const weekday = Array.from({ length: 7 }, () => 0)
+    const products = new Map<string, { name: string; sales: number; units: number }>()
+    const categories = new Map<string, number>()
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
-      value,
-    )
+    tickets.forEach((t) => {
+      const idx = dayIndex.get(t.day)
+      if (idx !== undefined) dailySales[idx].value += t.total
+      weekday[t.weekday] += t.total
+      t.items.forEach((i) => {
+        const key = i.productId || i.name
+        const cur = products.get(key) || { name: i.name, sales: 0, units: 0 }
+        cur.sales += i.subtotal
+        cur.units += i.quantity
+        products.set(key, cur)
+        categories.set(i.category, (categories.get(i.category) || 0) + i.subtotal)
+      })
+    })
+
+    const topProducts = [...products.values()].sort((a, b) => b.sales - a.sales).slice(0, 5)
+    const catTotal = [...categories.values()].reduce((a, b) => a + b, 0)
+    const sortedCats = [...categories.entries()].sort((a, b) => b[1] - a[1])
+    const head = sortedCats.slice(0, 5)
+    const rest = sortedCats.slice(5).reduce((a, [, v]) => a + v, 0)
+    if (rest > 0) head.push(["Otros", rest])
+    const salesByCategory = head
+      .filter(([, v]) => v > 0)
+      .map(([name, value]) => ({ name, value, percent: catTotal > 0 ? Math.round((value / catTotal) * 1000) / 10 : 0 }))
+
+    return {
+      totalSales,
+      tickets: tickets.length,
+      avgDailySales: totalSales / days,
+      avgWeeklySales: (totalSales / days) * 7,
+      avgTicket,
+      unitsSold,
+      previousComparison: pct(totalSales, prevTotal),
+      dailySales,
+      salesByWeekday: WEEK_ORDER.map((d) => ({ day: WEEKDAYS_SHORT[d], value: weekday[d] })),
+      topProducts,
+      salesByCategory,
+    }
+  }, [current.tickets, previous.tickets, days, from])
+
+  const exportCsv = () => {
+    const rows = [["Fecha", "Ventas"], ...stats.dailySales.map((d) => [d.date, String(d.value)])]
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(";")).join("\r\n")
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `analisis_ventas_${from}_${today}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   if (loading) {
@@ -76,16 +109,14 @@ export default function VentasOverviewPage() {
     )
   }
 
-  const COLORS = ["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]
+  const cmp = stats.previousComparison
 
   return (
-    <div className="space-y-6 p-8">
-      <DemoDataBanner />
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Ventas Overview</h1>
-          <p className="text-gray-400 mt-1">Vista ejecutiva de ventas y rendimiento</p>
+          <h1 className="text-3xl font-bold text-white">Análisis de Ventas</h1>
+          <p className="text-gray-400 mt-1">Vista ejecutiva de ventas y rendimiento, con tus datos reales</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
@@ -103,6 +134,7 @@ export default function VentasOverviewPage() {
           </div>
           <Button
             variant="outline"
+            onClick={exportCsv}
             className="gap-2 border-cyan-500/20 text-cyan-400 bg-transparent hover:bg-cyan-500/10"
           >
             <Download className="w-4 h-4" />
@@ -111,20 +143,33 @@ export default function VentasOverviewPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
+      {!error && stats.tickets === 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          No hay ventas en los últimos {days} días.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-cyan-400" />
             </div>
-            <div className="flex items-center gap-1 text-sm text-green-400">
-              <ArrowUp className="w-4 h-4" />
-              {stats.previousComparison}%
-            </div>
+            {cmp !== undefined && (
+              <div className={`flex items-center gap-1 text-sm ${cmp >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {cmp >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                {Math.abs(cmp).toFixed(1)}%
+              </div>
+            )}
           </div>
           <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.totalSales)}</p>
           <p className="text-sm text-gray-400">Ventas Totales</p>
+          {cmp !== undefined && <p className="text-xs text-gray-500 mt-1">vs {days} días anteriores</p>}
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
@@ -148,58 +193,47 @@ export default function VentasOverviewPage() {
             <ShoppingCart className="w-6 h-6 text-yellow-400" />
           </div>
           <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.avgTicket)}</p>
-          <p className="text-sm text-gray-400">Ticket Promedio</p>
+          <p className="text-sm text-gray-400">Ticket Promedio ({stats.tickets} tickets)</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Package className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.unitsSold.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-white mb-1">{stats.unitsSold.toLocaleString("es-AR")}</p>
           <p className="text-sm text-gray-400">Unidades Vendidas</p>
         </div>
       </div>
 
-      {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Sales Trend */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
           <h3 className="text-lg font-semibold text-white mb-6">Tendencia de Ventas Diarias</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={stats.dailySales}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: 12 }} />
-              <YAxis
-                stroke="#64748b"
-                style={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-              />
+              <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: 12 }} interval="preserveStartEnd" />
+              <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
               <Tooltip
                 contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
                 labelStyle={{ color: "#fff" }}
-                formatter={(value: any) => formatCurrency(value)}
+                formatter={(value: any) => formatCurrency(Number(value))}
               />
               <Line type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={3} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Sales by Weekday */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
           <h3 className="text-lg font-semibold text-white mb-6">Ventas por Día de la Semana</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={stats.salesByWeekday}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="day" stroke="#64748b" style={{ fontSize: 12 }} />
-              <YAxis
-                stroke="#64748b"
-                style={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-              />
+              <YAxis stroke="#64748b" style={{ fontSize: 12 }} tickFormatter={moneyTick} />
               <Tooltip
                 contentStyle={{ backgroundColor: "#0a0f1a", border: "1px solid #06b6d4", borderRadius: 8 }}
                 labelStyle={{ color: "#fff" }}
-                formatter={(value: any) => formatCurrency(value)}
+                formatter={(value: any) => formatCurrency(Number(value))}
               />
               <Bar dataKey="value" fill="#06b6d4" radius={[8, 8, 0, 0]} />
             </BarChart>
@@ -207,68 +241,68 @@ export default function VentasOverviewPage() {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Products */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
           <h3 className="text-lg font-semibold text-white mb-6">Top Productos por Ventas</h3>
-          <div className="space-y-4">
-            {stats.topProducts.map((product: any, i: number) => {
-              const maxSales = stats.topProducts[0].sales
-              const percentage = (product.sales / maxSales) * 100
-              return (
-                <div key={product.name}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">{product.name}</span>
-                    <div className="text-right">
-                      <span className="text-white font-semibold">{formatCurrency(product.sales)}</span>
-                      <span className="text-xs text-gray-500 ml-2">({product.units} un.)</span>
+          {stats.topProducts.length === 0 ? (
+            <p className="text-sm text-gray-500 py-10 text-center">Sin ventas para mostrar.</p>
+          ) : (
+            <div className="space-y-4">
+              {stats.topProducts.map((product, i) => {
+                const percentage = stats.topProducts[0].sales > 0 ? (product.sales / stats.topProducts[0].sales) * 100 : 0
+                return (
+                  <div key={product.name + i}>
+                    <div className="flex items-center justify-between mb-2 gap-3">
+                      <span className="text-white text-sm font-medium truncate">{product.name}</span>
+                      <div className="text-right shrink-0">
+                        <span className="text-white font-semibold">{formatCurrency(product.sales)}</span>
+                        <span className="text-xs text-gray-500 ml-2">({product.units} un.)</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-3 rounded-full bg-white/5">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${percentage}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                      />
                     </div>
                   </div>
-                  <div className="w-full h-3 rounded-full bg-white/5">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${percentage}%`,
-                        backgroundColor: COLORS[i % COLORS.length],
-                      }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Sales by Category */}
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
           <h3 className="text-lg font-semibold text-white mb-6">Ventas por Categoría</h3>
-          <div className="space-y-4">
-            {stats.salesByCategory.map((cat: any, i: number) => (
-              <div key={cat.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                  <span className="text-white text-sm font-medium">{cat.name}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-white font-semibold">{formatCurrency(cat.value)}</span>
-                  <span className="text-sm text-gray-400 w-16 text-right">{cat.percent}%</span>
-                </div>
+          {stats.salesByCategory.length === 0 ? (
+            <p className="text-sm text-gray-500 py-10 text-center">Sin ventas para mostrar.</p>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {stats.salesByCategory.map((cat, i) => (
+                  <div key={cat.name} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <span className="text-white text-sm font-medium truncate">{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span className="text-white font-semibold">{formatCurrency(cat.value)}</span>
+                      <span className="text-sm text-gray-400 w-16 text-right">{cat.percent}%</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-6 h-4 rounded-full bg-white/5 overflow-hidden flex">
-            {stats.salesByCategory.map((cat: any, i: number) => (
-              <div
-                key={cat.name}
-                style={{
-                  width: `${cat.percent}%`,
-                  backgroundColor: COLORS[i % COLORS.length],
-                }}
-                className="h-full"
-              />
-            ))}
-          </div>
+              <div className="mt-6 h-4 rounded-full bg-white/5 overflow-hidden flex">
+                {stats.salesByCategory.map((cat, i) => (
+                  <div
+                    key={cat.name}
+                    style={{ width: `${cat.percent}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                    className="h-full"
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
