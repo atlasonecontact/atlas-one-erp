@@ -3,7 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   PALETTE,
   ANIMATION,
@@ -67,8 +67,8 @@ export function AnalyticsChart({
       <div className="h-[290px]">
         <ResponsiveContainer width="100%" height="100%">
           {type === "combined" ? (
-            <ComposedChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <ChartGradients />
+            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              {chartDefs()}
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="month" {...axisProps} dy={8} />
               <YAxis yAxisId="left" {...axisProps} tickFormatter={moneyTick} width={52} />
@@ -100,8 +100,8 @@ export function AnalyticsChart({
               />
             </ComposedChart>
           ) : (
-            <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <ChartGradients />
+            <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              {chartDefs()}
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="month" {...axisProps} dy={8} />
               <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />

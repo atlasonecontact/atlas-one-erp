@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { ChartCard, ChartGradients, ChartTooltip, DonutChart, ANIMATION, axisProps, barFill, cursorBar, gridProps } from "@/components/charts/chart-theme"
+import { ChartCard, chartDefs, ChartTooltip, DonutChart, ANIMATION, axisProps, barFill, cursorBar, gridProps } from "@/components/charts/chart-theme"
 
 interface InventoryChartsProps {
   isLoading?: boolean
@@ -50,7 +50,7 @@ export function InventoryRotationChart({ isLoading }: InventoryChartsProps) {
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rotationData} margin={{ top: 8, right: 4, left: -20, bottom: 0 }}>
-            <ChartGradients />
+            {chartDefs()}
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="name" {...axisProps} dy={6} />
             <YAxis {...axisProps} domain={[0, 8]} />

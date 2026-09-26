@@ -10,7 +10,7 @@ import { subDays } from "date-fns"
 import { ComposedChart, Area, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   PALETTE,
   ANIMATION,
@@ -157,8 +157,8 @@ export default function ProductividadLocalPage() {
         <ChartCard title="Ventas por m² - Tendencia" subtitle="Resultado real frente al benchmark">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={salesPerM2OverTime} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <ComposedChart data={salesPerM2OverTime} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
                 <YAxis {...axisProps} width={52} />
@@ -194,7 +194,7 @@ export default function ProductividadLocalPage() {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={branchComparison} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-                <ChartGradients />
+                {chartDefs()}
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
                 <XAxis type="number" {...axisProps} />
                 <YAxis dataKey="branch" type="category" {...axisProps} width={110} />

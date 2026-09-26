@@ -13,7 +13,7 @@ import { format, isSameDay } from "date-fns"
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   DonutChart,
   PALETTE,
@@ -485,8 +485,8 @@ export default function ExecutiveOverviewPage() {
             >
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.daily} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                    <ChartGradients />
+                  <AreaChart data={data.daily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} />
                     <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
                     <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
@@ -519,8 +519,8 @@ export default function ExecutiveOverviewPage() {
             <ChartCard title="Ventas por Hora" subtitle="Cuándo se vende más">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.hourly} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                    <ChartGradients />
+                  <BarChart data={data.hourly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} />
                     <XAxis dataKey="hour" {...axisProps} dy={6} interval={2} />
                     <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
@@ -535,7 +535,7 @@ export default function ExecutiveOverviewPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.shiftData} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-                    <ChartGradients />
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} horizontal={false} vertical />
                     <XAxis type="number" {...axisProps} tickFormatter={moneyTick} />
                     <YAxis dataKey="shift" type="category" {...axisProps} width={70} />
@@ -553,7 +553,7 @@ export default function ExecutiveOverviewPage() {
                 <div style={{ height: Math.max(220, data.sellerData.length * 52) }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.sellerData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
-                      <ChartGradients />
+                      {chartDefs()}
                       <CartesianGrid {...gridProps} horizontal={false} vertical />
                       <XAxis type="number" {...axisProps} tickFormatter={moneyTick} />
                       <YAxis dataKey="name" type="category" {...axisProps} width={130} />

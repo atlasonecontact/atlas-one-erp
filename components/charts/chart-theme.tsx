@@ -29,26 +29,24 @@ export const barFillH = (c: ChartColor) => `url(#atlas-barh-${c})`
 /** Degrade que se desvanece hacia abajo, para areas. */
 export const areaFill = (c: ChartColor) => `url(#atlas-area-${c})`
 
-/** Definiciones SVG: ponerlas una vez dentro de cada grafico. */
-export function ChartGradients() {
+/** Definiciones SVG. Se llama como funcion ({chartDefs()}) porque recharts solo dibuja elementos SVG dentro del grafico. */
+export function chartDefs() {
   return (
     <defs>
-      {(Object.keys(PALETTE) as ChartColor[]).map((name) => (
-        <g key={name}>
-          <linearGradient id={`atlas-bar-${name}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={1} />
-            <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={0.45} />
-          </linearGradient>
-          <linearGradient id={`atlas-barh-${name}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={0.45} />
-            <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={1} />
-          </linearGradient>
-          <linearGradient id={`atlas-area-${name}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={0.4} />
-            <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={0} />
-          </linearGradient>
-        </g>
-      ))}
+      {(Object.keys(PALETTE) as ChartColor[]).flatMap((name) => [
+        <linearGradient key={`bar-${name}`} id={`atlas-bar-${name}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={1} />
+          <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={0.45} />
+        </linearGradient>,
+        <linearGradient key={`barh-${name}`} id={`atlas-barh-${name}`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={0.45} />
+          <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={1} />
+        </linearGradient>,
+        <linearGradient key={`area-${name}`} id={`atlas-area-${name}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={PALETTE[name]} stopOpacity={0.4} />
+          <stop offset="100%" stopColor={PALETTE[name]} stopOpacity={0} />
+        </linearGradient>,
+      ])}
     </defs>
   )
 }

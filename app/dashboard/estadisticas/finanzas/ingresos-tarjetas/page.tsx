@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Dol
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   ANIMATION,
   axisProps,
@@ -360,8 +360,8 @@ export default function IngresosTarjetasPage() {
         <ChartCard title="Ingresos Mensuales por Marca" subtitle="VISA, Mastercard y AMEX" className="lg:col-span-2">
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <BarChart data={monthlyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="month" {...axisProps} dy={6} />
                 <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />

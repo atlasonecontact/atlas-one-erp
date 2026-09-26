@@ -6,7 +6,7 @@ import { Trophy, TrendingUp, Users, Clock, Download, RefreshCw } from "lucide-re
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   DonutChart,
   EmptyChart,
@@ -207,8 +207,8 @@ export default function DesempenoVendedorPage() {
       <ChartCard title="Ventas por Vendedor y Turno" subtitle="Facturación de cada vendedor según el turno de la caja">
         <div className="h-[340px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <ChartGradients />
+            <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              {chartDefs()}
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="seller" {...axisProps} dy={6} />
               <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />

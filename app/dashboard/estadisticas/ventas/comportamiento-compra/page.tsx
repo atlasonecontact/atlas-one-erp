@@ -35,7 +35,7 @@ import {
 } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   PALETTE,
   ANIMATION,
@@ -228,7 +228,7 @@ export default function ComportamientoCompraPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.ticketDistribution} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <ChartGradients />
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} />
                     <XAxis dataKey="range" {...axisProps} dy={6} />
                     <YAxis {...axisProps} allowDecimals={false} />
@@ -247,7 +247,7 @@ export default function ComportamientoCompraPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.unitsDistribution} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <ChartGradients />
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} />
                     <XAxis dataKey="units" {...axisProps} dy={6} />
                     <YAxis {...axisProps} allowDecimals={false} />
@@ -265,7 +265,7 @@ export default function ComportamientoCompraPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data.days} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <ChartGradients />
+                    {chartDefs()}
                     <CartesianGrid {...gridProps} />
                     <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
                     <YAxis {...axisProps} allowDecimals={false} />

@@ -6,7 +6,7 @@ import { Clock, TrendingUp, Calendar, Download, RefreshCw } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   DonutChart,
   EmptyChart,
@@ -181,8 +181,8 @@ export default function ProductividadHorariaPage() {
         <ChartCard title="Ventas por Hora" subtitle="Facturación en cada franja">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <BarChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="hour" {...axisProps} dy={6} tickFormatter={(hour) => `${hour}h`} interval={1} />
                 <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
@@ -200,7 +200,7 @@ export default function ProductividadHorariaPage() {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                <ChartGradients />
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="hour" {...axisProps} dy={6} tickFormatter={(hour) => `${hour}h`} interval={1} />
                 <YAxis {...axisProps} allowDecimals={false} />
@@ -254,8 +254,8 @@ export default function ProductividadHorariaPage() {
       <ChartCard title="Tendencia Intradía de Ventas" subtitle="Cómo evoluciona la facturación a lo largo del día">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <ChartGradients />
+            <AreaChart data={stats.salesByHour} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              {chartDefs()}
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="hour" {...axisProps} dy={8} tickFormatter={(hour) => `${hour}:00`} interval={1} />
               <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   DonutChart,
   PALETTE,
@@ -482,8 +482,8 @@ export default function ReportesPage() {
         <ChartCard title="Ventas por Día" subtitle="Facturación de cada día del período">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesByDay} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <BarChart data={salesByDay} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="day" {...axisProps} dy={6} />
                 <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />
@@ -505,8 +505,8 @@ export default function ReportesPage() {
         <ChartCard title="Patrón de Ventas por Hora" subtitle="Cómo evoluciona el día">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={hourlyData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <AreaChart data={hourlyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="hour" {...axisProps} dy={8} interval={2} />
                 <YAxis {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} width={52} />
@@ -531,7 +531,7 @@ export default function ReportesPage() {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={employeePerformance} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-                <ChartGradients />
+                {chartDefs()}
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
                 <XAxis type="number" {...axisProps} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="name" {...axisProps} width={100} />

@@ -3,7 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   PALETTE,
   ANIMATION,
@@ -32,8 +32,8 @@ export function SalesChart() {
     <ChartCard title="Evolución de ventas" subtitle="Últimos 30 días">
       <div className="h-[290px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-            <ChartGradients />
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            {chartDefs()}
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="date" {...axisProps} dy={8} />
             <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />

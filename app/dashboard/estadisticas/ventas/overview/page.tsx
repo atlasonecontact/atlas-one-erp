@@ -6,7 +6,7 @@ import { DollarSign, ShoppingCart, TrendingUp, Calendar, Download, RefreshCw, Ar
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
-  ChartGradients,
+  chartDefs,
   ChartTooltip,
   DonutChart,
   EmptyChart,
@@ -228,8 +228,8 @@ export default function VentasOverviewPage() {
         <ChartCard title="Tendencia de Ventas Diarias" subtitle={`Últimos ${days} días`}>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.dailySales} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <AreaChart data={stats.dailySales} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
                 <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
@@ -253,8 +253,8 @@ export default function VentasOverviewPage() {
         <ChartCard title="Ventas por Día de la Semana" subtitle="Qué días se vende más">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.salesByWeekday} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <ChartGradients />
+              <BarChart data={stats.salesByWeekday} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="day" {...axisProps} dy={6} />
                 <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
