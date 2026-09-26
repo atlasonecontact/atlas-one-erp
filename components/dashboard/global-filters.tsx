@@ -239,7 +239,7 @@ export function GlobalFiltersComponent({
             <Clock className="h-4 w-4 text-cyan-400" />
             Franja horaria
           </div>
-          <Select value={hourFrom === undefined ? "all" : String(hourFrom)} onValueChange={(v) => setHour("from", v)}>
+          <Select value={!hourFrom ? "all" : String(hourFrom)} onValueChange={(v) => setHour("from", v)}>
             <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50">
               <SelectValue placeholder="Desde" />
             </SelectTrigger>
@@ -252,7 +252,7 @@ export function GlobalFiltersComponent({
               ))}
             </SelectContent>
           </Select>
-          <Select value={hourTo === undefined ? "all" : String(hourTo)} onValueChange={(v) => setHour("to", v)}>
+          <Select value={hourTo === undefined || hourTo === 24 ? "all" : String(hourTo)} onValueChange={(v) => setHour("to", v)}>
             <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50">
               <SelectValue placeholder="Hasta" />
             </SelectTrigger>
