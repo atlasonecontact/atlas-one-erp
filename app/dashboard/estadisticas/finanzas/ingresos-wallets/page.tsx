@@ -1,569 +1,282 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, Clock, Search, Filter, Download } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Wallet, Receipt, TrendingUp, Percent, ArrowUp, ArrowDown, RefreshCw, QrCode, Landmark } from "lucide-react"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import {
+  ChartCard,
+  chartDefs,
+  ChartTooltip,
+  DonutChart,
+  PALETTE,
+  ANIMATION,
+  areaFill,
+  axisProps,
+  cursorLine,
+  gridProps,
+} from "@/components/charts/chart-theme"
+import { formatCurrency } from "@/lib/utils/currency"
+import { useTickets, ymdToday, shiftYmd, moneyTick, pct } from "@/lib/analytics/tickets"
 
-const walletsData = [
-  {
-    id: "mercadopago",
-    name: "Mercado Pago",
-    totalIngresos: 84523,
-    operaciones: 1248,
-    percentageOfTotal: 51,
-    ticketPromedio: 67.7,
-    acreditacion: "Inmediato",
-    network: "Mastercard",
-    gradient: "from-[#00B1EA] to-[#007EB5]",
-    textColor: "text-white",
-    variacion: 16.3,
-  },
-  {
-    id: "cuentadni",
-    name: "Cuenta DNI",
-    totalIngresos: 52340,
-    operaciones: 892,
-    percentageOfTotal: 32,
-    ticketPromedio: 58.7,
-    acreditacion: "Inmediato",
-    network: "Visa",
-    gradient: "from-[#009FE3] to-[#0077B6]",
-    textColor: "text-white",
-    variacion: 14.2,
-  },
-  {
-    id: "uala",
-    name: "Ualá",
-    totalIngresos: 67406,
-    operaciones: 1042,
-    percentageOfTotal: 44,
-    ticketPromedio: 64.7,
-    acreditacion: "24-48hs",
-    network: "Mastercard",
-    gradient: "from-[#FF4B5C] to-[#C73744]",
-    textColor: "text-white",
-    variacion: -10.5,
-  },
-  {
-    id: "naranjax",
-    name: "Naranja X",
-    totalIngresos: 45378,
-    operaciones: 687,
-    percentageOfTotal: 34,
-    ticketPromedio: 66.1,
-    acreditacion: "24-48hs",
-    network: "Visa",
-    gradient: "from-[#FF7A00] to-[#D96500]",
-    textColor: "text-white",
-    variacion: -10.7,
-  },
-  {
-    id: "modo",
-    name: "MODO",
-    totalIngresos: 38523,
-    operaciones: 856,
-    percentageOfTotal: 23,
-    ticketPromedio: 45.0,
-    acreditacion: "Inmediato",
-    network: "QR Code",
-    gradient: "from-[#1E1B3A] via-[#2A2754] to-[#3d3665]",
-    textColor: "text-white",
-    variacion: 8.4,
-  },
-  {
-    id: "brubank",
-    name: "Brubank",
-    totalIngresos: 16423,
-    operaciones: 298,
-    percentageOfTotal: 10,
-    ticketPromedio: 55.1,
-    acreditacion: "24hs",
-    network: "Visa",
-    gradient: "from-[#6C5CE7] to-[#584BD6]",
-    textColor: "text-white",
-    variacion: 8.2,
-  },
-  {
-    id: "prex",
-    name: "Prex",
-    totalIngresos: 24758,
-    operaciones: 423,
-    percentageOfTotal: 15,
-    ticketPromedio: 58.5,
-    acreditacion: "48hs",
-    network: "Mastercard",
-    gradient: "from-[#3A3F45] to-[#2E3237]",
-    textColor: "text-white",
-    variacion: 3.2,
-  },
-  {
-    id: "lemon",
-    name: "Lemon",
-    totalIngresos: 17645,
-    operaciones: 342,
-    percentageOfTotal: 11,
-    ticketPromedio: 51.6,
-    acreditacion: "Inmediato",
-    network: "Mastercard",
-    gradient: "from-[#2DD4A3] to-[#1EBE90]",
-    textColor: "text-white",
-    variacion: 12.3,
-  },
-  {
-    id: "belo",
-    name: "Belo",
-    totalIngresos: 12890,
-    operaciones: 234,
-    percentageOfTotal: 8,
-    ticketPromedio: 55.1,
-    acreditacion: "24-48hs",
-    network: "Visa",
-    gradient: "from-[#4FA3F7] to-[#3B8EE6]",
-    textColor: "text-white",
-    variacion: 5.6,
-  },
-  {
-    id: "personalpay",
-    name: "Personal Pay",
-    totalIngresos: 9876,
-    operaciones: 187,
-    percentageOfTotal: 6,
-    ticketPromedio: 52.8,
-    acreditacion: "Inmediato",
-    network: "QR Code",
-    gradient: "from-[#F59E6C] to-[#E88954]",
-    textColor: "text-white",
-    variacion: -3.2,
-  },
-  {
-    id: "bna",
-    name: "BNA+",
-    totalIngresos: 21345,
-    operaciones: 412,
-    percentageOfTotal: 13,
-    ticketPromedio: 51.8,
-    acreditacion: "48hs",
-    network: "Visa",
-    gradient: "from-[#1E40AF] to-[#1E3A8A]",
-    textColor: "text-white",
-    variacion: 7.8,
-  },
-]
+export const dynamic = "force-dynamic"
 
-const transactionsData = [
-  {
-    id: "TXN-2024-001234",
-    fechaHora: "2024-12-24 15:32:10",
-    wallet: "Mercado Pago",
-    red: "Mastercard",
-    monto: 1250.0,
-    comision: 37.5,
-    netoAcreditado: 1212.5,
-    estado: "Acreditado",
-    bancoDestino: "Banco Galicia",
-    usuario: "Caja 1",
-    sucursal: "Centro",
-  },
-  {
-    id: "TXN-2024-001235",
-    fechaHora: "2024-12-24 15:28:45",
-    wallet: "Ualá",
-    red: "Mastercard",
-    monto: 850.0,
-    comision: 25.5,
-    netoAcreditado: 824.5,
-    estado: "Pendiente",
-    bancoDestino: "Banco Nación",
-    usuario: "Caja 2",
-    sucursal: "Palermo",
-  },
-  {
-    id: "TXN-2024-001236",
-    fechaHora: "2024-12-24 15:15:22",
-    wallet: "MODO",
-    red: "QR Code",
-    monto: 450.0,
-    comision: 4.5,
-    netoAcreditado: 445.5,
-    estado: "Acreditado",
-    bancoDestino: "Banco Macro",
-    usuario: "Caja 1",
-    sucursal: "Centro",
-  },
-  {
-    id: "TXN-2024-001237",
-    fechaHora: "2024-12-24 14:52:33",
-    wallet: "Naranja X",
-    red: "Visa",
-    monto: 2100.0,
-    comision: 84.0,
-    netoAcreditado: 2016.0,
-    estado: "Acreditado",
-    bancoDestino: "Banco Santander",
-    usuario: "Caja 3",
-    sucursal: "Belgrano",
-  },
-  {
-    id: "TXN-2024-001238",
-    fechaHora: "2024-12-24 14:40:18",
-    wallet: "Lemon",
-    red: "Mastercard",
-    monto: 675.5,
-    comision: 20.26,
-    netoAcreditado: 655.24,
-    estado: "Rechazado",
-    bancoDestino: "-",
-    usuario: "Caja 2",
-    sucursal: "Palermo",
-  },
-]
+// "Wallets" en este sistema son las ventas cobradas por QR o Transferencia (Mercado Pago, MODO,
+// Ualá, etc. entran todas por ahí). No hay integración con cada billetera para saber marca,
+// banco destino, comisión o si ya se acreditó — sólo se muestra lo que el POS registra de verdad.
+export default function IngresosWalletsPage() {
+  const [period, setPeriod] = useState("30d")
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90
+  const today = ymdToday()
+  const from = shiftYmd(today, -(days - 1))
+  const prevTo = shiftYmd(from, -1)
+  const prevFrom = shiftYmd(prevTo, -(days - 1))
 
-function CardChip() {
-  return (
-    <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-600 flex items-center justify-center overflow-hidden shadow-lg">
-      <div className="w-full h-full grid grid-cols-3 gap-0.5 p-1">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-yellow-500/60 rounded-sm" />
-        ))}
-      </div>
-    </div>
-  )
-}
+  const current = useTickets(from, today, false)
+  const previous = useTickets(prevFrom, prevTo, false)
+  const loading = current.loading || previous.loading
+  const error = current.error || previous.error
 
-function NetworkBadge({ network }: { network: string }) {
-  if (network === "Mastercard") {
+  const stats = useMemo(() => {
+    const all = current.tickets
+    const isWallet = (m: string | null) => ["qr", "transfer"].includes((m || "").toLowerCase())
+    const walletTickets = all.filter((t) => isWallet(t.payment))
+    const prevWallet = previous.tickets.filter((t) => isWallet(t.payment))
+
+    const totalRevenue = walletTickets.reduce((a, t) => a + t.total, 0)
+    const prevRevenue = prevWallet.reduce((a, t) => a + t.total, 0)
+    const totalAll = all.reduce((a, t) => a + t.total, 0)
+    const avgTicket = walletTickets.length > 0 ? totalRevenue / walletTickets.length : 0
+    const shareOfTotal = totalAll > 0 ? (totalRevenue / totalAll) * 100 : 0
+
+    const qr = walletTickets.filter((t) => (t.payment || "").toLowerCase() === "qr")
+    const transfer = walletTickets.filter((t) => (t.payment || "").toLowerCase() === "transfer")
+
+    const dayIndex = new Map<string, number>()
+    const dailySales = Array.from({ length: days }, (_, i) => {
+      const ymd = shiftYmd(from, i)
+      dayIndex.set(ymd, i)
+      const [, m, d] = ymd.split("-")
+      return { date: `${d}/${m}`, value: 0 }
+    })
+    walletTickets.forEach((t) => {
+      const idx = dayIndex.get(t.day)
+      if (idx !== undefined) dailySales[idx].value += t.total
+    })
+
+    const byMethod = [
+      { name: "QR", value: qr.reduce((a, t) => a + t.total, 0), count: qr.length },
+      { name: "Transferencia", value: transfer.reduce((a, t) => a + t.total, 0), count: transfer.length },
+    ]
+
+    const recent = [...walletTickets].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 100)
+
+    return { totalRevenue, prevRevenue, avgTicket, shareOfTotal, count: walletTickets.length, dailySales, byMethod, recent }
+  }, [current.tickets, previous.tickets, days, from])
+
+  const cmp = pct(stats.totalRevenue, stats.prevRevenue)
+
+  if (loading) {
     return (
-      <div className="flex items-center gap-0.5">
-        <div className="w-4 h-4 rounded-full bg-red-500" />
-        <div className="w-4 h-4 rounded-full bg-[#f79e1b] -ml-2" />
+      <div className="flex h-64 items-center justify-center">
+        <RefreshCw className="h-8 w-8 animate-spin text-cyan-500" />
       </div>
     )
   }
-  if (network === "Visa") {
-    return <div className="text-xs font-bold italic text-white/90">VISA</div>
-  }
-  return <div className="text-[10px] font-semibold text-white/80">{network}</div>
-}
 
-function WalletKPICard({
-  wallet,
-  isHovered,
-  onHover,
-  onClick,
-}: {
-  wallet: (typeof walletsData)[0]
-  isHovered: boolean
-  onHover: (id: string | null) => void
-  onClick: (id: string) => void
-}) {
   return (
-    <div
-      className="relative cursor-pointer transition-all duration-300"
-      style={{
-        perspective: "1200px",
-        transform: isHovered ? "scale(1.03)" : "scale(1)",
-      }}
-      onMouseEnter={() => onHover(wallet.id)}
-      onMouseLeave={() => onHover(null)}
-      onClick={() => onClick(wallet.id)}
-    >
-      <div
-        className={`relative w-full aspect-[1.586/1] rounded-[20px] bg-gradient-to-br ${wallet.gradient} p-5 shadow-2xl overflow-hidden transition-all duration-300`}
-        style={{
-          transform: isHovered ? "rotateY(-5deg) rotateX(3deg)" : "rotateY(0) rotateX(0)",
-          boxShadow: isHovered
-            ? "0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 255, 255, 0.1)"
-            : "0 15px 40px -10px rgba(0, 0, 0, 0.35)",
-        }}
-      >
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Ingresos por Wallets</h1>
+          <p className="mt-1 text-gray-400">Ventas cobradas por QR o transferencia, con tus datos reales</p>
         </div>
-
-        {/* Shine effect on hover */}
-        <div
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent opacity-0 transition-opacity duration-300"
-          style={{ opacity: isHovered ? 0.4 : 0 }}
-        />
-
-        {/* Card content */}
-        <div className="relative h-full flex flex-col justify-between">
-          {/* Top: Wallet name and network */}
-          <div className="flex justify-between items-start">
-            <div className={`text-base font-bold ${wallet.textColor}`}>{wallet.name}</div>
-            <NetworkBadge network={wallet.network} />
-          </div>
-
-          {/* Middle: Chip and main KPI */}
-          <div className="space-y-3">
-            <CardChip />
-            <div>
-              <div className={`text-3xl font-bold ${wallet.textColor}`}>${wallet.totalIngresos.toLocaleString()}</div>
-              <div className={`text-xs opacity-80 ${wallet.textColor}`}>Ingresos Totales</div>
-            </div>
-          </div>
-
-          {/* Bottom: Secondary KPIs */}
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <div className={`text-sm font-semibold ${wallet.textColor}`}>{wallet.operaciones}</div>
-              <div className={`text-[10px] opacity-70 ${wallet.textColor}`}>operaciones</div>
-            </div>
-            <div>
-              <div className={`text-sm font-semibold ${wallet.textColor}`}>{wallet.percentageOfTotal}%</div>
-              <div className={`text-[10px] opacity-70 ${wallet.textColor}`}>del total</div>
-            </div>
-            <div>
-              <div className={`text-sm font-semibold ${wallet.textColor}`}>${wallet.ticketPromedio}</div>
-              <div className={`text-[10px] opacity-70 ${wallet.textColor}`}>ticket prom</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Info panel on hover */}
-      <div
-        className={`absolute -bottom-2 left-0 right-0 bg-[#0f1419] border border-gray-800/50 rounded-xl p-3 transition-all duration-300 shadow-xl ${
-          isHovered ? "opacity-100 translate-y-full" : "opacity-0 translate-y-[calc(100%-8px)] pointer-events-none"
-        }`}
-      >
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-gray-400">Estado de Acreditación</span>
-            <Badge variant="outline" className="text-[10px] px-2 py-0">
-              <Clock className="w-3 h-3 mr-1" />
-              {wallet.acreditacion}
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-gray-400">Variación vs período anterior</span>
-            <span
-              className={`flex items-center gap-1 font-semibold ${
-                wallet.variacion >= 0 ? "text-emerald-400" : "text-red-400"
+        <div className="flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-[#0a0f1a] p-1">
+          {["7d", "30d", "90d"].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
               }`}
             >
-              {wallet.variacion >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {wallet.variacion >= 0 ? "+" : ""}
-              {wallet.variacion}%
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function IngresosWalletsPage() {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-
-  const totalVentas = walletsData.reduce((acc, w) => acc + w.totalIngresos, 0)
-  const totalTransacciones = walletsData.reduce((acc, w) => acc + w.operaciones, 0)
-  const saldoTotal = walletsData.reduce((acc, w) => acc + w.totalIngresos * 0.97, 0) // 3% commission estimate
-  const porcentajeAcreditado = 87.3
-
-  // Filter transactions
-  const filteredTransactions = transactionsData.filter((t) => {
-    const matchesSearch =
-      t.id.toLowerCase().includes(searchTerm.toLowerCase()) || t.wallet.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === "all" || t.estado.toLowerCase() === filterStatus.toLowerCase()
-    const matchesWallet = !selectedWallet || t.wallet === walletsData.find((w) => w.id === selectedWallet)?.name
-    return matchesSearch && matchesStatus && matchesWallet
-  })
-
-  return (
-    <div className="min-h-screen bg-[#0a0e14] p-6 space-y-6">
-      {/* Header with summary KPIs */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Ingresos por Wallets y Tarjetas Prepaga</h1>
-          <p className="text-gray-400">Panel de control financiero de medios de pago digitales</p>
-        </div>
-
-        {/* Top KPI Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-[#0f1419] border-gray-800/50 shadow-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="w-4 h-4 text-emerald-400" />
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Total Ventas</p>
-              </div>
-              <p className="text-2xl font-bold text-white">${totalVentas.toLocaleString()}</p>
-              <div className="flex items-center gap-1 text-emerald-400 text-xs mt-1">
-                <TrendingUp className="w-3 h-3" />
-                <span>+12.4% vs mes anterior</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#0f1419] border-gray-800/50 shadow-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Saldo Total</p>
-              </div>
-              <p className="text-2xl font-bold text-white">${saldoTotal.toLocaleString()}</p>
-              <div className="text-xs text-gray-400 mt-1">Neto después de comisiones</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#0f1419] border-gray-800/50 shadow-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <ArrowUpRight className="w-4 h-4 text-purple-400" />
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Transacciones</p>
-              </div>
-              <p className="text-2xl font-bold text-white">{totalTransacciones.toLocaleString()}</p>
-              <div className="text-xs text-gray-400 mt-1">Total de operaciones</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#0f1419] border-gray-800/50 shadow-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Acreditados</p>
-              </div>
-              <p className="text-2xl font-bold text-white">{porcentajeAcreditado}%</p>
-              <div className="text-xs text-gray-400 mt-1">Ingresos acreditados</div>
-            </CardContent>
-          </Card>
+              {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Wallet Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-        {walletsData.map((wallet) => (
-          <WalletKPICard
-            key={wallet.id}
-            wallet={wallet}
-            isHovered={hoveredCard === wallet.id}
-            onHover={setHoveredCard}
-            onClick={setSelectedWallet}
-          />
-        ))}
-      </div>
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
+      {!error && stats.count === 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          No hay ventas por QR o transferencia en los últimos {days} días.
+        </div>
+      )}
 
-      {/* Transaction Database Table */}
-      <Card className="bg-[#0f1419] border-gray-800/50 shadow-xl">
-        <CardHeader>
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <CardTitle className="text-white text-xl flex items-center gap-2">
-                Base de Datos Transaccional
-                <Badge variant="outline" className="ml-2">
-                  {filteredTransactions.length} registros
-                </Badge>
-              </CardTitle>
-              <p className="text-sm text-gray-400 mt-1">
-                Control financiero y auditoría de transacciones en tiempo real
-              </p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20">
+              <Wallet className="h-6 w-6 text-cyan-400" />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por ID o wallet..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-[#0a0e14] border-gray-800 text-white w-64"
+            {cmp !== undefined && (
+              <div className={`flex items-center gap-1 text-sm ${cmp >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {cmp >= 0 ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                {Math.abs(cmp).toFixed(1)}%
+              </div>
+            )}
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
+          <p className="text-sm text-gray-400">Ingresos por Wallet</p>
+          {cmp !== undefined && <p className="mt-1 text-xs text-gray-500">vs {days} días anteriores</p>}
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
+            <Receipt className="h-6 w-6 text-blue-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{stats.count.toLocaleString("es-AR")}</p>
+          <p className="text-sm text-gray-400">Transacciones</p>
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
+            <TrendingUp className="h-6 w-6 text-green-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.avgTicket)}</p>
+          <p className="text-sm text-gray-400">Ticket Promedio</p>
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
+            <Percent className="h-6 w-6 text-purple-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{stats.shareOfTotal.toFixed(1)}%</p>
+          <p className="text-sm text-gray-400">del total de ventas</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartCard title="Ingresos por Wallet - Tendencia" subtitle={`Últimos ${days} días`}>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.dailySales} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
+                <CartesianGrid {...gridProps} />
+                <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name="Wallet"
+                  stroke={PALETTE.violet}
+                  strokeWidth={2.5}
+                  fill={areaFill("violet")}
+                  dot={false}
+                  activeDot={{ r: 6, fill: PALETTE.violet, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  {...ANIMATION}
                 />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40 bg-[#0a0e14] border-gray-800 text-white">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="acreditado">Acreditado</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="rechazado">Rechazado</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="sm" className="border-gray-800 bg-transparent">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar
-              </Button>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        <ChartCard title="QR vs Transferencia" subtitle="Participación en el período">
+          <DonutChart
+            data={stats.byMethod}
+            valueFormatter={(v) => formatCurrency(v)}
+            centerLabel="Wallets"
+            centerValue={formatCurrency(stats.totalRevenue)}
+          />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/15">
+              <QrCode className="h-5 w-5 text-violet-400" />
+            </div>
+            <div>
+              <p className="font-medium text-white">QR</p>
+              <p className="text-xs text-gray-500">{stats.byMethod[0].count} transacciones</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-800 hover:bg-transparent">
-                  <TableHead className="text-gray-400 font-semibold">Fecha & Hora</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Wallet / Medio</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Red</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">ID Transacción</TableHead>
-                  <TableHead className="text-gray-400 font-semibold text-right">Monto</TableHead>
-                  <TableHead className="text-gray-400 font-semibold text-right">Comisión</TableHead>
-                  <TableHead className="text-gray-400 font-semibold text-right">Neto Acreditado</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Estado</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Banco Destino</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Usuario / Caja</TableHead>
-                  <TableHead className="text-gray-400 font-semibold">Sucursal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((transaction) => {
-                  const wallet = walletsData.find((w) => w.name === transaction.wallet)
-                  return (
-                    <TableRow key={transaction.id} className="border-gray-800 hover:bg-white/[0.02]">
-                      <TableCell className="text-gray-300 font-mono text-xs">{transaction.fechaHora}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {wallet && <div className={`w-6 h-4 rounded bg-gradient-to-br ${wallet.gradient}`} />}
-                          <span className="text-white font-medium text-sm">{transaction.wallet}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {transaction.red}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-gray-400 font-mono text-xs">{transaction.id}</TableCell>
-                      <TableCell className="text-right text-white font-semibold">
-                        ${transaction.monto.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right text-gray-400">${transaction.comision.toFixed(2)}</TableCell>
-                      <TableCell className="text-right text-emerald-400 font-semibold">
-                        ${transaction.netoAcreditado.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`text-xs ${
-                            transaction.estado === "Acreditado"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : transaction.estado === "Pendiente"
-                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                : "bg-red-500/10 text-red-400 border-red-500/20"
-                          }`}
-                        >
-                          {transaction.estado}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-gray-300 text-sm">{transaction.bancoDestino}</TableCell>
-                      <TableCell className="text-gray-300 text-sm">{transaction.usuario}</TableCell>
-                      <TableCell className="text-gray-300 text-sm">{transaction.sucursal}</TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+          <p className="text-xl font-bold text-white">{formatCurrency(stats.byMethod[0].value)}</p>
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/15">
+              <Landmark className="h-5 w-5 text-sky-400" />
+            </div>
+            <div>
+              <p className="font-medium text-white">Transferencia</p>
+              <p className="text-xs text-gray-500">{stats.byMethod[1].count} transacciones</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-xl font-bold text-white">{formatCurrency(stats.byMethod[1].value)}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-white">Últimas Ventas por Wallet</h3>
+          <span className="rounded-full border border-cyan-500/20 px-2 py-0.5 text-xs text-cyan-400">
+            {stats.recent.length}
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 text-left text-gray-400">
+                <th className="py-2 pr-4 font-medium">Fecha</th>
+                <th className="py-2 pr-4 font-medium">Método</th>
+                <th className="py-2 pr-4 font-medium">Sucursal</th>
+                <th className="py-2 pr-4 font-medium">Vendedor</th>
+                <th className="py-2 pr-4 font-medium">Nº Venta</th>
+                <th className="py-2 pl-4 text-right font-medium">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.recent.map((t) => (
+                <tr key={t.id} className="border-b border-gray-800/60 hover:bg-white/[0.02]">
+                  <td className="py-2.5 pr-4 text-gray-300">
+                    {new Date(t.createdAt).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        (t.payment || "").toLowerCase() === "qr"
+                          ? "bg-violet-500/15 text-violet-300"
+                          : "bg-sky-500/15 text-sky-300"
+                      }`}
+                    >
+                      {(t.payment || "").toLowerCase() === "qr" ? "QR" : "Transferencia"}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-4 text-gray-300">{t.branch}</td>
+                  <td className="py-2.5 pr-4 text-gray-300">{t.seller}</td>
+                  <td className="py-2.5 pr-4 font-mono text-xs text-gray-400" title={t.number}>
+                    {t.number.slice(-8)}
+                  </td>
+                  <td className="py-2.5 pl-4 text-right font-semibold text-white">{formatCurrency(t.total)}</td>
+                </tr>
+              ))}
+              {stats.recent.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                    Sin ventas por wallet en este período.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

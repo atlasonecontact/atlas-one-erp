@@ -1,173 +1,176 @@
 "use client"
 
-import { useState } from "react"
-import { DollarSign, ShoppingCart, TrendingUp, Activity } from "lucide-react"
-import { GlobalFiltersComponent, type GlobalFilters } from "@/components/dashboard/global-filters"
-import { KPICard } from "@/components/dashboard/kpi-card"
-import { Card } from "@/components/ui/card"
-import { DemoDataBanner } from "@/components/ui/demo-data-banner"
-import { subDays } from "date-fns"
-import { ComposedChart, Area, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { useMemo, useState } from "react"
+import { DollarSign, ShoppingCart, TrendingUp, Building2, RefreshCw } from "lucide-react"
+import { AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   ChartCard,
   chartDefs,
   ChartTooltip,
+  EmptyChart,
   PALETTE,
+  COLOR_ORDER,
   ANIMATION,
   areaFill,
   axisProps,
-  barFillH,
+  barFill,
   cursorBar,
   cursorLine,
   gridProps,
-  legendProps,
 } from "@/components/charts/chart-theme"
+import { formatCurrency } from "@/lib/utils/currency"
+import { useTickets, ymdToday, shiftYmd, moneyTick, pct } from "@/lib/analytics/tickets"
 
 export const dynamic = "force-dynamic"
 
+// Productividad real por sucursal: ventas, tickets y ticket promedio de cada local con datos
+// reales. No se mide por m² porque el sistema no tiene la superficie de cada sucursal cargada,
+// así que ese dato (y el benchmark de industria) no se inventa.
 export default function ProductividadLocalPage() {
-  const [filters, setFilters] = useState<GlobalFilters>({
-    dateRange: {
-      from: subDays(new Date(), 30),
-      to: new Date(),
-    },
-  })
+  const [period, setPeriod] = useState("30d")
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90
+  const today = ymdToday()
+  const from = shiftYmd(today, -(days - 1))
+  const prevTo = shiftYmd(from, -1)
+  const prevFrom = shiftYmd(prevTo, -(days - 1))
 
-  // Mock data - En producción, m² vendría de configuración de sucursal
-  const storeArea = 150 // metros cuadrados
-  const benchmark = 2500 // benchmark de industria
+  const current = useTickets(from, today, false)
+  const previous = useTickets(prevFrom, prevTo, false)
+  const loading = current.loading || previous.loading
+  const error = current.error || previous.error
 
-  const kpis = {
-    salesPerM2: {
-      value: "$2,847",
-      change: 12.5,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 2700 + Math.random() * 300 })),
-    },
-    ticketsPerM2: {
-      value: "56.2",
-      change: 8.3,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 50 + Math.random() * 10 })),
-    },
-    performance: {
-      value: "113.9%",
-      change: 3.8,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 110 + Math.random() * 8 })),
-    },
-    efficiency: {
-      value: "Alta",
-      change: 0,
-      sparkline: Array.from({ length: 7 }, (_, i) => ({ value: 95 + Math.random() * 5 })),
-    },
+  const stats = useMemo(() => {
+    const tickets = current.tickets
+    const totalSales = tickets.reduce((a, t) => a + t.total, 0)
+    const prevTotal = previous.tickets.reduce((a, t) => a + t.total, 0)
+    const avgTicket = tickets.length > 0 ? totalSales / tickets.length : 0
+
+    const dayIndex = new Map<string, number>()
+    const dailySales = Array.from({ length: days }, (_, i) => {
+      const ymd = shiftYmd(from, i)
+      dayIndex.set(ymd, i)
+      const [, m, d] = ymd.split("-")
+      return { date: `${d}/${m}`, value: 0 }
+    })
+    tickets.forEach((t) => {
+      const idx = dayIndex.get(t.day)
+      if (idx !== undefined) dailySales[idx].value += t.total
+    })
+
+    const byBranch = new Map<string, { name: string; revenue: number; tickets: number }>()
+    tickets.forEach((t) => {
+      const cur = byBranch.get(t.branchId) || { name: t.branch, revenue: 0, tickets: 0 }
+      cur.revenue += t.total
+      cur.tickets += 1
+      byBranch.set(t.branchId, cur)
+    })
+    const branches = [...byBranch.values()]
+      .map((b) => ({ ...b, avgTicket: b.tickets > 0 ? b.revenue / b.tickets : 0, share: totalSales > 0 ? (b.revenue / totalSales) * 100 : 0 }))
+      .sort((a, b) => b.revenue - a.revenue)
+
+    const best = branches[0]
+    const worst = branches[branches.length - 1]
+
+    return { totalSales, tickets: tickets.length, avgTicket, previousComparison: pct(totalSales, prevTotal), dailySales, branches, best, worst }
+  }, [current.tickets, previous.tickets, days, from])
+
+  const cmp = stats.previousComparison
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <RefreshCw className="h-8 w-8 animate-spin text-cyan-500" />
+      </div>
+    )
   }
 
-  const salesPerM2OverTime = Array.from({ length: 30 }, (_, i) => ({
-    date: `${i + 1}/12`,
-    value: 2500 + Math.random() * 800,
-    benchmark: benchmark,
-  }))
-
-  const branchComparison = [
-    { branch: "Sucursal Centro", salesPerM2: 2847, area: 150, color: "#06b6d4" },
-    { branch: "Sucursal Norte", salesPerM2: 2456, area: 180, color: "#8b5cf6" },
-    { branch: "Sucursal Sur", salesPerM2: 2198, area: 200, color: "#10b981" },
-    { branch: "Sucursal Oeste", salesPerM2: 3012, area: 120, color: "#f59e0b" },
-  ]
-
-  const performanceScore = ((Number.parseFloat(kpis.salesPerM2.value.replace(/[$,]/g, "")) / benchmark) * 100).toFixed(
-    1,
-  )
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
-      <DemoDataBanner />
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Productividad del Local</h1>
-        <p className="text-gray-400">Análisis de eficiencia por metro cuadrado de superficie</p>
-      </div>
-
-      {/* Global Filters */}
-      <div className="mb-8">
-        <GlobalFiltersComponent filters={filters} onChange={setFilters} />
-      </div>
-
-      {/* Store Info Card */}
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-gray-400 text-sm mb-1">Superficie Total</div>
-            <div className="text-3xl font-bold text-white">{storeArea} m²</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-400 text-sm mb-1">Ventas Totales</div>
-            <div className="text-3xl font-bold text-cyan-400">$427,050</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-400 text-sm mb-1">Benchmark Industria</div>
-            <div className="text-3xl font-bold text-gray-400">${benchmark}/m²</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-400 text-sm mb-1">Estado</div>
-            <div className="text-2xl font-bold text-green-400 flex items-center justify-center gap-2">
-              <Activity className="w-6 h-6" />
-              Por encima
-            </div>
-          </div>
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Productividad por Local</h1>
+          <p className="mt-1 text-gray-400">Ventas, tickets y rendimiento de cada sucursal, con tus datos reales</p>
         </div>
-      </Card>
-
-      {/* KPIs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KPICard
-          title="Ventas por m²"
-          value={kpis.salesPerM2.value}
-          change={kpis.salesPerM2.change}
-          changeLabel="vs período anterior"
-          icon={DollarSign}
-          sparklineData={kpis.salesPerM2.sparkline}
-        />
-        <KPICard
-          title="Tickets por m²"
-          value={kpis.ticketsPerM2.value}
-          change={kpis.ticketsPerM2.change}
-          changeLabel="vs período anterior"
-          icon={ShoppingCart}
-          sparklineData={kpis.ticketsPerM2.sparkline}
-        />
-        <KPICard
-          title="Performance vs Benchmark"
-          value={kpis.performance.value}
-          change={kpis.performance.change}
-          changeLabel="del benchmark"
-          icon={TrendingUp}
-          sparklineData={kpis.performance.sparkline}
-        />
-        <KPICard
-          title="Eficiencia"
-          value={kpis.efficiency.value}
-          change={kpis.efficiency.change}
-          changeLabel="clasificación"
-          icon={Activity}
-          sparklineData={kpis.efficiency.sparkline}
-        />
+        <div className="flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-[#0a0f1a] p-1">
+          {["7d", "30d", "90d"].map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Ventas por m² - Tendencia" subtitle="Resultado real frente al benchmark">
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          No se pudieron cargar las ventas: {error}
+        </div>
+      )}
+      {!error && stats.tickets === 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+          No hay ventas en los últimos {days} días.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20">
+            <DollarSign className="h-6 w-6 text-cyan-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.totalSales)}</p>
+          <p className="text-sm text-gray-400">Ventas Totales</p>
+          {cmp !== undefined && (
+            <p className={`mt-1 text-xs ${cmp >= 0 ? "text-green-400" : "text-red-400"}`}>
+              {cmp >= 0 ? "+" : ""}
+              {cmp.toFixed(1)}% vs {days} días anteriores
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/20">
+            <ShoppingCart className="h-6 w-6 text-yellow-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{stats.tickets.toLocaleString("es-AR")}</p>
+          <p className="text-sm text-gray-400">Tickets</p>
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
+            <TrendingUp className="h-6 w-6 text-green-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.avgTicket)}</p>
+          <p className="text-sm text-gray-400">Ticket Promedio</p>
+        </div>
+
+        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
+            <Building2 className="h-6 w-6 text-purple-400" />
+          </div>
+          <p className="mb-1 text-3xl font-bold text-white">{stats.branches.length}</p>
+          <p className="text-sm text-gray-400">Sucursales con ventas</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartCard title="Ventas - Tendencia" subtitle={`Últimos ${days} días`}>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={salesPerM2OverTime} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={stats.dailySales} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 {chartDefs()}
                 <CartesianGrid {...gridProps} />
                 <XAxis dataKey="date" {...axisProps} dy={8} interval="preserveStartEnd" minTickGap={24} />
-                <YAxis {...axisProps} width={52} />
-                <Tooltip cursor={cursorLine} content={<ChartTooltip />} />
-                <Legend {...legendProps} />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip cursor={cursorLine} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
                 <Area
                   type="monotone"
                   dataKey="value"
-                  name="Real"
+                  name="Ventas"
                   stroke={PALETTE.cyan}
                   strokeWidth={2.5}
                   fill={areaFill("cyan")}
@@ -175,99 +178,88 @@ export default function ProductividadLocalPage() {
                   activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
                   {...ANIMATION}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="benchmark"
-                  name="Benchmark"
-                  stroke={PALETTE.rose}
-                  strokeWidth={2}
-                  strokeDasharray="6 6"
-                  dot={false}
-                  {...ANIMATION}
-                />
-              </ComposedChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title="Comparación por Sucursal" subtitle="Ventas por m² de cada local">
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={branchComparison} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
-                {chartDefs()}
-                <CartesianGrid {...gridProps} horizontal={false} vertical />
-                <XAxis type="number" {...axisProps} />
-                <YAxis dataKey="branch" type="category" {...axisProps} width={110} />
-                <Tooltip cursor={cursorBar} content={<ChartTooltip />} />
-                <Bar dataKey="salesPerM2" name="Ventas por m²" radius={[0, 8, 8, 0]} maxBarSize={30} {...ANIMATION}>
-                  {branchComparison.map((entry, index) => (
-                    <Cell key={`bar-${index}`} fill={entry.color} fillOpacity={0.92} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <ChartCard title="Ventas por Sucursal" subtitle="Comparación del período">
+          {stats.branches.length === 0 ? (
+            <EmptyChart />
+          ) : (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.branches} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+                  {chartDefs()}
+                  <CartesianGrid {...gridProps} horizontal={false} vertical />
+                  <XAxis type="number" {...axisProps} tickFormatter={moneyTick} />
+                  <YAxis dataKey="name" type="category" {...axisProps} width={110} />
+                  <Tooltip cursor={cursorBar} content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
+                  <Bar dataKey="revenue" name="Ventas" radius={[0, 8, 8, 0]} maxBarSize={30} {...ANIMATION}>
+                    {stats.branches.map((_, i) => (
+                      <Cell key={i} fill={barFill(COLOR_ORDER[i % COLOR_ORDER.length])} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </ChartCard>
-
-        {/* Performance Gauge */}
-        <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-            Indicador de Performance
-          </h3>
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="relative w-64 h-32">
-              {/* Gauge Background */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-full bg-gradient-to-r from-red-500/20 via-yellow-500/20 to-green-500/20 rounded-t-full" />
-              </div>
-              {/* Gauge Needle */}
-              <div
-                className="absolute bottom-0 left-1/2 w-2 h-24 bg-cyan-400 origin-bottom transition-transform duration-1000"
-                style={{
-                  transform: `translateX(-50%) rotate(${-90 + (Number.parseFloat(performanceScore) / 150) * 180}deg)`,
-                }}
-              />
-              {/* Center Circle */}
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-gray-800 rounded-full border-4 border-cyan-400" />
-            </div>
-            <div className="mt-8 text-center">
-              <div className="text-5xl font-bold text-white mb-2">{performanceScore}%</div>
-              <div className="text-gray-400">del benchmark de industria</div>
-            </div>
-          </div>
-        </Card>
       </div>
 
-      {/* Insights */}
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mt-6">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
-          Análisis de Productividad
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/30">
-            <div className="text-green-400 font-semibold mb-2">Performance Superior</div>
-            <p className="text-gray-300 text-sm">
-              Tu local está 13.9% por encima del benchmark de la industria. Esto indica excelente aprovechamiento del
-              espacio.
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+        <h3 className="mb-4 text-lg font-semibold text-white">Detalle por Sucursal</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 text-left text-gray-400">
+                <th className="py-2 pr-4 font-medium">Sucursal</th>
+                <th className="py-2 pr-4 text-right font-medium">Ventas</th>
+                <th className="py-2 pr-4 text-right font-medium">Tickets</th>
+                <th className="py-2 pr-4 text-right font-medium">Ticket Promedio</th>
+                <th className="py-2 pl-4 text-right font-medium">% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.branches.map((b, i) => (
+                <tr key={b.name + i} className="border-b border-gray-800/60 hover:bg-white/[0.02]">
+                  <td className="py-2.5 pr-4 font-medium text-white">{b.name}</td>
+                  <td className="py-2.5 pr-4 text-right text-gray-200">{formatCurrency(b.revenue)}</td>
+                  <td className="py-2.5 pr-4 text-right text-gray-300">{b.tickets}</td>
+                  <td className="py-2.5 pr-4 text-right text-gray-300">{formatCurrency(b.avgTicket)}</td>
+                  <td className="py-2.5 pl-4 text-right text-cyan-400">{b.share.toFixed(1)}%</td>
+                </tr>
+              ))}
+              {stats.branches.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">
+                    Sin ventas en este período.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {stats.branches.length > 1 && stats.best && stats.worst && stats.best.name !== stats.worst.name && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4">
+            <div className="mb-2 font-semibold text-green-400">Mejor desempeño</div>
+            <p className="text-sm text-gray-300">
+              <span className="font-medium text-white">{stats.best.name}</span> lidera con {formatCurrency(stats.best.revenue)} (
+              {stats.best.share.toFixed(1)}% del total) en los últimos {days} días.
             </p>
           </div>
-          <div className="bg-cyan-500/10 p-4 rounded-lg border border-cyan-500/30">
-            <div className="text-cyan-400 font-semibold mb-2">Oportunidad</div>
-            <p className="text-gray-300 text-sm">
-              La Sucursal Oeste tiene el mejor rendimiento con $3,012/m². Analizar sus prácticas podría optimizar otras
-              sucursales.
-            </p>
-          </div>
-          <div className="bg-purple-500/10 p-4 rounded-lg border border-purple-500/30">
-            <div className="text-purple-400 font-semibold mb-2">Recomendación</div>
-            <p className="text-gray-300 text-sm">
-              La Sucursal Sur podría mejorar su layout. Con 200m², genera menos ventas/m² que locales más pequeños.
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
+            <div className="mb-2 font-semibold text-cyan-400">Oportunidad</div>
+            <p className="text-sm text-gray-300">
+              <span className="font-medium text-white">{stats.worst.name}</span> es la que menos vendió del grupo, con{" "}
+              {formatCurrency(stats.worst.revenue)}. Puede valer la pena revisar qué hace distinto {stats.best.name}.
             </p>
           </div>
         </div>
-      </Card>
+      )}
     </div>
   )
 }

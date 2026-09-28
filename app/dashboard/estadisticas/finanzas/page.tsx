@@ -18,6 +18,9 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useTheme } from "@/lib/theme-context"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { chartDefs, ChartTooltip, PALETTE, ANIMATION, areaFill, axisProps, cursorLine, gridProps } from "@/components/charts/chart-theme"
+import { moneyTick } from "@/lib/analytics/tickets"
 
 interface FinanceStats {
   totalRevenue: number
@@ -50,16 +53,25 @@ export default function FinanzasEstadisticasPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: kioscos } = await supabase
-        .from("kioscos")
-        .select("id")
-        .eq("owner_id", user.id)
-      
-      if (!kioscos || kioscos.length === 0) {
+      // Sucursales propias, o la del empleado si el que entró no es el dueño.
+      let kioskoIds: string[] = []
+      const { data: owned } = await supabase.from("kioscos").select("id").eq("owner_id", user.id)
+      if (owned && owned.length > 0) {
+        kioskoIds = owned.map((k) => k.id)
+      } else {
+        const { data: emp } = await supabase
+          .from("employees")
+          .select("kiosko_id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle()
+        if (emp?.kiosko_id) kioskoIds = [emp.kiosko_id]
+      }
+
+      if (kioskoIds.length === 0) {
         setLoading(false)
         return
       }
-      const kioskoIds = kioscos.map(k => k.id)
 
       // Calculate date range
       const days = period === "7d" ? 7 : period === "30d" ? 30 : 90
@@ -97,43 +109,69 @@ export default function FinanzasEstadisticasPage() {
         categoryCosts.set(category, (categoryCosts.get(category) || 0) + cost)
       })
 
-      // Get cash register expenses
-      const { data: expenses } = await supabase
+      // Gastos operativos reales: movimientos de caja que son egresos operativos. Se dejan afuera
+      // los retiros del dueño (no son un gasto del negocio) y los pagos a proveedores (ya están
+      // contados como costo de ventas / cuentas por pagar), para no duplicarlos.
+      const { data: expenseMovements } = await supabase
         .from("cash_register_transactions")
-        .select("amount, created_at")
-        .eq("type", "expense")
+        .select("amount, type, direction, cash_registers!inner(kiosko_id)")
+        .eq("direction", "out")
+        .in("type", ["expense", "other_out", "employee_advance"])
+        .in("cash_registers.kiosko_id", kioskoIds)
         .gte("created_at", startDate.toISOString())
 
-      const totalExpenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
+      const totalExpenses = expenseMovements?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
 
-      // Get purchases (payables/costs)
+      // Cuentas por pagar reales: lo que falta pagar de las compras no saldadas (payment_status,
+      // no el estado de entrega de la compra que es un campo distinto).
       const { data: purchases } = await supabase
         .from("purchases")
-        .select("total_amount, status, created_at")
+        .select("total_amount, total_paid, payment_status, created_at")
         .in("kiosko_id", kioskoIds)
-        .gte("created_at", startDate.toISOString())
+        .neq("payment_status", "paid")
 
-      const payables = purchases?.filter(p => p.status === "pending")
-        .reduce((sum, p) => sum + Number(p.total_amount), 0) || 0
+      const payables = purchases?.reduce((sum, p) => sum + (Number(p.total_amount) - Number(p.total_paid || 0)), 0) || 0
 
-      // Get current cash in registers
+      // Efectivo en caja real: para cada caja abierta, lo que abrió + ventas en efectivo desde que
+      // abrió + movimientos de ingreso - movimientos de egreso (misma cuenta que usa el módulo Caja).
       const { data: openRegisters } = await supabase
         .from("cash_registers")
-        .select("opening_balance, closing_balance")
+        .select("id, kiosko_id, opening_balance, opened_at")
         .in("kiosko_id", kioskoIds)
         .eq("status", "open")
 
       let cashInHand = 0
-      openRegisters?.forEach(r => {
-        cashInHand += Number(r.opening_balance) || 0
-      })
-      // Add today's cash sales
-      const todaySales = sales?.filter(s => {
-        const saleDate = new Date(s.created_at).toDateString()
-        return saleDate === new Date().toDateString()
-      })
-      cashInHand += todaySales?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
-      cashInHand -= totalExpenses
+      if (openRegisters && openRegisters.length > 0) {
+        const registerIds = openRegisters.map((r) => r.id)
+        const [{ data: movements }, cashSalesResults] = await Promise.all([
+          supabase.from("cash_register_transactions").select("cash_register_id, amount, direction").in("cash_register_id", registerIds),
+          Promise.all(
+            openRegisters.map((r) =>
+              supabase
+                .from("sales")
+                .select("total_amount")
+                .eq("kiosko_id", r.kiosko_id)
+                .eq("payment_method", "cash")
+                .or("status.is.null,status.eq.completed")
+                .gte("created_at", r.opened_at),
+            ),
+          ),
+        ])
+
+        const movByRegister = new Map<string, { in: number; out: number }>()
+        movements?.forEach((m) => {
+          const cur = movByRegister.get(m.cash_register_id) || { in: 0, out: 0 }
+          if (m.direction === "in") cur.in += Number(m.amount) || 0
+          else cur.out += Number(m.amount) || 0
+          movByRegister.set(m.cash_register_id, cur)
+        })
+
+        openRegisters.forEach((r, i) => {
+          const cashSales = cashSalesResults[i].data?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
+          const mov = movByRegister.get(r.id) || { in: 0, out: 0 }
+          cashInHand += (Number(r.opening_balance) || 0) + cashSales + mov.in - mov.out
+        })
+      }
 
       // Revenue by day
       const dayMap = new Map<string, { revenue: number; costs: number }>()
@@ -307,6 +345,58 @@ export default function FinanzasEstadisticasPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Tendencia de Ingresos */}
+      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Tendencia de Ingresos</h3>
+        {!stats?.revenueByDay || stats.revenueByDay.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">Sin ventas en este período</p>
+        ) : (
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.revenueByDay} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                {chartDefs()}
+                <CartesianGrid {...gridProps} />
+                <XAxis
+                  dataKey="date"
+                  {...axisProps}
+                  dy={8}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                  tickFormatter={(v) => {
+                    const [, m, d] = String(v).split("-")
+                    return `${d}/${m}`
+                  }}
+                />
+                <YAxis {...axisProps} tickFormatter={moneyTick} width={52} />
+                <Tooltip
+                  cursor={cursorLine}
+                  content={
+                    <ChartTooltip
+                      valueFormatter={(v) => formatCurrency(v)}
+                      labelFormatter={(v) => {
+                        const [, m, d] = String(v).split("-")
+                        return `${d}/${m}`
+                      }}
+                    />
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Ingresos"
+                  stroke={PALETTE.cyan}
+                  strokeWidth={2.5}
+                  fill={areaFill("cyan")}
+                  dot={false}
+                  activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  {...ANIMATION}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Costos por Categoría */}

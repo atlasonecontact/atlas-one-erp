@@ -94,53 +94,89 @@ export function FinancialKPIs({ data, isLoading = false }: FinancialKPIsProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: kioscos } = await supabase
-        .from("kioscos")
-        .select("id")
-        .eq("owner_id", user.id)
-      
-      if (!kioscos || kioscos.length === 0) {
+      // Sucursales propias, o la del empleado si el que entró no es el dueño.
+      let kioskoIds: string[] = []
+      const { data: owned } = await supabase.from("kioscos").select("id").eq("owner_id", user.id)
+      if (owned && owned.length > 0) {
+        kioskoIds = owned.map((k) => k.id)
+      } else {
+        const { data: emp } = await supabase
+          .from("employees")
+          .select("kiosko_id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle()
+        if (emp?.kiosko_id) kioskoIds = [emp.kiosko_id]
+      }
+
+      if (kioskoIds.length === 0) {
         setLoading(false)
         return
       }
-      const kioskoIds = kioscos.map(k => k.id)
 
-      // Calculate gross margin from products
-      const { data: products } = await supabase
-        .from("products")
-        .select("price, cost")
-        .in("kiosko_id", kioskoIds)
+      const days = 30
+      const periodStart = new Date()
+      periodStart.setDate(periodStart.getDate() - days)
 
-      let totalRevenue = 0
-      let totalCost = 0
-      products?.forEach(p => {
-        totalRevenue += Number(p.price) || 0
-        totalCost += Number(p.cost) || 0
-      })
-      
-      const grossMargin = totalRevenue > 0 
-        ? Math.round(((totalRevenue - totalCost) / totalRevenue) * 100 * 10) / 10
-        : 0
-
-      // Calculate break even from monthly sales
       const monthStart = new Date()
       monthStart.setDate(1)
       monthStart.setHours(0, 0, 0, 0)
-      
-      const { data: sales } = await supabase
-        .from("sales")
-        .select("total_amount")
-        .in("kiosko_id", kioskoIds)
-        .neq("status", "cancelled")
-        .gte("created_at", monthStart.toISOString())
 
-      const totalSales = sales?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
+      const [{ data: sales }, { data: monthSales }, { data: products }, { data: purchases }] = await Promise.all([
+        supabase
+          .from("sales")
+          .select("id, total_amount")
+          .in("kiosko_id", kioskoIds)
+          .neq("status", "cancelled")
+          .gte("created_at", periodStart.toISOString()),
+        supabase
+          .from("sales")
+          .select("total_amount")
+          .in("kiosko_id", kioskoIds)
+          .neq("status", "cancelled")
+          .gte("created_at", monthStart.toISOString()),
+        supabase.from("products").select("stock_quantity, cost").in("kiosko_id", kioskoIds),
+        supabase
+          .from("purchases")
+          .select("total_amount, total_paid, payment_status")
+          .in("kiosko_id", kioskoIds)
+          .neq("payment_status", "paid"),
+      ])
+
+      // Margen bruto real: ingresos y costo de lo efectivamente vendido en los últimos 30 días
+      // (no el margen de catálogo, que no refleja qué se vendió más).
+      const saleIds = (sales || []).map((s) => s.id)
+      let totalRevenue = 0
+      let cogs = 0
+      if (saleIds.length > 0) {
+        const { data: saleItems } = await supabase
+          .from("sale_items")
+          .select("sale_id, quantity, unit_price, cost_price, products(cost)")
+          .in("sale_id", saleIds)
+        saleItems?.forEach((it: any) => {
+          const qty = Number(it.quantity) || 0
+          const unitCost = Number(it.cost_price ?? it.products?.cost ?? 0) || 0
+          totalRevenue += qty * (Number(it.unit_price) || 0)
+          cogs += qty * unitCost
+        })
+      }
+      const grossMargin = totalRevenue > 0 ? Math.round(((totalRevenue - cogs) / totalRevenue) * 100 * 10) / 10 : 0
+
+      const totalSales = monthSales?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
       const breakEvenPoint = Math.round(totalSales * 0.4) // Estimate based on 40% of sales
+
+      // Ciclo de conversión de efectivo = días de inventario + días de cobro - días de pago a proveedores.
+      // No hay cuenta corriente de clientes (fiado) en el sistema todavía, así que días de cobro = 0.
+      const inventoryValue = products?.reduce((sum, p) => sum + (Number(p.stock_quantity) || 0) * (Number(p.cost) || 0), 0) || 0
+      const payables = purchases?.reduce((sum, p) => sum + (Number(p.total_amount) - Number(p.total_paid || 0)), 0) || 0
+      const daysInventoryOutstanding = cogs > 0 ? (inventoryValue / cogs) * days : 0
+      const daysPayableOutstanding = cogs > 0 ? (payables / cogs) * days : 0
+      const cashConversionCycle = Math.round(daysInventoryOutstanding - daysPayableOutstanding)
 
       setKpiData({
         grossMargin,
         breakEvenPoint,
-        cashConversionCycle: 30, // Average estimate
+        cashConversionCycle,
       })
     } catch (err) {
       console.error("Error loading financial KPIs:", err)
