@@ -55,13 +55,9 @@ export function TermsGate() {
       const res = await fetch("/api/legal/accept", { method: "POST" })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const missingColumn = String(body?.error || "").toLowerCase().includes("column")
-        const missingTable = String(body?.error || "").toLowerCase().includes("user_legal_acceptances")
-        setError(
-          missingColumn || missingTable
-            ? "Falta aplicar las migraciones de base de datos (scripts 220 y 221) antes de poder guardar esto."
-            : `No pudimos guardar tu aceptación: ${body?.error || "error desconocido"}`,
-        )
+        // Mostramos siempre el error real del servidor (no un texto adivinado), para no
+        // quedarnos "a ciegas" si la causa no es la migración de base de datos.
+        setError(`No pudimos guardar tu aceptación (${body?.error || `HTTP ${res.status}`}).`)
         return
       }
       setVisible(false)
