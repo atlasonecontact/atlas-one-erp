@@ -43,6 +43,7 @@ import {
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
+import { TermsGate } from "@/components/dashboard/terms-gate"
 import { cn } from "@/lib/utils"
 import { AtlasLogo } from "@/components/atlas-logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -831,6 +832,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider>
+      <TermsGate />
       <div className="flex h-screen overflow-hidden">
         <DashboardSidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
