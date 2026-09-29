@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmployeeModal } from "@/components/employees/employee-modal"
-import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, Eye, EyeOff, Clock, Phone, Calendar, Trash2 } from "lucide-react"
+import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, KeyRound, Clock, Phone, Calendar, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import type { EmployeePermissions } from "@/lib/hooks/use-employee-permissions"
@@ -19,7 +19,7 @@ type Employee = {
   id: string
   name: string
   username: string
-  pin?: string
+  pin_hash?: string | null
   phone?: string
   document_id?: string
   address?: string
@@ -45,7 +45,6 @@ export default function EmpleadosPage() {
   const [selectedKiosko, setSelectedKiosko] = useState<string>("")
   const [kioscos, setKioscos] = useState<any[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [showPinFor, setShowPinFor] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const supabase = createClient()
@@ -138,10 +137,8 @@ export default function EmpleadosPage() {
   }
 
   const copyCredentials = async (employee: Employee) => {
-    let text = `Empleado: ${employee.name}\nUsuario: ${employee.username}`
-    if (employee.pin) {
-      text += `\nPIN: ${employee.pin}`
-    }
+    // El PIN está hasheado: ya no se puede recuperar el valor original para copiarlo.
+    const text = `Empleado: ${employee.name}\nUsuario: ${employee.username}`
     await navigator.clipboard.writeText(text)
     setCopiedId(employee.id)
     setTimeout(() => setCopiedId(null), 2000)
@@ -348,21 +345,11 @@ export default function EmpleadosPage() {
               </div>
 
               <div className="space-y-2 mb-4 text-sm">
-                {/* PIN */}
-                {employee.pin && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">PIN:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-cyan-400 tracking-widest">
-                        {showPinFor === employee.id ? employee.pin : "••••"}
-                      </span>
-                      <button
-                        onClick={() => setShowPinFor(showPinFor === employee.id ? null : employee.id)}
-                        className="text-gray-400 hover:text-white p-1"
-                      >
-                        {showPinFor === employee.id ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </button>
-                    </div>
+                {/* PIN: no se puede mostrar el valor (está hasheado), sólo si tiene uno configurado */}
+                {employee.pin_hash && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <KeyRound className="w-3 h-3" />
+                    <span className="text-gray-300">PIN configurado</span>
                   </div>
                 )}
 
@@ -427,7 +414,7 @@ export default function EmpleadosPage() {
                   ) : (
                     <>
                       <Copy className="w-4 h-4 mr-2" />
-                      {employee.pin ? "Copiar Datos" : "Copiar Usuario"}
+                      Copiar Usuario
                     </>
                   )}
                 </Button>

@@ -20,9 +20,18 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
+
+    // El PIN nunca se guarda en texto plano: se hashea en la base (pgcrypto/bcrypt,
+    // scripts/223_hash_employee_pins.sql) antes de escribirlo.
+    const { data: pinHash, error: hashError } = await admin.rpc("hash_pin", { p_pin: pin })
+    if (hashError || !pinHash) {
+      console.error("[api/employees/set-pin] hash_pin error:", hashError)
+      return NextResponse.json({ error: "No se pudo procesar el PIN" }, { status: 500 })
+    }
+
     const { error } = await admin
       .from("employees")
-      .update({ pin, updated_at: new Date().toISOString() })
+      .update({ pin_hash: pinHash, updated_at: new Date().toISOString() })
       .eq("user_id", user.id)
 
     if (error) {
