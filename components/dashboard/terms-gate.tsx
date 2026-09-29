@@ -27,12 +27,16 @@ export function TermsGate() {
       } = await supabase.auth.getUser()
       if (!user || cancelled) return
 
-      const { data: profile } = await supabase
+      const { data: profile, error: selectError } = await supabase
         .from("profiles")
         .select("terms_accepted_at, terms_version")
         .eq("id", user.id)
         .maybeSingle()
       if (cancelled) return
+
+      if (selectError) {
+        console.error("[TermsGate] No se pudo leer profiles.terms_accepted_at:", selectError)
+      }
 
       if (!profile?.terms_accepted_at || profile.terms_version !== TERMS_VERSION) {
         setUserId(user.id)
@@ -57,7 +61,13 @@ export function TermsGate() {
       .eq("id", userId)
     setSaving(false)
     if (updError) {
-      setError("No pudimos guardar tu aceptación. Probá de nuevo.")
+      console.error("[TermsGate] No se pudo guardar la aceptación:", updError)
+      const missingColumn = updError.message?.toLowerCase().includes("column")
+      setError(
+        missingColumn
+          ? "Falta aplicar la migración de base de datos (script 220_profiles_terms_acceptance.sql) antes de poder guardar esto."
+          : `No pudimos guardar tu aceptación: ${updError.message || "error desconocido"}`,
+      )
       return
     }
     setVisible(false)
