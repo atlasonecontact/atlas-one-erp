@@ -286,6 +286,9 @@ export default function ProductosPage() {
     const { error } = await supabase.from("products").delete().eq("id", id)
     if (!error) {
       setProducts((prev) => prev.filter((p) => p.id !== id))
+    } else {
+      console.error("[productos] Error al borrar:", error)
+      toast.error("No se pudo borrar el producto", error.message)
     }
   }
 
