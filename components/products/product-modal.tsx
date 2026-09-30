@@ -260,6 +260,17 @@ export function ProductModal({
     }
   }
 
+  // Cuando este modal se abre desde "Buscar con scanner" de la lista con un código que
+  // todavía no está en el inventario (initialBarcode), hay que buscarlo ya mismo en el
+  // catálogo compartido / Open Food Facts / UPC — si no, el nombre queda en blanco y
+  // parece que el código "no se reconoce" aunque sí esté en esas bases.
+  useEffect(() => {
+    if (open && initialBarcode && !product) {
+      lookupExternal(initialBarcode)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialBarcode, product])
+
   const handleBarcodeScanned = (code: string) => {
     setShowScanner(false)
     checkBarcode(code)
