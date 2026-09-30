@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { Cart } from "@/components/pos/cart"
 import { ChoiceModal, type ChoiceOption } from "@/components/pos/choice-modal"
+import { SurchargeModal, isSurchargeActiveNow, DEFAULT_SURCHARGE, type SurchargeConfig } from "@/components/pos/surcharge-modal"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
-import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X } from "lucide-react"
+import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X, Moon } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useScanner } from "@/lib/hooks/use-scanner"
@@ -157,9 +158,30 @@ export default function VentasPage() {
   const [arcaStatus, setArcaStatus] = useState<{ ready: boolean; reason?: string; environment?: string }>(
     { ready: false, reason: "Cargando configuración de ARCA..." },
   )
+  // Recargo automático por franja horaria (ej: +10% de 22 a 4hs), aplicado a todos los productos.
+  const [surchargeConfig, setSurchargeConfig] = useState<SurchargeConfig | null>(null)
+  const [showSurchargeModal, setShowSurchargeModal] = useState(false)
+  const [nowTick, setNowTick] = useState(() => new Date())
 
   const supabase = createClient()
   const toast = useToast()
+
+  // Revisa cada 30s si entramos o salimos de la franja de recargo, sin tener que recargar la página.
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const surchargeActive = useMemo(() => isSurchargeActiveNow(surchargeConfig, nowTick), [surchargeConfig, nowTick])
+
+  // Con el recargo activo, el precio que se muestra y el que se cobra (y por lo tanto el que
+  // queda en el ticket) ya vienen aumentados: todo lo que sigue usa products.price como si fuera
+  // el precio real de venta en este momento.
+  const displayProducts = useMemo(() => {
+    if (!surchargeActive || !surchargeConfig) return products
+    const mult = 1 + surchargeConfig.percentage / 100
+    return products.map((p) => ({ ...p, price: Math.round(p.price * mult) }))
+  }, [products, surchargeActive, surchargeConfig])
 
   useEffect(() => {
     const scanParam = searchParams.get("scan")
@@ -222,14 +244,15 @@ export default function VentasPage() {
         if (typeof window !== "undefined" && window.innerWidth >= 1024) searchInputRef.current?.focus()
       }
 
-      const product = products.find((p) => p.barcode === barcode || p.id === barcode || p.sku === barcode)
+      // displayProducts (no products): ya trae el precio con el recargo horario aplicado si corresponde.
+      const product = displayProducts.find((p) => p.barcode === barcode || p.id === barcode || p.sku === barcode)
 
       if (product) {
         addToCart(product)
         toast.success("Producto agregado", `${product.name} x1`)
       } else {
         // If not found, search by name (partial match)
-        const matchByName = products.find((p) => p.name.toLowerCase().includes(barcode.toLowerCase()))
+        const matchByName = displayProducts.find((p) => p.name.toLowerCase().includes(barcode.toLowerCase()))
 
         if (matchByName) {
           addToCart(matchByName)
@@ -243,7 +266,7 @@ export default function VentasPage() {
       }
       refocus()
     },
-    [products, toast, router],
+    [displayProducts, toast, router],
   )
 
   const {
@@ -306,6 +329,7 @@ export default function VentasPage() {
       loadProducts(employeeData.kiosko_id)
       loadPromotions(employeeData.kiosko_id)
       loadOpenRegister(employeeData.kiosko_id)
+      loadSurcharge(employeeData.kiosko_id)
     } else {
       const { data: kioscos } = await supabase
         .from("kioscos")
@@ -321,6 +345,7 @@ export default function VentasPage() {
         loadProducts(kioscos[0].id)
         loadPromotions(kioscos[0].id)
         loadOpenRegister(kioscos[0].id)
+        loadSurcharge(kioscos[0].id)
         loadStaff(kioscos[0].id)
       } else {
         setIsLoading(false)
@@ -526,6 +551,27 @@ export default function VentasPage() {
     [supabase, toast],
   )
 
+  const loadSurcharge = useCallback(
+    async (kiosko_id: string) => {
+      const { data, error } = await supabase
+        .from("price_surcharges")
+        .select("enabled, percentage, start_time, end_time")
+        .eq("kiosko_id", kiosko_id)
+        .maybeSingle()
+      if (error || !data) {
+        setSurchargeConfig(null)
+        return
+      }
+      setSurchargeConfig({
+        enabled: data.enabled,
+        percentage: Number(data.percentage) || 0,
+        start_time: String(data.start_time).slice(0, 5),
+        end_time: String(data.end_time).slice(0, 5),
+      })
+    },
+    [supabase],
+  )
+
   const loadArcaConfig = useCallback(
     async (kiosko_id: string) => {
       try {
@@ -660,7 +706,10 @@ export default function VentasPage() {
     [promotions, products],
   )
 
-  const sellableProducts = useMemo(() => [...products, ...promotionProducts], [products, promotionProducts])
+  const sellableProducts = useMemo(
+    () => [...displayProducts, ...promotionProducts],
+    [displayProducts, promotionProducts],
+  )
 
   // Se derivan de los productos reales del kiosko (no de una lista fija) para
   // que los tabs del POS siempre coincidan con las categorías que existen de
@@ -1127,7 +1176,32 @@ export default function VentasPage() {
                 <span className="hidden sm:inline">Historial</span>
               </Button>
             </Link>
+            {userRole !== "employee" && (
+              <Button
+                variant="outline"
+                onClick={() => setShowSurchargeModal(true)}
+                className={cn(
+                  "gap-2 bg-transparent h-11 lg:h-10",
+                  surchargeActive
+                    ? "border-violet-500/40 text-violet-300 hover:bg-violet-500/10"
+                    : "border-cyan-500/20 text-gray-400 hover:text-white",
+                )}
+              >
+                <Moon className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {surchargeActive ? `Recargo +${surchargeConfig?.percentage}%` : "Recargo"}
+                </span>
+              </Button>
+            )}
           </div>
+
+          {surchargeActive && surchargeConfig && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-sm text-violet-300">
+              <Moon className="h-4 w-4 shrink-0" />
+              Recargo nocturno activo: +{surchargeConfig.percentage}% sobre todos los productos (hasta las{" "}
+              {surchargeConfig.end_time}).
+            </div>
+          )}
 
           {/* Categorias: se acomodan en varias filas, sin scroll lateral */}
           <div className="flex flex-wrap gap-2 mb-4 lg:mb-6">
@@ -1353,6 +1427,14 @@ export default function VentasPage() {
         options={getChoiceOptions()}
         onSelect={handleChoiceSelected}
         onClose={() => setChoicePromo(null)}
+      />
+
+      <SurchargeModal
+        open={showSurchargeModal}
+        onClose={() => setShowSurchargeModal(false)}
+        kioskoId={kioskoId}
+        config={surchargeConfig}
+        onSaved={setSurchargeConfig}
       />
 
       <PaymentModal
