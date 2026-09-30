@@ -418,7 +418,7 @@ export default function LandingPage() {
                     variant="outline"
                     className="px-8 py-6 text-lg border-white/20 hover:bg-white/5 text-white bg-transparent"
                   >
-                    <a href="https://wa.me/5491123085611" target="_blank" rel="noopener noreferrer">
+                    <a href="https://wa.me/5491173678389" target="_blank" rel="noopener noreferrer">
                       WhatsApp
                     </a>
                   </Button>
