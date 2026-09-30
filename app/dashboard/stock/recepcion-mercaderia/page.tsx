@@ -954,33 +954,39 @@ export default function RecepcionMercaderiaPage() {
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetForm}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
-              >
-                {editingDraftId ? "Cancelar edición" : "Limpiar"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
-                className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? "Guardando..." : "Guardar borrador"}
-              </Button>
-              <Button
-                type="submit"
-                disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
-                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Confirmar recepción
-              </Button>
+            <div className="space-y-2 pt-4">
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                >
+                  {editingDraftId ? "Cancelar edición" : "Limpiar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveDraft}
+                  disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
+                  className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Guardando..." : "Guardar borrador (no suma stock)"}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
+                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Confirmar y sumar al stock
+                </Button>
+              </div>
+              <p className="text-right text-xs text-amber-400/80">
+                "Guardar borrador" no mueve stock todavía. Para que los productos aparezcan en el punto de venta, tenés
+                que usar <span className="font-semibold">"Confirmar y sumar al stock"</span>.
+              </p>
             </div>
           </form>
         </Card>
