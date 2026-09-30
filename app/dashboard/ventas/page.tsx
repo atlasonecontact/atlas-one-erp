@@ -244,25 +244,24 @@ export default function VentasPage() {
         if (typeof window !== "undefined" && window.innerWidth >= 1024) searchInputRef.current?.focus()
       }
 
-      // displayProducts (no products): ya trae el precio con el recargo horario aplicado si corresponde.
+      // displayProducts (no products): ya trae el precio con el recargo horario aplicado si corresponde,
+      // e incluye productos sin stock (para poder avisar bien, en vez de decir "no encontrado").
       const product = displayProducts.find((p) => p.barcode === barcode || p.id === barcode || p.sku === barcode)
+      const matchByName = product ? null : displayProducts.find((p) => p.name.toLowerCase().includes(barcode.toLowerCase()))
+      const found = product || matchByName
 
-      if (product) {
-        addToCart(product)
-        toast.success("Producto agregado", `${product.name} x1`)
-      } else {
-        // If not found, search by name (partial match)
-        const matchByName = displayProducts.find((p) => p.name.toLowerCase().includes(barcode.toLowerCase()))
-
-        if (matchByName) {
-          addToCart(matchByName)
-          toast.success("Producto agregado", `${matchByName.name} x1`)
+      if (found) {
+        if (found.stock <= 0) {
+          toast.warning("Sin stock", `"${found.name}" está cargado pero no tiene stock disponible`)
         } else {
-          toast.warning("Producto no encontrado", `Código: ${barcode}`, {
-            label: "Crear producto con este código",
-            onClick: () => router.push(`/dashboard/productos?new_barcode=${encodeURIComponent(barcode)}`),
-          })
+          addToCart(found)
+          toast.success("Producto agregado", `${found.name} x1`)
         }
+      } else {
+        toast.warning("Producto no encontrado", `Código: ${barcode}`, {
+          label: "Crear producto con este código",
+          onClick: () => router.push(`/dashboard/productos?new_barcode=${encodeURIComponent(barcode)}`),
+        })
       }
       refocus()
     },
@@ -503,11 +502,14 @@ export default function VentasPage() {
   const loadProducts = useCallback(
     async (kiosko_id: string) => {
       try {
+        // Trae TODOS los productos, tengan o no stock: si sólo trajéramos los que tienen
+        // stock > 0, un producto recién creado sin stock cargado directamente no existiría
+        // acá, y ni el escáner ni la grilla lo encontrarían (aunque esté bien guardado en
+        // la base). La grilla ya sabe mostrar "Sin stock" y bloquear el agregado.
         const { data: productsData, error } = await supabase
           .from("products")
           .select("*")
           .eq("kiosko_id", kiosko_id)
-          .gt("stock_quantity", 0)
           .order("name")
 
         if (error) throw error
@@ -521,7 +523,7 @@ export default function VentasPage() {
             stock: p.stock_quantity || 0,
             barcode: p.barcode,
             sku: p.sku,
-            status: p.stock_quantity <= 10 ? "low_stock" : "active",
+            status: p.stock_quantity <= 0 ? "out_of_stock" : p.stock_quantity <= 10 ? "low_stock" : "active",
           }))
           setProducts(mappedProducts)
 
@@ -756,6 +758,7 @@ export default function VentasPage() {
       setChoicePromo(product)
       return
     }
+    if (product.stock <= 0) return
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id)
       if (existing) {
