@@ -1184,12 +1184,25 @@ export default function VentasPage() {
                   "gap-2 bg-transparent h-11 lg:h-10",
                   surchargeActive
                     ? "border-violet-500/40 text-violet-300 hover:bg-violet-500/10"
-                    : "border-cyan-500/20 text-gray-400 hover:text-white",
+                    : surchargeConfig?.enabled
+                      ? "border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+                      : "border-cyan-500/20 text-gray-400 hover:text-white",
                 )}
+                title={
+                  surchargeActive
+                    ? "Recargo activo ahora. Tocá para modificarlo o desactivarlo."
+                    : surchargeConfig?.enabled
+                      ? "Recargo programado, todavía no llegó la hora. Tocá para modificarlo o desactivarlo."
+                      : "Configurar un recargo automático por horario"
+                }
               >
                 <Moon className="w-4 h-4" />
                 <span className="hidden sm:inline">
-                  {surchargeActive ? `Recargo +${surchargeConfig?.percentage}%` : "Recargo"}
+                  {surchargeActive
+                    ? `Recargo activo +${surchargeConfig?.percentage}%`
+                    : surchargeConfig?.enabled
+                      ? `Recargo programado (${surchargeConfig.start_time}-${surchargeConfig.end_time})`
+                      : "Recargo"}
                 </span>
               </Button>
             )}
