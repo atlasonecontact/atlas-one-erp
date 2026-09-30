@@ -484,6 +484,18 @@ export default function ProductosPage() {
       } else if (data) {
         importedCount += data.length
       }
+
+      // Contribuye al catálogo compartido de códigos de barras (mismo criterio que al
+      // guardar un producto a mano): así la próxima vez que alguien escanee alguno de
+      // estos códigos, ya sale reconocido, aunque lo hayan cargado por CSV.
+      const catalogRows = batch
+        .filter((p) => p.barcode && p.name && !/^Producto \d+$/.test(p.name))
+        .map((p) => ({ barcode: p.barcode, name: p.name, category: p.category || null }))
+      if (catalogRows.length > 0) {
+        await supabase
+          .from("barcode_catalog")
+          .upsert(catalogRows, { onConflict: "barcode", ignoreDuplicates: true })
+      }
     }
 
     // Refresh full product list
