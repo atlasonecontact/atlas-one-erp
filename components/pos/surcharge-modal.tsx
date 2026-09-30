@@ -64,7 +64,10 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
   }, [open, config])
 
   const handleSave = async () => {
-    if (!kioskoId) return
+    if (!kioskoId) {
+      toast.error("No se pudo guardar el recargo", "No se encontró tu sucursal todavía, esperá un segundo y probá de nuevo")
+      return
+    }
     setSaving(true)
     try {
       const payload = {
