@@ -406,6 +406,30 @@ export default function ProductosPage() {
         toast.error("Error al guardar", error.message)
       }
     } else {
+      // Si ya existe un producto con este código de barras en este kiosko, no se crea uno
+      // nuevo duplicado: se suma el stock cargado al que ya existía.
+      const dup = product.barcode ? products.find((p) => p.barcode && p.barcode === product.barcode) : undefined
+      if (dup) {
+        const newStock = dup.stock + finalStock
+        const { error: dupError } = await supabase
+          .from("products")
+          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
+          .eq("id", dup.id)
+
+        if (dupError) {
+          toast.error("Error al guardar", dupError.message)
+        } else {
+          setProducts((prev) => prev.map((p) => (p.id === dup.id ? { ...p, stock: newStock } : p)))
+          toast.warning(
+            "Ya existía un producto con ese código",
+            `Se sumaron ${finalStock} unidades a "${dup.name}" (ahora tiene ${newStock}) en vez de crear uno nuevo.`,
+          )
+        }
+        setShowModal(false)
+        setEditingProduct(null)
+        return
+      }
+
       const { data, error } = await supabase
         .from("products")
         .insert({ ...payload, kiosko_id: kioskoId, is_active: true })
