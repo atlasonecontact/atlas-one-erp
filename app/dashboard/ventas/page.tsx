@@ -510,6 +510,8 @@ export default function VentasPage() {
           .from("products")
           .select("*")
           .eq("kiosko_id", kiosko_id)
+          // is_active NULL se trata como activo (productos viejos de antes de que existiera la columna).
+          .or("is_active.is.null,is_active.eq.true")
           .order("name")
 
         if (error) throw error

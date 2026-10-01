@@ -30,6 +30,7 @@ import {
   Droplet,
   Beer,
   ScanLine,
+  RotateCcw,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
@@ -63,6 +64,7 @@ interface Product {
   track_expiration?: boolean
   expiration_date?: string | null
   lots?: ProductLot[]
+  is_active?: boolean
 }
 
 export default function ProductosPage() {
@@ -157,6 +159,7 @@ export default function ProductosPage() {
       supplier: p.supplier,
       track_expiration: p.track_expiration,
       expiration_date: p.expiration_date,
+      is_active: p.is_active ?? true,
     }))
     setProducts(mappedProducts)
     setLoading(false)
@@ -286,10 +289,41 @@ export default function ProductosPage() {
     const { error } = await supabase.from("products").delete().eq("id", id)
     if (!error) {
       setProducts((prev) => prev.filter((p) => p.id !== id))
+      return
+    }
+
+    console.error("[productos] Error al borrar:", error)
+    // Tiene ventas, compras o movimientos de stock asociados: borrarlo rompería ese
+    // historial, por eso la base lo bloquea. La alternativa real es desactivarlo: deja
+    // de poder venderse (no aparece en el punto de venta) pero no se pierde nada.
+    if (error.code === "23503") {
+      toast.warning("No se puede borrar: tiene ventas o movimientos asociados", "Borrarlo perdería ese historial.", {
+        label: "Desactivarlo en vez de borrar",
+        onClick: () => handleDeactivate(id),
+      })
     } else {
-      console.error("[productos] Error al borrar:", error)
       toast.error("No se pudo borrar el producto", error.message)
     }
+  }
+
+  const handleDeactivate = async (id: string) => {
+    const { error } = await supabase.from("products").update({ is_active: false }).eq("id", id)
+    if (error) {
+      toast.error("No se pudo desactivar el producto", error.message)
+      return
+    }
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: false } : p)))
+    toast.success("Producto desactivado", "Ya no va a aparecer en el punto de venta")
+  }
+
+  const handleReactivate = async (id: string) => {
+    const { error } = await supabase.from("products").update({ is_active: true }).eq("id", id)
+    if (error) {
+      toast.error("No se pudo reactivar el producto", error.message)
+      return
+    }
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: true } : p)))
+    toast.success("Producto reactivado")
   }
 
   const contributeToBarcodeCatalog = async (product: Omit<Product, "id"> & { id?: string }) => {
@@ -850,6 +884,11 @@ export default function ProductosPage() {
                       <p className="text-foreground font-semibold break-words">{product.name}</p>
                       {product.barcode && <p className="text-xs text-muted-foreground font-mono">{product.barcode}</p>}
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        {product.is_active === false && (
+                          <span className="rounded-full border border-gray-500/30 bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400">
+                            Desactivado
+                          </span>
+                        )}
                         <span className={`rounded-full border bg-gradient-to-r px-2 py-0.5 text-xs ${getCategoryColor(product.category)}`}>
                           {product.category}
                         </span>
@@ -887,15 +926,26 @@ export default function ProductosPage() {
                       <Edit2 className="w-4 h-4" />
                       Editar
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(product.id)}
-                      className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Eliminar
-                    </Button>
+                    {product.is_active === false ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReactivate(product.id)}
+                        className="flex-1 border-green-500/30 text-green-400 hover:bg-green-500/10 gap-1.5"
+                      >
+                        Reactivar
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                        className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))
@@ -960,6 +1010,11 @@ export default function ProductosPage() {
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground break-words leading-snug">{product.name}</p>
                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {product.is_active === false && (
+                                <span className="rounded-full border border-gray-500/30 bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400">
+                                  Desactivado
+                                </span>
+                              )}
                               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{product.category}</span>
                               {product.subcategory && (
                                 <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">
@@ -1014,15 +1069,27 @@ export default function ProductosPage() {
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(product.id)}
-                            title="Eliminar"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {product.is_active === false ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReactivate(product.id)}
+                              title="Reactivar"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-400"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                              title="Eliminar"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
