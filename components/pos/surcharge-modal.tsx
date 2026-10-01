@@ -50,12 +50,14 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
   const [startTime, setStartTime] = useState("22:00")
   const [endTime, setEndTime] = useState("04:00")
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const supabase = createClient()
   const toast = useToast()
 
   useEffect(() => {
     if (!open) return
+    setSaveError(null)
     const c = config || DEFAULT_SURCHARGE
     setEnabled(c.enabled)
     setPercentage(c.percentage)
@@ -64,12 +66,17 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
   }, [open, config])
 
   const handleSave = async () => {
+    setSaveError(null)
     if (!kioskoId) {
-      toast.error("No se pudo guardar el recargo", "No se encontró tu sucursal todavía, esperá un segundo y probá de nuevo")
+      setSaveError("No se encontró tu sucursal todavía (kioskoId vacío). Esperá un segundo y probá de nuevo.")
       return
     }
     setSaving(true)
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       const payload = {
         kiosko_id: kioskoId,
         enabled,
@@ -79,7 +86,9 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
         updated_at: new Date().toISOString(),
       }
       const { error } = await supabase.from("price_surcharges").upsert(payload, { onConflict: "kiosko_id" })
-      if (error) throw error
+      if (error) {
+        throw new Error(`${error.message} (code: ${error.code || "?"}, user: ${user?.id?.slice(0, 8) || "sin sesión"}, kiosko: ${kioskoId.slice(0, 8)})`)
+      }
 
       onSaved({ enabled, percentage, start_time: startTime, end_time: endTime })
       toast.success(
@@ -88,7 +97,8 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
       )
       onClose()
     } catch (error: any) {
-      toast.error("No se pudo guardar el recargo", error?.message)
+      console.error("[SurchargeModal] Error al guardar:", error)
+      setSaveError(error?.message || "Error desconocido")
     } finally {
       setSaving(false)
     }
@@ -168,6 +178,12 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
           <p className="mb-4 text-xs text-gray-500">
             Cruza la medianoche: se aplica desde las {startTime} hasta las {endTime} del día siguiente.
           </p>
+        )}
+
+        {saveError && (
+          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 break-words select-all">
+            {saveError}
+          </div>
         )}
 
         <button
