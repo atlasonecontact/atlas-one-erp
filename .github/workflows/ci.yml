@@ -24,7 +24,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom 30 (vía undici) usa una función interna de webidl que no existe en
+          # Node 20 ("webidl.util.markAsUncloneable is not a function") — sólo rompe en
+          # CI porque Vercel/local corren con Node más nuevo. Node 22+ la tiene.
+          node-version: 22
           cache: pnpm
 
       - name: Instalar dependencias
