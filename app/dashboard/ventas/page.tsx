@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { Cart } from "@/components/pos/cart"
 import { ChoiceModal, type ChoiceOption } from "@/components/pos/choice-modal"
+import { prorateComponents } from "@/lib/pos/promotion-pricing"
 import { SurchargeModal, isSurchargeActiveNow, DEFAULT_SURCHARGE, type SurchargeConfig } from "@/components/pos/surcharge-modal"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
@@ -678,18 +679,7 @@ export default function VentasPage() {
           }
           const availableStock = Math.min(fixedAvailable, choiceAvailable)
 
-          const normalTotal = components.reduce((sum, c) => sum + c.price * c.quantity, 0)
-          const promotionComponents = promo.choice
-            ? []
-            : components.map((c) => ({
-                productId: c.productId,
-                productName: c.productName,
-                quantity: c.quantity,
-                unitPrice:
-                  normalTotal > 0
-                    ? ((c.price * c.quantity) / normalTotal) * (promo.price / c.quantity)
-                    : promo.price / components.length / c.quantity,
-              }))
+          const promotionComponents = promo.choice ? [] : prorateComponents(components, promo.price)
 
           return {
             id: promo.id,
@@ -804,19 +794,10 @@ export default function VentasPage() {
     if (!promo?.choice) return
     const qty: number = promo.choice.quantity
     const fixed: { productId: string; productName: string; quantity: number; price: number; stock: number }[] = promo.fixedComponents
-    const normalTotal = fixed.reduce((sum, c) => sum + c.price * c.quantity, 0) + drink.price * qty
-    const share = (price: number, quantity: number) =>
-      normalTotal > 0 ? ((price * quantity) / normalTotal) * (promo.price / quantity) : promo.price / (fixed.length + 1) / quantity
-
-    const promotionComponents = [
-      ...fixed.map((c) => ({
-        productId: c.productId,
-        productName: c.productName,
-        quantity: c.quantity,
-        unitPrice: share(c.price, c.quantity),
-      })),
-      { productId: drink.id, productName: drink.name, quantity: qty, unitPrice: share(drink.price, qty) },
-    ]
+    const promotionComponents = prorateComponents(
+      [...fixed, { productId: drink.id, productName: drink.name, quantity: qty, price: drink.price }],
+      promo.price,
+    )
     const stock = Math.min(
       ...fixed.map((c) => Math.floor(c.stock / c.quantity)),
       Math.floor(drink.stock / qty),

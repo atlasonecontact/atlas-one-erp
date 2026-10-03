@@ -1,0 +1,48 @@
+name: CI
+
+# Corre en cada push y en cada PR contra main. El objetivo es simple: que no se pueda
+# subir código roto sin que quede un check en rojo en GitHub, ANTES de que Vercel lo
+# despliegue solo. Hoy Vercel no espera a este check (no hay branch protection
+# configurada todavía) — hasta que se active, esto avisa pero no frena el deploy por sí
+# solo. Ver docs/RISKS.md, sección "CI no bloquea Vercel todavía".
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks:
+    name: lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Chequeo de tipos (no bloquea por deuda existente, sí por errores nuevos)
+        run: node .ci/check-typecheck-baseline.mjs
+
+      - name: Tests
+        run: pnpm test:run
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Credenciales de prueba, sólo para que next build pueda generar las páginas
+          # estáticas. No son reales ni dan acceso a nada.
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key

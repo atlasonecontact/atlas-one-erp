@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { CSVImportModal, type CSVProduct } from "@/components/products/csv-import-modal"
 import { PriceAdjustmentModal } from "@/components/products/price-adjustment-modal"
 import { CameraScanner } from "@/components/mobile/camera-scanner"
+import { findDuplicateByBarcode } from "@/lib/products/duplicates"
 import { useScanner } from "@/lib/hooks/use-scanner"
 import {
   Search,
@@ -408,7 +409,7 @@ export default function ProductosPage() {
     } else {
       // Si ya existe un producto con este código de barras en este kiosko, no se crea uno
       // nuevo duplicado: se suma el stock cargado al que ya existía.
-      const dup = product.barcode ? products.find((p) => p.barcode && p.barcode === product.barcode) : undefined
+      const dup = findDuplicateByBarcode(products, product.barcode)
       if (dup) {
         const newStock = dup.stock + finalStock
         const { error: dupError } = await supabase
