@@ -212,22 +212,20 @@ export default function VentasPage() {
       const nextCart: CartItem[] = []
       for (const it of saved.items || []) {
         const p = products.find((x: any) => x.id === it.product_id)
-        if (!p || p.stock <= 0) {
+        if (!p) {
           missing.push(it.name)
           continue
         }
         const existing = nextCart.find((c) => c.id === p.id)
-        const qty = Math.min(it.quantity, p.stock - (existing?.quantity ?? 0))
-        if (qty <= 0) continue
-        if (existing) existing.quantity += qty
-        else nextCart.push({ id: p.id, name: p.name, price: p.price, quantity: qty, stock: p.stock })
+        // No se recorta por stock disponible: "sin stock" ya no bloquea la venta,
+        // así que rehacerla repone la cantidad completa que se vendió.
+        if (existing) existing.quantity += it.quantity
+        else nextCart.push({ id: p.id, name: p.name, price: p.price, quantity: it.quantity, stock: p.stock })
       }
       if (nextCart.length > 0) setCart(nextCart)
       toast.info(
         `Rehaciendo la venta ${saved.sale_number ?? ""}`.trim(),
-        missing.length > 0
-          ? `Sin stock o no encontrados: ${missing.join(", ")}`
-          : "Corregí lo que haga falta y cobrala de nuevo",
+        missing.length > 0 ? `No encontrados: ${missing.join(", ")}` : "Corregí lo que haga falta y cobrala de nuevo",
       )
     } catch {
       // datos inválidos: se ignora
@@ -252,10 +250,10 @@ export default function VentasPage() {
       const found = product || matchByName
 
       if (found) {
+        addToCart(found)
         if (found.stock <= 0) {
-          toast.warning("Sin stock", `"${found.name}" está cargado pero no tiene stock disponible`)
+          toast.warning("Agregado sin stock registrado", `"${found.name}" x1 — revisar el conteo de stock`)
         } else {
-          addToCart(found)
           toast.success("Producto agregado", `${found.name} x1`)
         }
       } else {
@@ -750,11 +748,14 @@ export default function VentasPage() {
       setChoicePromo(product)
       return
     }
-    if (product.stock <= 0) return
+    // "Sin stock" es un aviso, no un bloqueo: el conteo en el sistema suele atrasarse
+    // respecto a lo que hay en el local, y bloquear la venta por eso dejaba productos
+    // sin poder cobrarse aunque el kiosko los tuviera (bug real, 2026-10). El stock
+    // puede quedar en negativo; eso es justamente la señal de "repasar este conteo".
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id)
       if (existing) {
-        if (existing.quantity >= product.stock) return prev
+        if (product.stock > 0 && existing.quantity >= product.stock) return prev
         return prev.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
       }
       return [

@@ -48,15 +48,17 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
         </thead>
         <tbody>
           {products.map((product) => {
+            // "Sin stock" es sólo un aviso, no un bloqueo: el conteo de stock suele
+            // atrasarse respecto a lo que hay en el local de verdad, y antes esto
+            // directamente impedía cobrar el producto (bug real, 2026-10).
             const out = product.stock <= 0
             const low = !out && product.stock <= 10
             return (
               <tr
                 key={product.id}
-                onClick={() => !out && onAddToCart(product)}
+                onClick={() => onAddToCart(product)}
                 className={cn(
-                  "border-b border-cyan-500/5 transition-colors",
-                  out ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-cyan-500/5 active:bg-cyan-500/10",
+                  "cursor-pointer border-b border-cyan-500/5 transition-colors hover:bg-cyan-500/5 active:bg-cyan-500/10",
                 )}
               >
                 <td className="px-3 py-3 sm:px-4">
@@ -113,12 +115,11 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
                   <span className="mb-1 block text-sm font-bold text-cyan-400 sm:hidden">{formatCurrency(product.price)}</span>
                   <button
                     type="button"
-                    disabled={out}
                     onClick={(e) => {
                       e.stopPropagation()
                       onAddToCart(product)
                     }}
-                    className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-black transition-colors hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500 sm:w-auto"
+                    className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-black transition-colors hover:bg-cyan-400 sm:w-auto"
                   >
                     <Plus className="h-4 w-4" />
                     <span className="hidden sm:inline">Agregar</span>

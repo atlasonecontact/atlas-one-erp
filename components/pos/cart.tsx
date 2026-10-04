@@ -69,7 +69,9 @@ export function Cart({ items, subtotal, tax, total, onUpdateQuantity, onRemove, 
                 <span className="w-8 text-center text-sm text-white">{item.quantity}</span>
                 <button
                   onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                  disabled={item.quantity >= item.stock}
+                  // Tope de stock sólo si hay stock de verdad: en 0 (o negativo) no hay
+                  // un límite con sentido, así que no se bloquea sumar más unidades.
+                  disabled={item.stock > 0 && item.quantity >= item.stock}
                   className="w-7 h-7 rounded-md bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
