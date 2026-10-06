@@ -41,6 +41,7 @@ import {
   Gift,
   PiggyBank,
   ShieldAlert,
+  ImageIcon,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -171,6 +172,7 @@ function DashboardSidebar({
       isExpandable: true,
       items: [
         { href: "/dashboard/productos", label: "Catálogo", icon: Package },
+        { href: "/dashboard/productos/visual", label: "Catálogo Visual", icon: ImageIcon },
         { href: "/dashboard/productos/promociones", label: "Promociones", icon: Gift },
       ],
     },
