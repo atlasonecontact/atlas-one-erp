@@ -105,8 +105,14 @@ export default function CatalogoVisualPage() {
         .order("created_at", { ascending: false }),
     ])
 
-    if (productsRes.data) setProducts(productsRes.data as VisualProduct[])
-    if (pendingRes.data) {
+    if (productsRes.error) {
+      toast.error("No se pudieron cargar los productos", productsRes.error.message)
+    } else if (productsRes.data) {
+      setProducts(productsRes.data as VisualProduct[])
+    }
+    if (pendingRes.error) {
+      toast.error("No se pudo cargar la cola de revisión", pendingRes.error.message)
+    } else if (pendingRes.data) {
       setPendingImages(
         (pendingRes.data as any[]).map((p) => ({ ...p, product: p.products })),
       )
