@@ -162,6 +162,10 @@ async function syncStockMovements(supabase: any): Promise<{ synced: number; erro
         p_delta: isOut ? -movement.quantity : movement.quantity,
         p_movement_type: movement.movementType === "entrada" ? "in" : isOut ? "out" : "adjustment",
         p_reason: movement.reason,
+        // El mismo registro local puede reintentarse si la sincronización se
+        // corta a mitad: el id local es estable entre reintentos, así que
+        // sirve de clave para no aplicar el delta dos veces.
+        p_idempotency_key: movement.id,
       })
 
       if (error) throw error
@@ -185,49 +189,26 @@ async function syncPurchases(supabase: any): Promise<{ synced: number; errors: s
 
   for (const purchase of pendingPurchases) {
     try {
-      // Create purchase
-      const { data: newPurchase, error: purchaseError } = await supabase
-        .from("purchases")
-        .insert({
+      // Compra + items + stock, todo en una sola transacción (register_purchase)
+      // — antes eran 3+ llamadas separadas, sin nada en común si se cortaba la
+      // conexión a mitad. Dedupe por (kiosko_id, purchase_number): un mismo
+      // registro offline reintentado dos veces no duplica la compra.
+      const { error } = await supabase.rpc("register_purchase", {
+        p_purchase: {
           kiosko_id: purchase.kioskoId,
           supplier_name: purchase.supplierName,
-          invoice_number: purchase.invoiceNumber,
+          purchase_number: purchase.invoiceNumber || `OFFLINE-${purchase.id}`,
           total_amount: purchase.totalAmount,
           notes: purchase.notes,
-          status: "completado",
-          created_at: new Date(purchase.createdAt).toISOString(),
-        })
-        .select("id")
-        .single()
+          items: purchase.items.map((item) => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+            unit_cost: item.unitCost,
+          })),
+        },
+      })
 
-      if (purchaseError) throw purchaseError
-
-      // Insert purchase items
-      const purchaseItems = purchase.items.map(item => ({
-        purchase_id: newPurchase.id,
-        product_id: item.productId,
-        quantity: item.quantity,
-        unit_cost: item.unitCost,
-        subtotal: item.unitCost * item.quantity,
-      }))
-
-      const { error: itemsError } = await supabase
-        .from("purchase_items")
-        .insert(purchaseItems)
-
-      if (itemsError) throw itemsError
-
-      // Stock atómico (sin leer-calcular-escribir), un delta por producto.
-      for (const item of purchase.items) {
-        await supabase.rpc("adjust_stock", {
-          p_kiosko: purchase.kioskoId,
-          p_product: item.productId,
-          p_delta: item.quantity,
-          p_movement_type: "in",
-          p_reason: `Compra offline - ${purchase.supplierName}`,
-          p_reference_id: newPurchase.id,
-        })
-      }
+      if (error) throw error
 
       await markPurchaseSynced(purchase.id)
       result.synced++

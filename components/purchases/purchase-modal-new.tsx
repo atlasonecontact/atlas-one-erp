@@ -139,57 +139,28 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       const supplierName = supplier === "Otro proveedor" ? customSupplier : supplier
       const purchaseNumber = `C-${Date.now()}`
 
-      // 1. Create purchase record
-      const { data: purchase, error: purchaseError } = await supabase
-        .from("purchases")
-        .insert({
+      // Compra + items + stock + costo, todo en una sola transacción del lado
+      // de la base (register_purchase): si se corta la conexión a mitad, no
+      // queda nada a medio grabar.
+      const { error } = await supabase.rpc("register_purchase", {
+        p_purchase: {
           kiosko_id: kioskoId,
           supplier_name: supplierName,
           purchase_number: purchaseNumber,
           total_amount: total,
-          status: "completed",
           notes: notes || null,
-        })
-        .select()
-        .single()
+          items: items.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            unit_cost: item.unitCost,
+          })),
+        },
+      })
 
-      if (purchaseError) throw purchaseError
-
-      // 2. Create purchase items
-      const purchaseItems = items.map(item => ({
-        purchase_id: purchase.id,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        unit_cost: item.unitCost,
-        subtotal: item.quantity * item.unitCost,
-      }))
-
-      const { error: itemsError } = await supabase
-        .from("purchase_items")
-        .insert(purchaseItems)
-
-      if (itemsError) throw itemsError
-
-      // 3. Update stock atomically (sin leer-calcular-escribir) y actualizar costo
-      for (const item of items) {
-        await supabase.rpc("adjust_stock", {
-          p_kiosko: kioskoId,
-          p_product: item.product.id,
-          p_delta: item.quantity,
-          p_movement_type: "in",
-          p_reason: `Compra ${purchaseNumber} - ${supplierName}`,
-          p_reference_id: purchase.id,
-        })
-
-        await supabase
-          .from("products")
-          .update({ cost: item.unitCost, updated_at: new Date().toISOString() })
-          .eq("id", item.product.id)
-      }
+      if (error) throw error
 
       // Reset form
       setItems([])
