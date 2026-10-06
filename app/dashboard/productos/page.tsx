@@ -411,15 +411,18 @@ export default function ProductosPage() {
       // nuevo duplicado: se suma el stock cargado al que ya existía.
       const dup = findDuplicateByBarcode(products, product.barcode)
       if (dup) {
-        const newStock = dup.stock + finalStock
-        const { error: dupError } = await supabase
-          .from("products")
-          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
-          .eq("id", dup.id)
+        const { data: adjustResult, error: dupError } = await supabase.rpc("adjust_stock", {
+          p_kiosko: kioskoId,
+          p_product: dup.id,
+          p_delta: finalStock,
+          p_movement_type: "in",
+          p_reason: "Carga de producto con código de barras ya existente",
+        })
 
         if (dupError) {
           toast.error("Error al guardar", dupError.message)
         } else {
+          const newStock = adjustResult.stock_after
           setProducts((prev) => prev.map((p) => (p.id === dup.id ? { ...p, stock: newStock } : p)))
           toast.warning(
             "Ya existía un producto con ese código",
@@ -477,13 +480,16 @@ export default function ProductosPage() {
   }
 
   const handleQuickAddStock = async (product: Product, quantity: number) => {
-    const newStock = product.stock + quantity
-    const { error } = await supabase
-      .from("products")
-      .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
-      .eq("id", product.id)
+    const { data, error } = await supabase.rpc("adjust_stock", {
+      p_kiosko: kioskoId,
+      p_product: product.id,
+      p_delta: quantity,
+      p_movement_type: "in",
+      p_reason: "Suma rápida de stock desde el catálogo",
+    })
 
     if (!error) {
+      const newStock = data.stock_after
       setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, stock: newStock } : p)))
       toast.success("Stock actualizado", `${product.name}: ${product.stock} → ${newStock} unidades`)
     } else {

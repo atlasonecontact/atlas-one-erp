@@ -80,36 +80,18 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
 
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      // 1. Create stock movement
-      const { error: movementError } = await supabase
-        .from("stock_movements")
-        .insert({
-          product_id: selectedProduct.id,
-          kiosko_id: kioskoId,
-          movement_type: movementType,
-          quantity: quantity,
-          reason: reason || (movementType === "in" ? "Ingreso manual" : "Salida manual"),
-          created_by: user?.id,
-        })
+      // Delta atómico en la base (sin leer-calcular-escribir): adjust_stock
+      // aplica el +/- directo sobre la fila y deja el movimiento con la
+      // cantidad real aplicada, nunca con un número que no coincida.
+      const { error } = await supabase.rpc("adjust_stock", {
+        p_kiosko: kioskoId,
+        p_product: selectedProduct.id,
+        p_delta: movementType === "in" ? quantity : -quantity,
+        p_movement_type: movementType,
+        p_reason: reason || (movementType === "in" ? "Ingreso manual" : "Salida manual"),
+      })
 
-      if (movementError) throw movementError
-
-      // 2. Update product stock
-      const newStock = movementType === "in" 
-        ? selectedProduct.stock_quantity + quantity
-        : Math.max(0, selectedProduct.stock_quantity - quantity)
-
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({ 
-          stock_quantity: newStock,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", selectedProduct.id)
-
-      if (updateError) throw updateError
+      if (error) throw error
 
       // Reset form
       setSelectedProduct(null)
@@ -346,10 +328,10 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
               <p className={`text-2xl font-bold font-mono ${
                 movementType === "in" ? "text-green-400" : "text-red-400"
               }`}>
-                {movementType === "in" 
+                {movementType === "in"
                   ? selectedProduct.stock_quantity + quantity
-                  : Math.max(0, selectedProduct.stock_quantity - quantity)
-                } unidades
+                  : selectedProduct.stock_quantity - quantity}{" "}
+                unidades
               </p>
             </div>
           )}

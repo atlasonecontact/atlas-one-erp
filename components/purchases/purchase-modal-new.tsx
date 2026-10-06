@@ -174,28 +174,20 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
       if (itemsError) throw itemsError
 
-      // 3. Update stock and create movements for each product
+      // 3. Update stock atomically (sin leer-calcular-escribir) y actualizar costo
       for (const item of items) {
-        // Create stock movement
-        await supabase.from("stock_movements").insert({
-          product_id: item.product.id,
-          kiosko_id: kioskoId,
-          movement_type: "purchase",
-          quantity: item.quantity,
-          reason: `Compra ${purchaseNumber} - ${supplierName}`,
-          reference_id: purchase.id,
-          created_by: user?.id,
+        await supabase.rpc("adjust_stock", {
+          p_kiosko: kioskoId,
+          p_product: item.product.id,
+          p_delta: item.quantity,
+          p_movement_type: "in",
+          p_reason: `Compra ${purchaseNumber} - ${supplierName}`,
+          p_reference_id: purchase.id,
         })
 
-        // Update product stock
-        const newStock = item.product.stock_quantity + item.quantity
         await supabase
           .from("products")
-          .update({ 
-            stock_quantity: newStock,
-            cost: item.unitCost, // Update cost with latest purchase price
-            updated_at: new Date().toISOString()
-          })
+          .update({ cost: item.unitCost, updated_at: new Date().toISOString() })
           .eq("id", item.product.id)
       }
 

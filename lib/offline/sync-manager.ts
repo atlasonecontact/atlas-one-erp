@@ -151,39 +151,20 @@ async function syncStockMovements(supabase: any): Promise<{ synced: number; erro
 
   for (const movement of pendingMovements) {
     try {
-      const { error } = await supabase.from("stock_movements").insert({
-        kiosko_id: movement.kioskoId,
-        product_id: movement.productId,
-        movement_type: movement.movementType,
-        quantity: movement.quantity,
-        reason: movement.reason,
-        created_at: new Date(movement.createdAt).toISOString(),
+      // adjust_stock aplica el delta en un solo UPDATE atómico y deja el
+      // movimiento en stock_movements con un movement_type válido ('in'/'out'/
+      // 'adjustment') — el insert directo de antes mandaba 'entrada'/'salida',
+      // que no existen en el CHECK de la tabla, así que esto nunca sincronizaba.
+      const isOut = movement.movementType === "salida"
+      const { error } = await supabase.rpc("adjust_stock", {
+        p_kiosko: movement.kioskoId,
+        p_product: movement.productId,
+        p_delta: isOut ? -movement.quantity : movement.quantity,
+        p_movement_type: movement.movementType === "entrada" ? "in" : isOut ? "out" : "adjustment",
+        p_reason: movement.reason,
       })
 
       if (error) throw error
-
-      // Update product stock on server
-      const { data: product } = await supabase
-        .from("products")
-        .select("stock_quantity")
-        .eq("id", movement.productId)
-        .single()
-
-      if (product) {
-        let newStock = Number(product.stock_quantity)
-        if (movement.movementType === "entrada") {
-          newStock += movement.quantity
-        } else if (movement.movementType === "salida") {
-          newStock = Math.max(0, newStock - movement.quantity)
-        } else {
-          newStock = movement.quantity // ajuste
-        }
-
-        await supabase
-          .from("products")
-          .update({ stock_quantity: newStock, updated_at: new Date().toISOString() })
-          .eq("id", movement.productId)
-      }
 
       await markStockMovementSynced(movement.id)
       result.synced++
@@ -236,23 +217,16 @@ async function syncPurchases(supabase: any): Promise<{ synced: number; errors: s
 
       if (itemsError) throw itemsError
 
-      // Update stock for each item
+      // Stock atómico (sin leer-calcular-escribir), un delta por producto.
       for (const item of purchase.items) {
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.productId)
-          .single()
-
-        if (product) {
-          await supabase
-            .from("products")
-            .update({
-              stock_quantity: Number(product.stock_quantity) + item.quantity,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", item.productId)
-        }
+        await supabase.rpc("adjust_stock", {
+          p_kiosko: purchase.kioskoId,
+          p_product: item.productId,
+          p_delta: item.quantity,
+          p_movement_type: "in",
+          p_reason: `Compra offline - ${purchase.supplierName}`,
+          p_reference_id: newPurchase.id,
+        })
       }
 
       await markPurchaseSynced(purchase.id)
