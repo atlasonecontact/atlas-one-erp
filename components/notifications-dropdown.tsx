@@ -1,25 +1,42 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, ShoppingCart, AlertTriangle, Package, Clock, RefreshCw, Check, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Bell, ShoppingCart, AlertTriangle, Package, Clock, RefreshCw, Check, Trash2, PackageSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { useTheme } from "@/lib/theme-context"
 
 interface Notification {
   id: string
-  type: "sale" | "stock" | "order" | "system"
+  type: "sale" | "stock" | "order" | "approval" | "system"
   title: string
   message: string
   time: Date
   read: boolean
   kioskoName?: string
+  href?: string
+  urgent?: boolean
+}
+
+const READ_KEY = "atlas.notifications.read.v1"
+
+function loadReadIds(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(READ_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function saveReadIds(ids: Set<string>) {
+  try {
+    window.localStorage.setItem(READ_KEY, JSON.stringify([...ids]))
+  } catch {
+    // localStorage no disponible (navegación privada, etc.): no es crítico.
+  }
 }
 
 function formatTimeAgo(date: Date): string {
@@ -36,6 +53,7 @@ function formatTimeAgo(date: Date): string {
 }
 
 export function NotificationsDropdown() {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -44,7 +62,7 @@ export function NotificationsDropdown() {
 
   useEffect(() => {
     loadNotifications()
-    
+
     // Refresh every 30 seconds
     const interval = setInterval(loadNotifications, 30000)
     return () => clearInterval(interval)
@@ -55,19 +73,77 @@ export function NotificationsDropdown() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: kioscos } = await supabase
-        .from("kioscos")
-        .select("id, name")
-        .eq("owner_id", user.id)
-      
-      if (!kioscos || kioscos.length === 0) {
+      const { data: ownKioscos } = await supabase.from("kioscos").select("id, name, owner_id").eq("owner_id", user.id)
+
+      let kioskoIds: string[] = []
+      let kioskoMap = new Map<string, string>()
+      let canApprove = false
+      let approvalKioskoIds: string[] = []
+
+      if (ownKioscos && ownKioscos.length > 0) {
+        kioskoIds = ownKioscos.map((k) => k.id)
+        kioskoMap = new Map(ownKioscos.map((k) => [k.id, k.name]))
+        canApprove = true
+        approvalKioskoIds = kioskoIds
+      } else {
+        const { data: employeeData } = await supabase
+          .from("employees")
+          .select("kiosko_id, permissions, kioscos(id, name, owner_id)")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle()
+
+        if (employeeData) {
+          kioskoIds = [employeeData.kiosko_id]
+          const kioskoRow = (employeeData as any).kioscos
+          if (kioskoRow) kioskoMap.set(kioskoRow.id, kioskoRow.name)
+
+          if (employeeData.permissions?.can_approve_internal_orders && kioskoRow?.owner_id) {
+            canApprove = true
+            const { data: siblingKioscos } = await supabase
+              .from("kioscos")
+              .select("id, name")
+              .eq("owner_id", kioskoRow.owner_id)
+            if (siblingKioscos) {
+              approvalKioskoIds = siblingKioscos.map((k) => k.id)
+              siblingKioscos.forEach((k) => kioskoMap.set(k.id, k.name))
+            }
+          }
+        }
+      }
+
+      if (kioskoIds.length === 0) {
         setLoading(false)
         return
       }
-      const kioskoIds = kioscos.map(k => k.id)
-      const kioskoMap = new Map(kioscos.map(k => [k.id, k.name]))
 
       const newNotifications: Notification[] = []
+
+      // Pedidos internos esperando aprobación — sólo para quien puede
+      // aprobar (dueño, o empleado con el permiso). Es lo más urgente:
+      // mientras no se aprueba, el stock no se mueve de ningún lado.
+      if (canApprove && approvalKioskoIds.length > 0) {
+        const { data: pendingOrders } = await supabase
+          .from("pedidos_internos")
+          .select("id, kiosco_id, numero_pedido, fecha_solicitud")
+          .in("kiosco_id", approvalKioskoIds)
+          .eq("estado", "pendiente")
+          .order("fecha_solicitud", { ascending: false })
+          .limit(10)
+
+        pendingOrders?.forEach((order) => {
+          newNotifications.push({
+            id: `approval-${order.id}`,
+            type: "approval",
+            title: "Pedido de stock para aprobar",
+            message: `${order.numero_pedido} — pedido por ${kioskoMap.get(order.kiosco_id) || "una sucursal"}`,
+            time: new Date(order.fecha_solicitud),
+            read: false,
+            urgent: true,
+            href: "/dashboard/compras/pedidos-internos",
+          })
+        })
+      }
 
       // Get recent sales (last hour)
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
@@ -108,42 +184,24 @@ export function NotificationsDropdown() {
             message: `${product.name}: ${product.stock_quantity} unidades`,
             time: new Date(product.updated_at),
             read: false,
-            kioskoName: kioskoMap.get(product.kiosko_id)
+            kioskoName: kioskoMap.get(product.kiosko_id),
+            href: "/dashboard/productos",
           })
         }
       })
 
-      // Get pending orders (external_orders) - tabla puede no existir
-      try {
-        const { data: pendingOrders } = await supabase
-          .from("external_orders")
-          .select("id, kiosko_id, source, status, created_at")
-          .in("kiosko_id", kioskoIds)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(5)
+      // Sort by time (las urgentes de aprobación van siempre primero)
+      newNotifications.sort((a, b) => {
+        if (!!a.urgent !== !!b.urgent) return a.urgent ? -1 : 1
+        return b.time.getTime() - a.time.getTime()
+      })
 
-        pendingOrders?.forEach(order => {
-          newNotifications.push({
-            id: `order-${order.id}`,
-            type: "order",
-            title: `Pedido ${order.source}`,
-            message: "Pendiente de preparación",
-            time: new Date(order.created_at),
-            read: false,
-            kioskoName: kioskoMap.get(order.kiosko_id)
-          })
-        })
-      } catch (e) {
-        // Tabla puede no existir
-      }
+      // Take first 10, aplicando el estado de leído guardado localmente —
+      // antes esto se perdía en cada actualización (cada 30s) y la
+      // campanita parecía tener algo nuevo todo el tiempo.
+      const readIds = loadReadIds()
+      const limitedNotifications = newNotifications.slice(0, 10).map((n) => ({ ...n, read: readIds.has(n.id) }))
 
-      // Sort by time
-      newNotifications.sort((a, b) => b.time.getTime() - a.time.getTime())
-      
-      // Take first 10
-      const limitedNotifications = newNotifications.slice(0, 10)
-      
       setNotifications(limitedNotifications)
       setUnreadCount(limitedNotifications.filter(n => !n.read).length)
     } catch (err) {
@@ -153,7 +211,20 @@ export function NotificationsDropdown() {
     }
   }
 
+  const handleNotificationClick = (notification: Notification) => {
+    const readIds = loadReadIds()
+    readIds.add(notification.id)
+    saveReadIds(readIds)
+    setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => Math.max(0, prev - (notification.read ? 0 : 1)))
+
+    if (notification.href) router.push(notification.href)
+  }
+
   const markAllRead = () => {
+    const readIds = loadReadIds()
+    notifications.forEach((n) => readIds.add(n.id))
+    saveReadIds(readIds)
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     setUnreadCount(0)
   }
@@ -169,6 +240,8 @@ export function NotificationsDropdown() {
         return <ShoppingCart className="w-4 h-4 text-green-400" />
       case "stock":
         return <AlertTriangle className="w-4 h-4 text-yellow-400" />
+      case "approval":
+        return <PackageSearch className="w-4 h-4 text-red-400" />
       case "order":
         return <Package className="w-4 h-4 text-cyan-400" />
       default:
@@ -184,7 +257,7 @@ export function NotificationsDropdown() {
           {unreadCount > 0 && (
             <span
               className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-white"
-              style={{ backgroundColor: config.primary }}
+              style={{ backgroundColor: notifications.some((n) => n.urgent && !n.read) ? "#ef4444" : config.primary }}
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
@@ -250,13 +323,23 @@ export function NotificationsDropdown() {
               {notifications.map(notification => (
                 <div
                   key={notification.id}
-                  className={`p-3 hover:bg-white/5 transition-colors ${!notification.read ? "bg-cyan-500/5" : ""}`}
+                  onClick={() => handleNotificationClick(notification)}
+                  className={`p-3 transition-colors ${notification.href ? "cursor-pointer" : ""} hover:bg-white/5 ${
+                    notification.urgent && !notification.read
+                      ? "bg-red-500/10"
+                      : !notification.read
+                        ? "bg-cyan-500/5"
+                        : ""
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">{getIcon(notification.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-white truncate">{notification.title}</p>
+                        <p className="text-sm font-medium text-white truncate">
+                          {notification.urgent && "⚠️ "}
+                          {notification.title}
+                        </p>
                         <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatTimeAgo(notification.time)}
@@ -273,22 +356,6 @@ export function NotificationsDropdown() {
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator style={{ backgroundColor: config.border }} />
-            <div className="p-2">
-              <Button
-                variant="ghost"
-                className="w-full text-sm text-gray-400 hover:text-white"
-                onClick={() => {/* TODO: Open full notifications page */}}
-              >
-                Ver todas las notificaciones
-              </Button>
-            </div>
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -100,6 +100,7 @@ const ROLE_PRESETS: Record<string, { label: string; emoji: string; permissions: 
       can_stock_entry: true,
       can_create_internal_order: true,
       can_view_internal_orders: true,
+      can_approve_internal_orders: false,
       can_process_returns: false,
       can_view_reports: false,
       can_manage_employees: false,
@@ -121,6 +122,7 @@ const ROLE_PRESETS: Record<string, { label: string; emoji: string; permissions: 
       can_stock_entry: true,
       can_create_internal_order: true,
       can_view_internal_orders: true,
+      can_approve_internal_orders: true,
       can_view_products: true,
       can_view_reports: true,
       can_manage_employees: true,
@@ -140,7 +142,10 @@ const PERMISSION_GROUPS: { label: string; keys: (keyof EmployeePermissions)[] }[
   { label: "Caja", keys: ["can_open_register", "can_close_register"] },
   { label: "Productos", keys: ["can_view_products", "can_manage_inventory"] },
   { label: "Stock", keys: ["can_view_stock", "can_receive_merchandise", "can_stock_entry"] },
-  { label: "Pedidos internos", keys: ["can_create_internal_order", "can_view_internal_orders"] },
+  {
+    label: "Pedidos internos",
+    keys: ["can_create_internal_order", "can_view_internal_orders", "can_approve_internal_orders"],
+  },
   { label: "Reportes", keys: ["can_view_reports"] },
   { label: "Empleados", keys: ["can_manage_employees"] },
 ]
@@ -1297,6 +1302,26 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         🔄 Consultar pedidos internos
                       </label>
                       <p className="text-xs text-gray-500">Ver estado de sus solicitudes</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <Checkbox
+                      id="can_approve_internal_orders"
+                      checked={formData.permissions.can_approve_internal_orders}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          permissions: { ...formData.permissions, can_approve_internal_orders: checked as boolean },
+                        })
+                      }
+                      className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
+                    />
+                    <div>
+                      <label htmlFor="can_approve_internal_orders" className="text-sm text-white cursor-pointer block">
+                        ✅ Aprobar pedidos internos
+                      </label>
+                      <p className="text-xs text-gray-500">Decidir de qué local sale la mercadería y moverla</p>
                     </div>
                   </div>
 

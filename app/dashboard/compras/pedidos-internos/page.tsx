@@ -15,20 +15,28 @@ import {
   Warehouse,
   AlertCircle,
   ChevronRight,
+  X,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { NuevoPedidoInternoModal } from "@/components/compras/nuevo-pedido-interno-modal"
+import { AprobarPedidoInternoModal } from "@/components/compras/aprobar-pedido-interno-modal"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { useToast } from "@/components/ui/toast-provider"
 import { AccessDenied } from "@/components/ui/access-denied"
 
 interface PedidoInterno {
   id: string
   numero_pedido: string
+  kiosco_id: string
   tipo_destino: string
   destino_kiosco_id: string | null
   destino_nombre?: string
+  origen_kiosco_id: string | null
+  origen_nombre?: string | null
+  solicitante_nombre?: string
   estado: string
   observaciones: string | null
+  motivo_rechazo: string | null
   fecha_solicitud: string
   fecha_recepcion: string | null
   items_count: number
@@ -38,12 +46,16 @@ interface PedidoInterno {
 export default function PedidosInternosPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showModal, setShowModal] = useState(false)
+  const [approvingPedido, setApprovingPedido] = useState<PedidoInterno | null>(null)
   const [pedidos, setPedidos] = useState<PedidoInterno[]>([])
   const [loading, setLoading] = useState(true)
   const [kioskoId, setKioskoId] = useState<string | null>(null)
+  const [allKioscoIds, setAllKioscoIds] = useState<string[]>([])
+  const [canApprove, setCanApprove] = useState(false)
   const [selectedPedido, setSelectedPedido] = useState<string | null>(null)
   const [pedidoItems, setPedidoItems] = useState<any[]>([])
   const { permissions, loading: permsLoading } = useEmployeePermissions()
+  const toast = useToast()
 
   const supabase = createClient()
 
@@ -63,38 +75,70 @@ export default function PedidosInternosPage() {
 
     const { data: employeeData } = await supabase
       .from("employees")
-      .select("kiosko_id")
+      .select("kiosko_id, permissions")
       .eq("user_id", user.id)
       .eq("status", "active")
       .maybeSingle()
 
     let targetKioskoId: string | null = null
+    // El dueño (o un gerente con permiso) tiene que ver los pedidos de TODAS
+    // sus sucursales, no sólo la propia — si no, nunca se entera de un
+    // pedido pendiente hecho desde otro local.
+    let loadKioskoIds: string[] = []
+    let ownerId: string | null = null
+    let canApproveNow = false
 
     if (employeeData) {
       targetKioskoId = employeeData.kiosko_id
+      loadKioskoIds = [employeeData.kiosko_id]
+      if (employeeData.permissions?.can_approve_internal_orders) {
+        const { data: kioskoRow } = await supabase
+          .from("kioscos")
+          .select("owner_id")
+          .eq("id", employeeData.kiosko_id)
+          .single()
+        ownerId = kioskoRow?.owner_id ?? null
+        canApproveNow = true
+      }
     } else {
-      const { data: kioscos } = await supabase.from("kioscos").select("id").eq("owner_id", user.id).limit(1)
-
+      const { data: kioscos } = await supabase.from("kioscos").select("id, owner_id").eq("owner_id", user.id)
       if (kioscos && kioscos.length > 0) {
         targetKioskoId = kioscos[0].id
+        loadKioskoIds = kioscos.map((k) => k.id)
+        ownerId = user.id
+        canApproveNow = true
       }
     }
 
+    // Un gerente con permiso ve (y puede aprobar) los pedidos de todas las
+    // sucursales del mismo dueño, no sólo la propia.
+    if (ownerId && canApproveNow && employeeData) {
+      const { data: allOwnerKioscos } = await supabase.from("kioscos").select("id").eq("owner_id", ownerId)
+      if (allOwnerKioscos) {
+        loadKioskoIds = allOwnerKioscos.map((k) => k.id)
+      }
+    }
+
+    setCanApprove(canApproveNow)
+
     if (targetKioskoId) {
       setKioskoId(targetKioskoId)
-      await loadPedidos(targetKioskoId)
+      setAllKioscoIds(loadKioskoIds)
+      await loadPedidos(loadKioskoIds)
     }
     setLoading(false)
   }
 
-  const loadPedidos = async (kiosko_id: string) => {
+  const loadPedidos = async (kiosko_ids: string[]) => {
     const { data, error } = await supabase
       .from("pedidos_internos")
       .select(`
         *,
-        destino:destino_kiosco_id(name)
+        destino:destino_kiosco_id(name),
+        origen:origen_kiosco_id(name),
+        solicitante:kiosco_id(name)
       `)
-      .eq("kiosco_id", kiosko_id)
+      .in("kiosco_id", kiosko_ids)
       .order("created_at", { ascending: false })
 
     if (!error && data) {
@@ -110,6 +154,8 @@ export default function PedidosInternosPage() {
           return {
             ...pedido,
             destino_nombre: pedido.destino?.name || "Stock Central",
+            origen_nombre: pedido.origen?.name || null,
+            solicitante_nombre: pedido.solicitante?.name || "",
             items_count: count || 0,
             items_total: totalItems,
           }
@@ -142,6 +188,8 @@ export default function PedidosInternosPage() {
   }
 
   const handleMarcarRecibido = async (pedidoId: string) => {
+    // El stock ya se movió al aprobar: esto sólo confirma que la mercadería
+    // llegó físicamente, no vuelve a tocar stock_quantity.
     const { error } = await supabase
       .from("pedidos_internos")
       .update({
@@ -150,15 +198,30 @@ export default function PedidosInternosPage() {
       })
       .eq("id", pedidoId)
 
-    if (!error && kioskoId) {
-      await loadPedidos(kioskoId)
+    if (!error) {
+      await loadPedidos(allKioscoIds)
+    }
+  }
+
+  const handleRechazar = async (pedidoId: string) => {
+    const motivo = window.prompt("Motivo del rechazo (opcional):")?.trim() || null
+    const { error } = await supabase.rpc("reject_pedido_interno", {
+      p_pedido_id: pedidoId,
+      p_reason: motivo,
+    })
+
+    if (error) {
+      toast.error("No se pudo rechazar", error.message)
+    } else {
+      toast.success("Pedido rechazado", "No se movió stock de ningún lado")
+      await loadPedidos(allKioscoIds)
     }
   }
 
   const filteredPedidos = pedidos.filter(
     (p) =>
       p.numero_pedido.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.destino_nombre || "").toLowerCase().includes(searchQuery.toLowerCase()),
+      (p.solicitante_nombre || "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const formatDate = (dateStr: string) => {
@@ -175,10 +238,13 @@ export default function PedidosInternosPage() {
     switch (estado) {
       case "recibido":
         return <Check className="w-4 h-4" />
+      case "aprobado":
+        return <Truck className="w-4 h-4" />
       case "pendiente":
         return <Clock className="w-4 h-4" />
       case "en_proceso":
         return <Truck className="w-4 h-4" />
+      case "rechazado":
       case "cancelado":
         return <AlertCircle className="w-4 h-4" />
       default:
@@ -190,10 +256,13 @@ export default function PedidosInternosPage() {
     switch (estado) {
       case "recibido":
         return "bg-green-500/20 text-green-400"
+      case "aprobado":
+        return "bg-cyan-500/20 text-cyan-400"
       case "pendiente":
         return "bg-yellow-500/20 text-yellow-400"
       case "en_proceso":
         return "bg-cyan-500/20 text-cyan-400"
+      case "rechazado":
       case "cancelado":
         return "bg-red-500/20 text-red-400"
       default:
@@ -205,10 +274,14 @@ export default function PedidosInternosPage() {
     switch (estado) {
       case "recibido":
         return "Recibido"
+      case "aprobado":
+        return "Aprobado"
       case "pendiente":
         return "Pendiente"
       case "en_proceso":
         return "En Proceso"
+      case "rechazado":
+        return "Rechazado"
       case "cancelado":
         return "Cancelado"
       default:
@@ -307,7 +380,7 @@ export default function PedidosInternosPage() {
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className="text-left text-sm font-medium text-gray-400 p-4">Número</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Destino</th>
+              <th className="text-left text-sm font-medium text-gray-400 p-4">Solicitante</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Items</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha Solicitud</th>
               <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
@@ -341,12 +414,15 @@ export default function PedidosInternosPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        {pedido.tipo_destino === "stock_central" ? (
-                          <Warehouse className="w-4 h-4 text-cyan-400" />
-                        ) : (
-                          <Building2 className="w-4 h-4 text-purple-400" />
-                        )}
-                        <span className="text-white">{pedido.destino_nombre}</span>
+                        <Building2 className="w-4 h-4 text-purple-400" />
+                        <div>
+                          <span className="text-white">{pedido.solicitante_nombre}</span>
+                          {pedido.origen_nombre && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                              <Warehouse className="w-3 h-3" /> desde {pedido.origen_nombre}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -365,7 +441,35 @@ export default function PedidosInternosPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {pedido.estado === "en_proceso" && (
+                        {pedido.estado === "pendiente" && canApprove && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setApprovingPedido(pedido)
+                              }}
+                              className="text-cyan-400 hover:text-cyan-300"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Aprobar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRechazar(pedido.id)
+                              }}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Rechazar
+                            </Button>
+                          </>
+                        )}
+                        {pedido.estado === "aprobado" && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -394,6 +498,14 @@ export default function PedidosInternosPage() {
                             <div className="mb-4 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                               <p className="text-sm text-gray-300">
                                 <span className="font-medium text-cyan-400">Observaciones:</span> {pedido.observaciones}
+                              </p>
+                            </div>
+                          )}
+                          {pedido.motivo_rechazo && (
+                            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                              <p className="text-sm text-gray-300">
+                                <span className="font-medium text-red-400">Motivo del rechazo:</span>{" "}
+                                {pedido.motivo_rechazo}
                               </p>
                             </div>
                           )}
@@ -435,7 +547,19 @@ export default function PedidosInternosPage() {
           open={showModal}
           onClose={() => setShowModal(false)}
           kioskoId={kioskoId}
-          onSuccess={() => loadPedidos(kioskoId)}
+          onSuccess={() => loadPedidos(allKioscoIds)}
+        />
+      )}
+
+      {approvingPedido && (
+        <AprobarPedidoInternoModal
+          open={!!approvingPedido}
+          onClose={() => setApprovingPedido(null)}
+          pedido={approvingPedido}
+          onSuccess={() => {
+            setApprovingPedido(null)
+            loadPedidos(allKioscoIds)
+          }}
         />
       )}
     </div>

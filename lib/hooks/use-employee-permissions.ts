@@ -16,6 +16,7 @@ export type EmployeePermissions = {
   can_stock_entry: boolean
   can_create_internal_order: boolean
   can_view_internal_orders: boolean
+  can_approve_internal_orders: boolean
   can_view_products: boolean
   can_manage_employees: boolean
 }
@@ -33,6 +34,7 @@ export const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
   can_stock_entry: false,
   can_create_internal_order: false,
   can_view_internal_orders: false,
+  can_approve_internal_orders: false,
   can_view_products: true,
   can_manage_employees: false,
 }
