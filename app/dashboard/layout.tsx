@@ -40,6 +40,7 @@ import {
   X,
   Gift,
   PiggyBank,
+  ShieldAlert,
 } from "lucide-react"
 import { ThemeProvider } from "@/lib/theme-context"
 import { useTheme } from "@/lib/theme-context"
@@ -71,6 +72,18 @@ function DashboardSidebar({
 
   const [openMenu, setOpenMenu] = useState<string | null>("DASHBOARD")
   const [openSubMenu, setOpenSubMenu] = useState<string | null>("Ventas")
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    )
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email === "atlasonecontact@gmail.com") setIsAdmin(true)
+    })
+  }, [])
 
   const toggleMenu = (menuLabel: string) => {
     setOpenMenu(openMenu === menuLabel ? null : menuLabel)
@@ -231,6 +244,15 @@ function DashboardSidebar({
       icon: Settings,
       href: "/dashboard/configuracion",
     },
+    ...(isAdmin
+      ? [
+          {
+            label: "CUENTAS",
+            icon: ShieldAlert,
+            href: "/dashboard/admin/cuentas",
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -634,6 +656,12 @@ function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
           if (profile?.access_status === 'rejected' && !isAdmin) {
             await supabase.auth.signOut();
             window.location.href = '/login?error=account_rejected';
+            return;
+          }
+
+          if (profile?.access_status === 'suspended' && !isAdmin) {
+            await supabase.auth.signOut();
+            window.location.href = '/login?error=account_suspended';
             return;
           }
         }

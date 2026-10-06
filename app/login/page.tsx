@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,8 +20,14 @@ type DemoBusinessType =
   | "jugueteria"
   | "dietetica"
 
+const ACCOUNT_ERROR_MESSAGES: Record<string, string> = {
+  account_rejected: "Tu cuenta no fue aprobada. Contactá a soporte si creés que es un error.",
+  account_suspended: "Tu cuenta está suspendida. Contactá a soporte para reactivarla.",
+}
+
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDemoLoading, setIsDemoLoading] = useState(false)
@@ -29,6 +35,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [showDemoOptions, setShowDemoOptions] = useState(false)
+
+  useEffect(() => {
+    const code = searchParams.get("error")
+    if (code && ACCOUNT_ERROR_MESSAGES[code]) {
+      setError(ACCOUNT_ERROR_MESSAGES[code])
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

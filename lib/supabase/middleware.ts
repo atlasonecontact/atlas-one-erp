@@ -67,6 +67,13 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
      }
 
+     if (profile?.access_status === 'suspended' && !isAdmin) {
+        const url = request.nextUrl.clone()
+        url.pathname = "/login"
+        url.searchParams.set('error', 'account_suspended')
+        return NextResponse.redirect(url)
+     }
+
      // Check employee-specific status and forced password change
      const { data: employee } = await supabase
        .from('employees')
