@@ -50,7 +50,7 @@ function KPIRow({ icon, label, value, suffix = "", trend, variant = "default" }:
   variant?: "default" | "success" | "warning" | "danger"
 }) {
   const variantColors = {
-    default: "text-white",
+    default: "text-foreground",
     success: "text-green-400",
     warning: "text-yellow-400",
     danger: "text-red-400",
@@ -62,7 +62,7 @@ function KPIRow({ icon, label, value, suffix = "", trend, variant = "default" }:
         <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
           {icon}
         </div>
-        <span className="text-sm text-gray-400">{label}</span>
+        <span className="text-sm text-muted-foreground">{label}</span>
       </div>
       <span className={cn("text-lg font-bold", variantColors[variant])}>
         {typeof value === 'number' ? value.toLocaleString('es-AR') : value}{suffix}
@@ -189,18 +189,18 @@ export function FinancialKPIs({ data, isLoading = false }: FinancialKPIsProps) {
 
   if (isLoadingState) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-4 bg-white/10 rounded w-32 mb-4 animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-4 bg-muted rounded w-32 mb-4 animate-pulse" />
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 rounded animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-accent rounded animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 relative overflow-hidden">
-      <h3 className="text-sm font-medium text-white mb-4">KPIs Financieros</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5 relative overflow-hidden">
+      <h3 className="text-sm font-medium text-foreground mb-4">KPIs Financieros</h3>
       <div className="space-y-1 divide-y divide-cyan-500/10">
         <KPIRow 
           icon={<TrendingUp className="w-4 h-4" />} 
@@ -297,18 +297,18 @@ export function InventoryKPIs({ data, isLoading = false }: InventoryKPIsProps) {
 
   if (isLoadingState) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-4 bg-white/10 rounded w-32 mb-4 animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-4 bg-muted rounded w-32 mb-4 animate-pulse" />
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 rounded animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-accent rounded animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-sm font-medium text-white mb-4">Inventario y Stock</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-sm font-medium text-foreground mb-4">Inventario y Stock</h3>
       <div className="space-y-1 divide-y divide-cyan-500/10">
         <KPIRow 
           icon={<Package className="w-4 h-4" />} 
@@ -423,18 +423,18 @@ export function PerformanceKPIs({ data, isLoading = false }: PerformanceKPIsProp
 
   if (isLoadingState) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-4 bg-white/10 rounded w-40 mb-4 animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-4 bg-muted rounded w-40 mb-4 animate-pulse" />
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 rounded animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-accent rounded animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-sm font-medium text-white mb-4">Desempeño del Personal</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-sm font-medium text-foreground mb-4">Desempeño del Personal</h3>
       <div className="space-y-1 divide-y divide-cyan-500/10">
         <KPIRow 
           icon={<Users className="w-4 h-4" />} 
@@ -526,18 +526,18 @@ export function ControlKPIs({ data, isLoading = false }: ControlKPIsProps) {
 
   if (isLoadingState) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-4 bg-white/10 rounded w-36 mb-4 animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-4 bg-muted rounded w-36 mb-4 animate-pulse" />
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 rounded animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-10 bg-accent rounded animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-sm font-medium text-white mb-4">Control y Seguridad</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-sm font-medium text-foreground mb-4">Control y Seguridad</h3>
       <div className="space-y-1 divide-y divide-cyan-500/10">
         <KPIRow 
           icon={<DollarSign className="w-4 h-4" />} 

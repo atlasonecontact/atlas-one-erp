@@ -134,12 +134,12 @@ export default function StockPorSucursalPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Stock por Sucursal</h1>
-          <p className="text-sm text-gray-400 mt-1">Inventario distribuido en sucursales</p>
+          <h1 className="text-2xl font-bold text-foreground">Stock por Sucursal</h1>
+          <p className="text-sm text-muted-foreground mt-1">Inventario distribuido en sucursales</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={selectedKiosko} onValueChange={setSelectedKiosko}>
-            <SelectTrigger className="w-[250px] bg-[#0a0f1a] border-cyan-500/20">
+            <SelectTrigger className="w-[250px] bg-card border-cyan-500/20">
               <SelectValue placeholder="Seleccionar sucursal" />
             </SelectTrigger>
             <SelectContent>
@@ -159,12 +159,12 @@ export default function StockPorSucursalPage() {
             size="icon"
             onClick={() => selectedKiosko && loadProducts(selectedKiosko)}
             disabled={loading}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+          <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
           </Button>
@@ -175,20 +175,20 @@ export default function StockPorSucursalPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-purple-500/10 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Total</span>
+            <span className="text-sm text-muted-foreground">Stock Total</span>
             <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-purple-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-white">{totalStock.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-foreground">{totalStock.toLocaleString()}</p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-gray-500">{products.length} productos</span>
+            <span className="text-xs text-muted-foreground">{products.length} productos</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Bajo</span>
+            <span className="text-sm text-muted-foreground">Stock Bajo</span>
             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-yellow-400" />
             </div>
@@ -198,7 +198,7 @@ export default function StockPorSucursalPage() {
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-red-500/10 to-red-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Crítico</span>
+            <span className="text-sm text-muted-foreground">Stock Crítico</span>
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
@@ -208,41 +208,41 @@ export default function StockPorSucursalPage() {
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Sucursal</span>
+            <span className="text-sm text-muted-foreground">Sucursal</span>
             <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
               <Package className="w-5 h-5 text-blue-400" />
             </div>
           </div>
-          <p className="text-xl font-bold text-white truncate">
+          <p className="text-xl font-bold text-foreground truncate">
             {kioscos.find((k) => k.id === selectedKiosko)?.name || "--"}
           </p>
         </div>
       </div>
 
       {/* Products Table */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
-          <h3 className="text-lg font-semibold text-white">Productos en Sucursal</h3>
+          <h3 className="text-lg font-semibold text-foreground">Productos en Sucursal</h3>
           <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar productos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0d1424] border-cyan-500/10 text-white placeholder:text-gray-500"
+              className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
         {/* Celulares: tarjetas */}
         <div className="md:hidden divide-y divide-cyan-500/5">
           {loading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
               Cargando inventario...
             </div>
           ) : filteredProducts.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No se encontraron productos en esta sucursal</p>
+            <p className="p-8 text-center text-muted-foreground">No se encontraron productos en esta sucursal</p>
           ) : (
             filteredProducts.map((product) => {
               const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
@@ -250,7 +250,7 @@ export default function StockPorSucursalPage() {
               return (
                 <div key={product.id} className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-white font-medium break-words">{product.name}</p>
+                    <p className="text-foreground font-medium break-words">{product.name}</p>
                     {isCritical ? (
                       <span className="inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
                         <AlertTriangle className="w-3 h-3" />
@@ -268,7 +268,7 @@ export default function StockPorSucursalPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400">{product.category || "Sin categoría"}</p>
+                  <p className="text-xs text-muted-foreground">{product.category || "Sin categoría"}</p>
                   <div className="flex items-center gap-4 text-sm">
                     <span>
                       Stock:{" "}
@@ -278,13 +278,13 @@ export default function StockPorSucursalPage() {
                             ? "text-red-400 font-semibold"
                             : isLowStock
                               ? "text-yellow-400 font-semibold"
-                              : "text-white"
+                              : "text-foreground"
                         }
                       >
                         {product.stock_quantity}
                       </span>
                     </span>
-                    <span className="text-gray-500">Mín: {product.min_stock_level || 10}</span>
+                    <span className="text-muted-foreground">Mín: {product.min_stock_level || 10}</span>
                   </div>
                 </div>
               )
@@ -296,24 +296,24 @@ export default function StockPorSucursalPage() {
         <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Categoría</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Stock</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Nivel Mín.</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Nivel Mín.</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Cargando inventario...
                 </td>
               </tr>
             ) : filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   No se encontraron productos en esta sucursal
                 </td>
               </tr>
@@ -323,9 +323,9 @@ export default function StockPorSucursalPage() {
                 const isCritical = product.stock_quantity <= 5
 
                 return (
-                  <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4 text-white font-medium">{product.name}</td>
-                    <td className="p-4 text-gray-400">{product.category || "-"}</td>
+                  <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-accent transition-colors">
+                    <td className="p-4 text-foreground font-medium">{product.name}</td>
+                    <td className="p-4 text-muted-foreground">{product.category || "-"}</td>
                     <td className="p-4">
                       <span
                         className={
@@ -333,13 +333,13 @@ export default function StockPorSucursalPage() {
                             ? "text-red-400 font-semibold"
                             : isLowStock
                               ? "text-yellow-400 font-semibold"
-                              : "text-white"
+                              : "text-foreground"
                         }
                       >
                         {product.stock_quantity}
                       </span>
                     </td>
-                    <td className="p-4 text-gray-400">{product.min_stock_level || 10}</td>
+                    <td className="p-4 text-muted-foreground">{product.min_stock_level || 10}</td>
                     <td className="p-4">
                       {isCritical ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">

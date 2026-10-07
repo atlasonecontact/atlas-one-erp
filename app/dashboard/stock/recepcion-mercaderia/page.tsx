@@ -592,7 +592,7 @@ export default function RecepcionMercaderiaPage() {
 
   if (!permsLoading && !(permissions.can_receive_merchandise && permissions.can_stock_entry)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 lg:p-8">
+      <div className="min-h-screen bg-background p-4 lg:p-8">
         <div className="max-w-3xl mx-auto">
           <AccessDenied
             title="No tenés permiso para recibir mercadería"
@@ -604,24 +604,24 @@ export default function RecepcionMercaderiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 lg:p-8">
+    <div className="min-h-screen bg-background p-4 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Recepción de Mercadería</h1>
-            <p className="text-slate-400 mt-1 text-sm lg:text-base">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Recepción de Mercadería</h1>
+            <p className="text-muted-foreground mt-1 text-sm lg:text-base">
               Registra el ingreso de productos con trazabilidad completa
             </p>
           </div>
           {/* Toggle for enabling/disabling scanner */}
-          <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 self-start">
-            <label className="text-sm text-slate-300 flex items-center gap-2 cursor-pointer touch-target">
+          <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-2 border border-border self-start">
+            <label className="text-sm text-foreground flex items-center gap-2 cursor-pointer touch-target">
               <input
                 type="checkbox"
                 checked={scannerMode}
                 onChange={(e) => setScannerMode(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
+                className="w-4 h-4 rounded border-border bg-card text-cyan-500 focus:ring-cyan-500 focus:ring-offset-background"
               />
               <span className="hidden sm:inline">Scanner de Código de Barras </span>
               {scannerMode ? "Activado" : "Desactivado"}
@@ -630,7 +630,7 @@ export default function RecepcionMercaderiaPage() {
         </div>
 
         {/* New Receipt Form */}
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-4 lg:p-6">
+        <Card className="bg-card border-border backdrop-blur-xl p-4 lg:p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {editingDraftId && (
               <div className="p-3 bg-amber-950/30 border border-amber-900/50 rounded-lg text-sm text-amber-300">
@@ -642,7 +642,7 @@ export default function RecepcionMercaderiaPage() {
             {/* Receipt Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-slate-300 flex items-center gap-2">
+                <Label className="text-foreground flex items-center gap-2">
                   <FileText className="w-4 h-4 text-cyan-400" />
                   Número de Remito/Factura *
                 </Label>
@@ -651,12 +651,12 @@ export default function RecepcionMercaderiaPage() {
                   onChange={(e) => setReceiptNumber(e.target.value)}
                   placeholder="R-12345"
                   required
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300 flex items-center gap-2">
+                <Label className="text-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-cyan-400" />
                   Fecha *
                 </Label>
@@ -665,19 +665,19 @@ export default function RecepcionMercaderiaPage() {
                   value={receiptDate}
                   onChange={(e) => setReceiptDate(e.target.value)}
                   required
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300 flex items-center gap-2">
+                <Label className="text-foreground flex items-center gap-2">
                   <User className="w-4 h-4 text-cyan-400" />
                   Recibido por
                 </Label>
                 <Input
                   value={user?.email || "Cargando..."}
                   disabled
-                  className="bg-slate-800/30 border-slate-700 text-slate-400"
+                  className="bg-card border-border text-muted-foreground"
                 />
               </div>
             </div>
@@ -686,23 +686,23 @@ export default function RecepcionMercaderiaPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Autocompletion for supplier */}
               <div className="space-y-2 relative">
-                <Label className="text-slate-300">Proveedor *</Label>
+                <Label className="text-foreground">Proveedor *</Label>
                 <Input
                   value={supplierName}
                   onChange={(e) => setSupplierName(e.target.value)}
                   placeholder="Nombre del proveedor"
                   required
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                   onFocus={() => supplierName && setShowSupplierDropdown(true)}
                 />
                 {showSupplierDropdown && filteredSuppliers.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
                     {filteredSuppliers.map((supplier, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => selectSupplier(supplier)}
-                        className="w-full text-left px-4 py-2 text-white hover:bg-slate-700 transition-colors"
+                        className="w-full text-left px-4 py-2 text-foreground hover:bg-accent transition-colors"
                       >
                         {supplier}
                       </button>
@@ -712,19 +712,19 @@ export default function RecepcionMercaderiaPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Contacto del Proveedor</Label>
+                <Label className="text-foreground">Contacto del Proveedor</Label>
                 <Input
                   value={supplierContact}
                   onChange={(e) => setSupplierContact(e.target.value)}
                   placeholder="Teléfono o email"
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                 />
               </div>
             </div>
 
             {/* Photo Upload */}
             <div className="space-y-2">
-              <Label className="text-slate-300 flex items-center gap-2">
+              <Label className="text-foreground flex items-center gap-2">
                 <Camera className="w-4 h-4 text-cyan-400" />
                 Foto del Remito (Recomendable)
               </Label>
@@ -733,21 +733,21 @@ export default function RecepcionMercaderiaPage() {
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoChange}
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                 />
                 {receiptPhotoPreview && (
                   <img
                     src={receiptPhotoPreview || "/placeholder.svg"}
                     alt="Preview"
-                    className="w-20 h-20 object-cover rounded border border-slate-700"
+                    className="w-20 h-20 object-cover rounded border border-border"
                   />
                 )}
               </div>
             </div>
 
             {/* Add Products Section */}
-            <div className="border-t border-slate-800 pt-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <div className="border-t border-border pt-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-cyan-400" />
                 Productos Recibidos
               </h3>
@@ -765,7 +765,7 @@ export default function RecepcionMercaderiaPage() {
 
               {/* Buscar por código de barras: escribirlo, pegarlo, usar la pistola o la cámara */}
               <div className="mb-4 space-y-2">
-                <Label className="text-slate-300 flex items-center gap-2">
+                <Label className="text-foreground flex items-center gap-2">
                   <ScanLine className="w-4 h-4 text-cyan-400" />
                   Buscar por código de barras
                 </Label>
@@ -786,7 +786,7 @@ export default function RecepcionMercaderiaPage() {
                     }}
                     placeholder="Escaneá o escribí el código"
                     inputMode="numeric"
-                    className="flex-1 min-w-[140px] h-11 bg-slate-800/50 border-slate-700 text-white"
+                    className="flex-1 min-w-[140px] h-11 bg-card border-border text-foreground"
                   />
                   {/* Botón de cámara primero y bien visible: es el camino principal en mobile */}
                   <Button
@@ -808,7 +808,7 @@ export default function RecepcionMercaderiaPage() {
                       }
                     }}
                     disabled={barcodeInput.trim().length < 4}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white shrink-0 h-11 touch-target"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-foreground shrink-0 h-11 touch-target"
                   >
                     <Search className="w-4 h-4 sm:mr-2" />
                     <span className="hidden sm:inline">Buscar</span>
@@ -819,28 +819,28 @@ export default function RecepcionMercaderiaPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 {/* Product search with autocompletion */}
                 <div className="md:col-span-2 space-y-2 relative">
-                  <Label className="text-slate-300">Producto *</Label>
+                  <Label className="text-foreground">Producto *</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={productSearchQuery}
                       onChange={(e) => setProductSearchQuery(e.target.value)}
                       placeholder="Buscar por nombre, código de barras, SKU o categoría..."
-                      className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                      className="pl-10 bg-card border-border text-foreground"
                       onFocus={() => productSearchQuery && setShowProductDropdown(true)}
                     />
                   </div>
                   {showProductDropdown && filteredProducts.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
                       {filteredProducts.map((product) => (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => selectProduct(product)}
-                          className="w-full text-left px-4 py-3 text-white hover:bg-slate-700 transition-colors border-b border-slate-700 last:border-b-0"
+                          className="w-full text-left px-4 py-3 text-foreground hover:bg-accent transition-colors border-b border-border last:border-b-0"
                         >
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-slate-400">
+                          <div className="text-sm text-muted-foreground">
                             {product.category} • SKU: {product.sku} • ${product.cost.toFixed(2)}
                           </div>
                         </button>
@@ -850,14 +850,14 @@ export default function RecepcionMercaderiaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Cantidad *</Label>
+                  <Label className="text-foreground">Cantidad *</Label>
                   <Input
                     type="number"
                     min="1"
                     inputMode="numeric"
                     value={quantity}
                     onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                    className="h-11 bg-slate-800/50 border-slate-700 text-white"
+                    className="h-11 bg-card border-border text-foreground"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -872,7 +872,7 @@ export default function RecepcionMercaderiaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Costo Unitario</Label>
+                  <Label className="text-foreground">Costo Unitario</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -880,7 +880,7 @@ export default function RecepcionMercaderiaPage() {
                     inputMode="decimal"
                     value={unitCost}
                     onChange={(e) => setUnitCost(Number.parseFloat(e.target.value) || 0)}
-                    className="h-11 bg-slate-800/50 border-slate-700 text-white"
+                    className="h-11 bg-card border-border text-foreground"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -895,7 +895,7 @@ export default function RecepcionMercaderiaPage() {
                 type="button"
                 onClick={addItem}
                 disabled={!selectedProduct || quantity <= 0}
-                className="w-full sm:w-auto h-11 bg-cyan-600 hover:bg-cyan-700 text-white"
+                className="w-full sm:w-auto h-11 bg-cyan-600 hover:bg-cyan-700 text-foreground"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Producto
@@ -906,7 +906,7 @@ export default function RecepcionMercaderiaPage() {
                 <div className="mt-6 space-y-2">
                   {/* Desktop: tabla completa */}
                   <div className="hidden md:block space-y-2">
-                    <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-400 px-4 py-2">
+                    <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground px-4 py-2">
                       <div className="col-span-5">Producto</div>
                       <div className="col-span-2 text-right">Cantidad</div>
                       <div className="col-span-2 text-right">Costo Unit.</div>
@@ -916,11 +916,11 @@ export default function RecepcionMercaderiaPage() {
                     {items.map((item, index) => (
                       <div
                         key={index}
-                        className="grid grid-cols-12 gap-4 items-center bg-slate-800/30 rounded-lg px-4 py-3 border border-slate-800"
+                        className="grid grid-cols-12 gap-4 items-center bg-card rounded-lg px-4 py-3 border border-border"
                       >
-                        <div className="col-span-5 text-white font-medium">{item.product_name}</div>
-                        <div className="col-span-2 text-right text-slate-300">{item.quantity} un.</div>
-                        <div className="col-span-2 text-right text-slate-300">${item.unit_cost.toFixed(2)}</div>
+                        <div className="col-span-5 text-foreground font-medium">{item.product_name}</div>
+                        <div className="col-span-2 text-right text-foreground">{item.quantity} un.</div>
+                        <div className="col-span-2 text-right text-foreground">${item.unit_cost.toFixed(2)}</div>
                         <div className="col-span-2 text-right text-cyan-400 font-semibold">
                           ${item.subtotal.toFixed(2)}
                         </div>
@@ -944,10 +944,10 @@ export default function RecepcionMercaderiaPage() {
                     {items.map((item, index) => (
                       <div
                         key={index}
-                        className="bg-slate-800/30 rounded-lg px-4 py-3 border border-slate-800"
+                        className="bg-card rounded-lg px-4 py-3 border border-border"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-white font-medium">{item.product_name}</span>
+                          <span className="text-foreground font-medium">{item.product_name}</span>
                           <Button
                             type="button"
                             size="icon"
@@ -960,7 +960,7 @@ export default function RecepcionMercaderiaPage() {
                           </Button>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-sm">
-                          <span className="text-slate-400">
+                          <span className="text-muted-foreground">
                             {item.quantity} un. × ${item.unit_cost.toFixed(2)}
                           </span>
                           <span className="text-cyan-400 font-semibold">${item.subtotal.toFixed(2)}</span>
@@ -970,9 +970,9 @@ export default function RecepcionMercaderiaPage() {
                   </div>
 
                   {/* Total */}
-                  <div className="flex justify-end pt-4 border-t border-slate-800">
+                  <div className="flex justify-end pt-4 border-t border-border">
                     <div className="text-right">
-                      <div className="text-sm text-slate-400">Total</div>
+                      <div className="text-sm text-muted-foreground">Total</div>
                       <div className="text-2xl font-bold text-cyan-400">${totalAmount.toFixed(2)}</div>
                     </div>
                   </div>
@@ -982,13 +982,13 @@ export default function RecepcionMercaderiaPage() {
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Notas / Observaciones</Label>
+              <Label className="text-foreground">Notas / Observaciones</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas adicionales sobre la recepción..."
                 rows={3}
-                className="bg-slate-800/50 border-slate-700 text-white"
+                className="bg-card border-border text-foreground"
               />
             </div>
 
@@ -999,7 +999,7 @@ export default function RecepcionMercaderiaPage() {
                 <Button
                   type="submit"
                   disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
-                  className="w-full h-12 text-base bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                  className="w-full h-12 text-base bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-foreground"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   Confirmar y sumar al stock
@@ -1018,7 +1018,7 @@ export default function RecepcionMercaderiaPage() {
                   type="button"
                   variant="ghost"
                   onClick={resetForm}
-                  className="w-full h-11 text-slate-300 hover:bg-slate-800"
+                  className="w-full h-11 text-foreground hover:bg-accent"
                 >
                   {editingDraftId ? "Cancelar edición" : "Limpiar"}
                 </Button>
@@ -1030,7 +1030,7 @@ export default function RecepcionMercaderiaPage() {
                   type="button"
                   variant="outline"
                   onClick={resetForm}
-                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="border-border text-foreground hover:bg-accent"
                 >
                   {editingDraftId ? "Cancelar edición" : "Limpiar"}
                 </Button>
@@ -1047,7 +1047,7 @@ export default function RecepcionMercaderiaPage() {
                 <Button
                   type="submit"
                   disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
-                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-foreground"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   Confirmar y sumar al stock
@@ -1062,16 +1062,16 @@ export default function RecepcionMercaderiaPage() {
         </Card>
 
         {/* Receipts History */}
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-4 lg:p-6">
+        <Card className="bg-card border-border backdrop-blur-xl p-4 lg:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Historial de Recepciones</h2>
+            <h2 className="text-xl font-bold text-foreground">Historial de Recepciones</h2>
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar por remito o proveedor..."
-                className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                className="pl-10 bg-card border-border text-foreground"
               />
             </div>
           </div>
@@ -1080,7 +1080,7 @@ export default function RecepcionMercaderiaPage() {
             {filteredReceipts.map((receipt) => (
               <div
                 key={receipt.id}
-                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-800/30 rounded-lg p-4 border border-slate-800 hover:border-slate-700 transition-colors"
+                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card rounded-lg p-4 border border-border hover:border-border transition-colors"
               >
                 <div className="flex items-center gap-4">
                   {receipt.status === "draft" ? (
@@ -1093,7 +1093,7 @@ export default function RecepcionMercaderiaPage() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`text-white font-semibold ${receipt.status === "cancelled" ? "line-through opacity-60" : ""}`}
+                        className={`text-foreground font-semibold ${receipt.status === "cancelled" ? "line-through opacity-60" : ""}`}
                       >
                         {receipt.receipt_number}
                       </span>
@@ -1113,7 +1113,7 @@ export default function RecepcionMercaderiaPage() {
                             : "Confirmada"}
                       </span>
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-muted-foreground">
                       {receipt.supplier_name} • {new Date(receipt.receipt_date).toLocaleDateString()}
                       {receipt.status === "cancelled" && receipt.cancel_reason ? ` • ${receipt.cancel_reason}` : ""}
                     </div>
@@ -1121,11 +1121,11 @@ export default function RecepcionMercaderiaPage() {
                 </div>
                 <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6 flex-wrap">
                   <div className="text-left sm:text-right">
-                    <div className="text-sm text-slate-400">Recibido por</div>
-                    <div className="text-white">{receipt.received_by_name}</div>
+                    <div className="text-sm text-muted-foreground">Recibido por</div>
+                    <div className="text-foreground">{receipt.received_by_name}</div>
                   </div>
                   <div className="text-left sm:text-right">
-                    <div className="text-sm text-slate-400">Total</div>
+                    <div className="text-sm text-muted-foreground">Total</div>
                     <div className="text-lg font-bold text-cyan-400">${receipt.total_amount.toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -1134,7 +1134,7 @@ export default function RecepcionMercaderiaPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => window.open(receipt.receipt_photo_url!, "_blank")}
-                        className="border-slate-700 text-slate-300 touch-target"
+                        className="border-border text-foreground touch-target"
                       >
                         <Camera className="w-4 h-4" />
                       </Button>
@@ -1153,7 +1153,7 @@ export default function RecepcionMercaderiaPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => setCancelTarget(receipt)}
-                          className="border-slate-700 text-slate-300 touch-target"
+                          className="border-border text-foreground touch-target"
                         >
                           Descartar
                         </Button>
@@ -1175,7 +1175,7 @@ export default function RecepcionMercaderiaPage() {
             ))}
 
             {filteredReceipts.length === 0 && (
-              <div className="text-center py-12 text-slate-400">No se encontraron recepciones</div>
+              <div className="text-center py-12 text-muted-foreground">No se encontraron recepciones</div>
             )}
           </div>
         </Card>
@@ -1192,42 +1192,42 @@ export default function RecepcionMercaderiaPage() {
         {/* Resumen antes de confirmar: impacto exacto en stock */}
         {showConfirm && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-slate-800">
-                <h2 className="text-xl font-bold text-white">Confirmar recepción</h2>
-                <p className="text-sm text-slate-400 mt-1">
+            <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-border">
+                <h2 className="text-xl font-bold text-foreground">Confirmar recepción</h2>
+                <p className="text-sm text-muted-foreground mt-1">
                   Remito {receiptNumber} • {supplierName} • {totalUnits} unidades
                 </p>
               </div>
               <div className="flex-1 overflow-y-auto p-6 space-y-2">
-                <p className="text-sm text-slate-300 mb-3">
+                <p className="text-sm text-foreground mb-3">
                   Al confirmar se va a sumar este stock. No se puede editar después: si hay un error, se anula y
                   queda registrado.
                 </p>
                 {stockImpact.map((row) => (
                   <div
                     key={row.name}
-                    className="flex items-center justify-between bg-slate-800/40 rounded-lg px-4 py-3 border border-slate-800"
+                    className="flex items-center justify-between bg-muted rounded-lg px-4 py-3 border border-border"
                   >
-                    <span className="text-white font-medium">{row.name}</span>
-                    <span className="text-slate-300 text-sm">
+                    <span className="text-foreground font-medium">{row.name}</span>
+                    <span className="text-foreground text-sm">
                       {row.current} + <span className="text-cyan-400 font-semibold">{row.add}</span> ={" "}
-                      <span className="text-white font-bold">{row.current + row.add}</span> un.
+                      <span className="text-foreground font-bold">{row.current + row.add}</span> un.
                     </span>
                   </div>
                 ))}
-                <div className="flex justify-end pt-3 text-slate-300">
+                <div className="flex justify-end pt-3 text-foreground">
                   Total del remito:{" "}
                   <span className="ml-2 text-cyan-400 font-bold">${totalAmount.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
+              <div className="p-6 border-t border-border flex justify-end gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowConfirm(false)}
                   disabled={confirming}
-                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="border-border text-foreground hover:bg-accent"
                 >
                   Volver
                 </Button>
@@ -1235,7 +1235,7 @@ export default function RecepcionMercaderiaPage() {
                   type="button"
                   onClick={confirmReceipt}
                   disabled={confirming}
-                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-foreground"
                 >
                   {confirming ? "Confirmando..." : "Confirmar y sumar al stock"}
                 </Button>
@@ -1247,23 +1247,23 @@ export default function RecepcionMercaderiaPage() {
         {/* Anular recepción confirmada / descartar borrador */}
         {cancelTarget && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 space-y-4">
-              <h2 className="text-xl font-bold text-white">
+            <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4">
+              <h2 className="text-xl font-bold text-foreground">
                 {cancelTarget.status === "draft" ? "Descartar borrador" : "Anular recepción"}
               </h2>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-foreground">
                 Remito {cancelTarget.receipt_number} • {cancelTarget.supplier_name}
                 {cancelTarget.status === "draft"
                   ? ". No se modificó el stock, solo se descarta el borrador."
                   : ". Se va a restar del stock lo que se había sumado, con un movimiento compensatorio que queda en el historial (el original no se borra)."}
               </p>
               <div className="space-y-2">
-                <Label className="text-slate-300">Motivo (opcional)</Label>
+                <Label className="text-foreground">Motivo (opcional)</Label>
                 <Textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   rows={3}
-                  className="bg-slate-800/50 border-slate-700 text-white"
+                  className="bg-card border-border text-foreground"
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -1275,7 +1275,7 @@ export default function RecepcionMercaderiaPage() {
                     setCancelReason("")
                   }}
                   disabled={cancelling}
-                  className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="border-border text-foreground hover:bg-accent"
                 >
                   Volver
                 </Button>
@@ -1283,7 +1283,7 @@ export default function RecepcionMercaderiaPage() {
                   type="button"
                   onClick={submitCancel}
                   disabled={cancelling}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-foreground"
                 >
                   {cancelling ? "Procesando..." : cancelTarget.status === "draft" ? "Descartar" : "Anular recepción"}
                 </Button>

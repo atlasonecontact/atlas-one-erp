@@ -227,21 +227,21 @@ export default function StockPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Control de Stock</h1>
+          <h1 className="text-2xl font-bold text-foreground">Control de Stock</h1>
           <div className="flex items-center gap-4 mt-1">
             <button className="text-sm text-cyan-400 border-b-2 border-cyan-400 pb-1">Inventario</button>
-            <button className="text-sm text-gray-400 hover:text-white pb-1">Movimientos</button>
-            <button className="text-sm text-gray-400 hover:text-white pb-1">Alertas</button>
+            <button className="text-sm text-muted-foreground hover:text-foreground pb-1">Movimientos</button>
+            <button className="text-sm text-muted-foreground hover:text-foreground pb-1">Alertas</button>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {/* Date Range */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0f1a] border border-cyan-500/20">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-white">Últimos 30 días</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-foreground">Últimos 30 días</span>
           </div>
 
-          <Button variant="outline" size="sm" className="border-cyan-500/20 text-gray-400 bg-[#0a0f1a]">
+          <Button variant="outline" size="sm" className="border-cyan-500/20 text-muted-foreground bg-card">
             <Filter className="w-4 h-4 mr-2" />
             Filtrar
           </Button>
@@ -251,12 +251,12 @@ export default function StockPage() {
             size="icon"
             onClick={loadUserAndData}
             disabled={loading}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+          <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
           </Button>
@@ -274,37 +274,37 @@ export default function StockPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Total</span>
+            <span className="text-sm text-muted-foreground">Stock Total</span>
             <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
               <Package className="w-5 h-5 text-cyan-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-white">{totalStock.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-foreground">{totalStock.toLocaleString()}</p>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-green-400 flex items-center">
               <ArrowUpRight className="w-3 h-3" />
               +5.2%
             </span>
-            <span className="text-xs text-gray-500">{products.length} productos</span>
+            <span className="text-xs text-muted-foreground">{products.length} productos</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Bajo</span>
+            <span className="text-sm text-muted-foreground">Stock Bajo</span>
             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-yellow-400" />
             </div>
           </div>
           <p className="text-3xl font-bold text-yellow-400">{lowStockCount}</p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-gray-500">Bajo nivel mínimo</span>
+            <span className="text-xs text-muted-foreground">Bajo nivel mínimo</span>
           </div>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-red-500/10 to-red-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Stock Crítico</span>
+            <span className="text-sm text-muted-foreground">Stock Crítico</span>
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
@@ -317,12 +317,12 @@ export default function StockPage() {
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-green-500/10 to-green-500/5 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Movimientos Hoy</span>
+            <span className="text-sm text-muted-foreground">Movimientos Hoy</span>
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-green-400" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-foreground">
             {
               movements.filter((m) => {
                 const movDate = new Date(m.created_at).toDateString()
@@ -332,7 +332,7 @@ export default function StockPage() {
             }
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-gray-500">Últimas 24 horas</span>
+            <span className="text-xs text-muted-foreground">Últimas 24 horas</span>
           </div>
         </div>
       </div>
@@ -347,39 +347,39 @@ export default function StockPage() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Stock insights */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Stock Insights</h3>
-              <p className="text-xs text-gray-500">Predicciones y alertas</p>
+              <h3 className="text-lg font-semibold text-foreground">Stock Insights</h3>
+              <p className="text-xs text-muted-foreground">Predicciones y alertas</p>
             </div>
           </div>
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <p className="text-sm text-white font-medium">Cigarrillos caerán a crítico</p>
+                <p className="text-sm text-foreground font-medium">Cigarrillos caerán a crítico</p>
               </div>
               <p className="text-xs text-red-400 ml-4">en 45 horas</p>
             </div>
             <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <p className="text-sm text-white font-medium">Energizantes ↑ ventas</p>
+                <p className="text-sm text-foreground font-medium">Energizantes ↑ ventas</p>
               </div>
               <p className="text-xs text-green-400 ml-4">+32% esta semana</p>
             </div>
             <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <p className="text-sm text-white font-medium">Golosinas: stock envejecido</p>
+                <p className="text-sm text-foreground font-medium">Golosinas: stock envejecido</p>
               </div>
               <p className="text-xs text-yellow-400 ml-4">rotación lenta</p>
             </div>
             <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-orange-500" />
-                <p className="text-sm text-white font-medium">Snacks riesgo de quiebre</p>
+                <p className="text-sm text-foreground font-medium">Snacks riesgo de quiebre</p>
               </div>
               <p className="text-xs text-orange-400 ml-4">el sábado</p>
             </div>
@@ -387,23 +387,23 @@ export default function StockPage() {
         </div>
 
         {/* Rotation by category */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Rotación por Categoría</h3>
-              <p className="text-xs text-gray-500">Velocidad de venta</p>
+              <h3 className="text-lg font-semibold text-foreground">Rotación por Categoría</h3>
+              <p className="text-xs text-muted-foreground">Velocidad de venta</p>
             </div>
           </div>
           <div className="space-y-4">
             {categoryStats.length === 0 ? (
-              <p className="text-gray-500 text-sm">No hay productos cargados</p>
+              <p className="text-muted-foreground text-sm">No hay productos cargados</p>
             ) : (
               categoryStats.slice(0, 5).map((cat, i) => (
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">{cat.category}</span>
+                    <span className="text-muted-foreground">{cat.category}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">{cat.stock} unid.</span>
+                      <span className="text-xs text-muted-foreground">{cat.stock} unid.</span>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           cat.rotation === "Rápido"
@@ -417,7 +417,7 @@ export default function StockPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                  <div className="h-2 rounded-full bg-accent overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         cat.rotation === "Rápido"
@@ -443,24 +443,24 @@ export default function StockPage() {
       <StockHeatmap />
 
       {/* Movements table */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
-          <h3 className="text-lg font-semibold text-white">Movimientos de Inventario</h3>
+          <h3 className="text-lg font-semibold text-foreground">Movimientos de Inventario</h3>
           <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar movimientos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0d1424] border-cyan-500/10 text-white placeholder:text-gray-500"
+              className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
         {/* Celulares: tarjetas */}
         <div className="md:hidden divide-y divide-cyan-500/5">
           {filteredMovements.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">
+            <p className="p-8 text-center text-muted-foreground">
               {loading ? "Cargando movimientos..." : "No hay movimientos de inventario"}
             </p>
           ) : (
@@ -469,18 +469,18 @@ export default function StockPage() {
               return (
                 <div key={movement.id} className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-white font-medium break-words">{movement.product_name}</p>
+                    <p className="text-foreground font-medium break-words">{movement.product_name}</p>
                     <span className={`flex items-center gap-1 shrink-0 font-semibold ${isIn ? "text-green-400" : "text-red-400"}`}>
                       {isIn ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                       {isIn ? "+" : "-"}
                       {movement.quantity}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className={isIn ? "text-green-400" : "text-red-400"}>{isIn ? "Entrada" : "Salida"}</span>
                     <span>{formatDate(movement.created_at)}</span>
                   </div>
-                  {movement.reason && <p className="text-xs text-gray-400">{movement.reason}</p>}
+                  {movement.reason && <p className="text-xs text-muted-foreground">{movement.reason}</p>}
                 </div>
               )
             })
@@ -491,25 +491,25 @@ export default function StockPage() {
         <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Tipo</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Cantidad</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Razón</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Fecha</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Tipo</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Cantidad</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Razón</th>
             </tr>
           </thead>
           <tbody>
             {filteredMovements.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
                   {loading ? "Cargando movimientos..." : "No hay movimientos de inventario"}
                 </td>
               </tr>
             ) : (
               filteredMovements.map((movement) => (
-                <tr key={movement.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-gray-400">{formatDate(movement.created_at)}</td>
-                  <td className="p-4 text-white">{movement.product_name}</td>
+                <tr key={movement.id} className="border-b border-cyan-500/5 hover:bg-accent transition-colors">
+                  <td className="p-4 text-muted-foreground">{formatDate(movement.created_at)}</td>
+                  <td className="p-4 text-foreground">{movement.product_name}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       {movement.movement_type === "in" || movement.movement_type === "purchase" ? (
@@ -542,7 +542,7 @@ export default function StockPage() {
                       {movement.quantity}
                     </span>
                   </td>
-                  <td className="p-4 text-gray-400">{movement.reason || "-"}</td>
+                  <td className="p-4 text-muted-foreground">{movement.reason || "-"}</td>
                 </tr>
               ))
             )}
@@ -551,17 +551,17 @@ export default function StockPage() {
       </div>
 
       {/* Inventory by Location Table */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
-          <h3 className="text-lg font-semibold text-white">Inventario por Ubicación</h3>
+          <h3 className="text-lg font-semibold text-foreground">Inventario por Ubicación</h3>
           <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar productos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0d1424] border-cyan-500/10 text-white placeholder:text-gray-500"
+              className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
         </div>
@@ -594,12 +594,12 @@ export default function StockPage() {
               {/* Celulares: tarjetas */}
               <div className="md:hidden divide-y divide-cyan-500/5">
                 {loading ? (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-muted-foreground">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Cargando inventario...
                   </div>
                 ) : filteredInventory.length === 0 ? (
-                  <p className="p-8 text-center text-gray-500">No se encontraron productos</p>
+                  <p className="p-8 text-center text-muted-foreground">No se encontraron productos</p>
                 ) : (
                   filteredInventory.slice(0, 50).map((product) => {
                     const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
@@ -607,10 +607,10 @@ export default function StockPage() {
                     return (
                       <div key={product.id} className="p-4 space-y-2">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-white font-medium break-words">{product.name}</p>
+                          <p className="text-foreground font-medium break-words">{product.name}</p>
                           <EstadoBadge isCritical={isCritical} isLowStock={isLowStock} />
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           {product.stock_location === "Stock Central" ? (
                             <Warehouse className="w-3.5 h-3.5 text-cyan-400" />
                           ) : (
@@ -628,13 +628,13 @@ export default function StockPage() {
                                   ? "text-red-400 font-semibold"
                                   : isLowStock
                                     ? "text-yellow-400 font-semibold"
-                                    : "text-white"
+                                    : "text-foreground"
                               }
                             >
                               {product.stock_quantity}
                             </span>
                           </span>
-                          <span className="text-gray-500">Mín: {product.min_stock_level || 10}</span>
+                          <span className="text-muted-foreground">Mín: {product.min_stock_level || 10}</span>
                         </div>
                       </div>
                     )
@@ -646,25 +646,25 @@ export default function StockPage() {
               <table className="hidden md:table w-full">
                 <thead>
                   <tr className="border-b border-cyan-500/10">
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Categoría</th>
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Ubicación</th>
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Stock</th>
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Nivel Mín.</th>
-                    <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Producto</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Categoría</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Ubicación</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Stock</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Nivel Mín.</th>
+                    <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                         Cargando inventario...
                       </td>
                     </tr>
                   ) : filteredInventory.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
                         No se encontraron productos
                       </td>
                     </tr>
@@ -674,9 +674,9 @@ export default function StockPage() {
                       const isCritical = product.stock_quantity <= 5
 
                       return (
-                        <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                          <td className="p-4 text-white font-medium">{product.name}</td>
-                          <td className="p-4 text-gray-400">{product.category || "-"}</td>
+                        <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-accent transition-colors">
+                          <td className="p-4 text-foreground font-medium">{product.name}</td>
+                          <td className="p-4 text-muted-foreground">{product.category || "-"}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               {product.stock_location === "Stock Central" ? (
@@ -684,7 +684,7 @@ export default function StockPage() {
                               ) : (
                                 <Building2 className="w-4 h-4 text-purple-400" />
                               )}
-                              <span className="text-gray-300 text-sm">{product.kiosko_name}</span>
+                              <span className="text-muted-foreground text-sm">{product.kiosko_name}</span>
                             </div>
                           </td>
                           <td className="p-4">
@@ -694,13 +694,13 @@ export default function StockPage() {
                                   ? "text-red-400 font-semibold"
                                   : isLowStock
                                     ? "text-yellow-400 font-semibold"
-                                    : "text-white"
+                                    : "text-foreground"
                               }
                             >
                               {product.stock_quantity}
                             </span>
                           </td>
-                          <td className="p-4 text-gray-400">{product.min_stock_level || 10}</td>
+                          <td className="p-4 text-muted-foreground">{product.min_stock_level || 10}</td>
                           <td className="p-4">
                             <EstadoBadge isCritical={isCritical} isLowStock={isLowStock} />
                           </td>

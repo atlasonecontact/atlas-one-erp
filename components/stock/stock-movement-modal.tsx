@@ -139,7 +139,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-lg">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Package className="w-5 h-5 text-cyan-400" />
@@ -160,13 +160,13 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
               }`}
             >
               <div className="flex items-center justify-center gap-2 mb-1">
-                <ArrowUpRight className={`w-5 h-5 ${movementType === "in" ? "text-green-400" : "text-gray-400"}`} />
-                <Plus className={`w-4 h-4 ${movementType === "in" ? "text-green-400" : "text-gray-400"}`} />
+                <ArrowUpRight className={`w-5 h-5 ${movementType === "in" ? "text-green-400" : "text-muted-foreground"}`} />
+                <Plus className={`w-4 h-4 ${movementType === "in" ? "text-green-400" : "text-muted-foreground"}`} />
               </div>
-              <p className={`text-sm font-medium ${movementType === "in" ? "text-green-400" : "text-gray-400"}`}>
+              <p className={`text-sm font-medium ${movementType === "in" ? "text-green-400" : "text-muted-foreground"}`}>
                 Entrada
               </p>
-              <p className="text-xs text-gray-500 mt-1">Agregar stock</p>
+              <p className="text-xs text-muted-foreground mt-1">Agregar stock</p>
             </button>
             <button
               type="button"
@@ -178,24 +178,24 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
               }`}
             >
               <div className="flex items-center justify-center gap-2 mb-1">
-                <ArrowDownRight className={`w-5 h-5 ${movementType === "out" ? "text-red-400" : "text-gray-400"}`} />
-                <Minus className={`w-4 h-4 ${movementType === "out" ? "text-red-400" : "text-gray-400"}`} />
+                <ArrowDownRight className={`w-5 h-5 ${movementType === "out" ? "text-red-400" : "text-muted-foreground"}`} />
+                <Minus className={`w-4 h-4 ${movementType === "out" ? "text-red-400" : "text-muted-foreground"}`} />
               </div>
-              <p className={`text-sm font-medium ${movementType === "out" ? "text-red-400" : "text-gray-400"}`}>
+              <p className={`text-sm font-medium ${movementType === "out" ? "text-red-400" : "text-muted-foreground"}`}>
                 Salida
               </p>
-              <p className="text-xs text-gray-500 mt-1">Quitar stock</p>
+              <p className="text-xs text-muted-foreground mt-1">Quitar stock</p>
             </button>
           </div>
 
           {/* Product Search */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Producto</Label>
+            <Label className="text-muted-foreground">Producto</Label>
             {selectedProduct ? (
               <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                 <div>
-                  <p className="text-white font-medium">{selectedProduct.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-foreground font-medium">{selectedProduct.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     Stock actual: <span className="text-cyan-400 font-mono">{selectedProduct.stock_quantity}</span> unidades
                   </p>
                 </div>
@@ -204,7 +204,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedProduct(null)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   Cambiar
                 </Button>
@@ -212,20 +212,20 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
             ) : (
               <div className="space-y-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Buscar producto..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="pl-10 bg-card border-cyan-500/20 text-foreground"
                   />
                 </div>
-                <div className="max-h-40 overflow-y-auto rounded-lg border border-cyan-500/10 bg-[#0d1424]">
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-cyan-500/10 bg-card">
                   {loading ? (
-                    <p className="p-3 text-gray-500 text-sm text-center">Cargando productos...</p>
+                    <p className="p-3 text-muted-foreground text-sm text-center">Cargando productos...</p>
                   ) : filteredProducts.length === 0 ? (
-                    <p className="p-3 text-gray-500 text-sm text-center">No se encontraron productos</p>
+                    <p className="p-3 text-muted-foreground text-sm text-center">No se encontraron productos</p>
                   ) : (
                     filteredProducts.map((product) => (
                       <button
@@ -234,9 +234,9 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
                         onClick={() => setSelectedProduct(product)}
                         className="w-full text-left p-3 hover:bg-cyan-500/10 transition-colors border-b border-cyan-500/5 last:border-0"
                       >
-                        <p className="text-white text-sm font-medium">{product.name}</p>
+                        <p className="text-foreground text-sm font-medium">{product.name}</p>
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-gray-500">{product.category}</span>
+                          <span className="text-xs text-muted-foreground">{product.category}</span>
                           <span className="text-xs text-cyan-400">Stock: {product.stock_quantity}</span>
                         </div>
                       </button>
@@ -249,14 +249,14 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
 
           {/* Quantity */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Cantidad</Label>
+            <Label className="text-muted-foreground">Cantidad</Label>
             <div className="flex items-center gap-3">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
               >
                 <Minus className="w-4 h-4" />
               </Button>
@@ -265,14 +265,14 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-                className="w-24 text-center bg-[#0d1424] border-cyan-500/20 text-white text-xl font-mono"
+                className="w-24 text-center bg-card border-cyan-500/20 text-foreground text-xl font-mono"
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(quantity + 1)}
-                className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -284,7 +284,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
                     variant="outline"
                     size="sm"
                     onClick={() => setQuantity(n)}
-                    className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent px-2"
+                    className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent px-2"
                   >
                     +{n}
                   </Button>
@@ -300,14 +300,14 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
 
           {/* Reason */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Motivo</Label>
+            <Label className="text-muted-foreground">Motivo</Label>
             <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+              <SelectTrigger className="bg-card border-cyan-500/20 text-foreground">
                 <SelectValue placeholder="Seleccionar motivo..." />
               </SelectTrigger>
-              <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+              <SelectContent className="bg-card border-cyan-500/20">
                 {reasons[movementType].map((r) => (
-                  <SelectItem key={r} value={r} className="text-white hover:bg-white/10">
+                  <SelectItem key={r} value={r} className="text-foreground hover:bg-muted">
                     {r}
                   </SelectItem>
                 ))}
@@ -322,7 +322,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
                 ? "bg-green-500/10 border-green-500/20" 
                 : "bg-red-500/10 border-red-500/20"
             }`}>
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-muted-foreground">
                 {movementType === "in" ? "Nuevo stock:" : "Stock resultante:"}
               </p>
               <p className={`text-2xl font-bold font-mono ${
@@ -342,7 +342,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
             >
               Cancelar
             </Button>
@@ -352,7 +352,7 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
               className={`flex-1 font-semibold ${
                 movementType === "in"
                   ? "bg-green-500 hover:bg-green-400 text-black"
-                  : "bg-red-500 hover:bg-red-400 text-white"
+                  : "bg-red-500 hover:bg-red-400 text-foreground"
               }`}
             >
               {saving ? "Guardando..." : movementType === "in" ? "Agregar Stock" : "Quitar Stock"}

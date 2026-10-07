@@ -155,14 +155,14 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 lg:p-5">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-4 lg:p-5">
         <div className="flex justify-between items-center mb-4">
-          <div className="h-5 bg-white/10 rounded w-32 animate-pulse" />
-          <div className="h-8 bg-white/10 rounded w-24 animate-pulse" />
+          <div className="h-5 bg-muted rounded w-32 animate-pulse" />
+          <div className="h-8 bg-muted rounded w-24 animate-pulse" />
         </div>
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-16 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="h-16 bg-accent rounded animate-pulse" />
           ))}
         </div>
       </div>
@@ -170,25 +170,25 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 lg:p-5 relative overflow-hidden">
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-4 lg:p-5 relative overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h3 className="text-sm font-medium text-white">Historial de Ventas</h3>
+        <h3 className="text-sm font-medium text-foreground">Historial de Ventas</h3>
         <div className="flex gap-2 overflow-x-auto">
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "all" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "all" ? "bg-cyan-500/20 text-cyan-400" : "bg-accent text-muted-foreground hover:bg-muted"}`}
           >
             Todo
           </button>
           <button
             onClick={() => setFilter("day")}
-            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "day" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "day" ? "bg-cyan-500/20 text-cyan-400" : "bg-accent text-muted-foreground hover:bg-muted"}`}
           >
             Diaria
           </button>
           <button
             onClick={() => setFilter("week")}
-            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "week" ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
+            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap ${filter === "week" ? "bg-cyan-500/20 text-cyan-400" : "bg-accent text-muted-foreground hover:bg-muted"}`}
           >
             Semanal
           </button>
@@ -196,7 +196,7 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
       </div>
 
       {sales.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
           <Receipt className="w-12 h-12 mb-3 opacity-50" />
           <p className="text-sm">No hay ventas en este período</p>
         </div>
@@ -208,33 +208,33 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
               const mainProduct = sale.items?.[0]?.product_name || "Venta"
 
               return (
-                <div key={sale.id} className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
+                <div key={sale.id} className="p-4 rounded-lg bg-accent border border-cyan-500/10">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
                         <Package className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">#{sale.sale_number}</p>
-                        <p className="text-xs text-gray-500">{sale.employee?.name || "Sistema"}</p>
+                        <p className="text-sm font-medium text-foreground">#{sale.sale_number}</p>
+                        <p className="text-xs text-muted-foreground">{sale.employee?.name || "Sistema"}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-semibold text-foreground">
                       ${sale.total_amount.toLocaleString("es-AR")}
                     </span>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm text-white">{mainProduct}</p>
+                    <p className="text-sm text-foreground">{mainProduct}</p>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">
+                      <span className="text-muted-foreground">
                         {totalUnits} unid.{" "}
                         {sale.items && sale.items.length > 1 ? `(${sale.items.length} productos)` : ""}
                       </span>
-                      <span className="text-gray-400 bg-white/5 px-2 py-1 rounded">
+                      <span className="text-muted-foreground bg-accent px-2 py-1 rounded">
                         {getPaymentMethodLabel(sale.payment_method)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{formatDate(sale.created_at)}</span>
                       <span>{formatTime(sale.created_at)}</span>
                     </div>
@@ -248,11 +248,11 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
             <table className="w-full">
               <thead>
                 <tr className="border-b border-cyan-500/10">
-                  <th className="text-left text-xs text-gray-500 pb-3 font-medium">Venta</th>
-                  <th className="text-left text-xs text-gray-500 pb-3 font-medium">Productos</th>
-                  <th className="text-right text-xs text-gray-500 pb-3 font-medium">Método</th>
-                  <th className="text-right text-xs text-gray-500 pb-3 font-medium">Total</th>
-                  <th className="text-right text-xs text-gray-500 pb-3 font-medium">Fecha</th>
+                  <th className="text-left text-xs text-muted-foreground pb-3 font-medium">Venta</th>
+                  <th className="text-left text-xs text-muted-foreground pb-3 font-medium">Productos</th>
+                  <th className="text-right text-xs text-muted-foreground pb-3 font-medium">Método</th>
+                  <th className="text-right text-xs text-muted-foreground pb-3 font-medium">Total</th>
+                  <th className="text-right text-xs text-muted-foreground pb-3 font-medium">Fecha</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,41 +261,41 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
                   const mainProduct = sale.items?.[0]?.product_name || "Venta"
 
                   return (
-                    <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-white/5">
+                    <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-accent">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
                             <Package className="w-5 h-5 text-cyan-400" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-white">#{sale.sale_number}</p>
-                            <p className="text-xs text-gray-500">{sale.employee?.name || "Sistema"}</p>
+                            <p className="text-sm font-medium text-foreground">#{sale.sale_number}</p>
+                            <p className="text-xs text-muted-foreground">{sale.employee?.name || "Sistema"}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-4">
                         <div>
-                          <p className="text-sm text-white">{mainProduct}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm text-foreground">{mainProduct}</p>
+                          <p className="text-xs text-muted-foreground">
                             {totalUnits} unid.{" "}
                             {sale.items && sale.items.length > 1 ? `(${sale.items.length} productos)` : ""}
                           </p>
                         </div>
                       </td>
                       <td className="py-4 text-right">
-                        <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">
+                        <span className="text-xs text-muted-foreground bg-accent px-2 py-1 rounded">
                           {getPaymentMethodLabel(sale.payment_method)}
                         </span>
                       </td>
                       <td className="py-4 text-right">
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-sm font-medium text-foreground">
                           ${sale.total_amount.toLocaleString("es-AR")}
                         </span>
                       </td>
                       <td className="py-4 text-right">
                         <div className="text-right">
-                          <p className="text-xs text-gray-400">{formatDate(sale.created_at)}</p>
-                          <p className="text-xs text-gray-500">{formatTime(sale.created_at)}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(sale.created_at)}</p>
+                          <p className="text-xs text-muted-foreground">{formatTime(sale.created_at)}</p>
                         </div>
                       </td>
                     </tr>
@@ -308,24 +308,24 @@ export function SalesHistory({ isLoading: externalLoading = false, kioskoId }: S
           {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-cyan-500/10">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, sales.length)} de {sales.length}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-xs rounded-lg bg-accent text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Anterior
                 </button>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-xs rounded-lg bg-accent text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Siguiente
                 </button>

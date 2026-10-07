@@ -45,12 +45,12 @@ export function AnalyticsChart({
 }: AnalyticsChartProps) {
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-white/[0.07] bg-[#0a0f1a] p-6">
+      <div className="rounded-2xl border border-white/[0.07] bg-card p-6">
         <div className="mb-6 flex items-center justify-between">
-          <div className="h-5 w-24 animate-pulse rounded bg-white/10" />
-          <div className="h-8 w-32 animate-pulse rounded bg-white/10" />
+          <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         </div>
-        <div className="h-[280px] animate-pulse rounded-xl bg-white/5" />
+        <div className="h-[280px] animate-pulse rounded-xl bg-accent" />
       </div>
     )
   }

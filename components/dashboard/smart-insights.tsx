@@ -172,12 +172,12 @@ export function SmartInsights() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 h-full">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5 h-full">
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
             <Lightbulb className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Smart Insights</h3>
+          <h3 className="text-lg font-semibold text-foreground">Smart Insights</h3>
         </div>
         <div className="flex items-center justify-center h-32">
           <RefreshCw className="w-6 h-6 text-cyan-500 animate-spin" />
@@ -187,19 +187,19 @@ export function SmartInsights() {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 h-full">
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5 h-full">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
           <Lightbulb className="w-4 h-4 text-cyan-400" />
         </div>
-        <h3 className="text-lg font-semibold text-white">Smart Insights</h3>
+        <h3 className="text-lg font-semibold text-foreground">Smart Insights</h3>
       </div>
 
       <div className="space-y-4">
         {insights.map((insight, i) => (
           <div
             key={i}
-            className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-cyan-500/10 hover:border-cyan-500/20 transition-colors"
+            className="flex items-start gap-3 p-3 rounded-lg bg-accent border border-cyan-500/10 hover:border-cyan-500/20 transition-colors"
           >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
@@ -215,7 +215,7 @@ export function SmartInsights() {
               {insight.icon}
             </div>
             <div>
-              <p className="text-sm text-gray-400">{insight.title}</p>
+              <p className="text-sm text-muted-foreground">{insight.title}</p>
               <p
                 className={`text-sm font-medium ${
                   insight.color === "cyan"
@@ -234,7 +234,7 @@ export function SmartInsights() {
         ))}
 
         {insights.length === 0 && (
-          <p className="text-gray-500 text-center py-4">Sin insights disponibles</p>
+          <p className="text-muted-foreground text-center py-4">Sin insights disponibles</p>
         )}
       </div>
     </div>

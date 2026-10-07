@@ -84,24 +84,24 @@ export default function DashboardPage() {
     <div className="space-y-4 lg:space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-white">Dashboard</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-foreground">Dashboard</h1>
           <div className="flex items-center gap-2 lg:gap-4 mt-2 overflow-x-auto">
             <button
               onClick={() => setView("overview")}
-              className={`text-xs lg:text-sm whitespace-nowrap ${view === "overview" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-gray-400 hover:text-white"} pb-1`}
+              className={`text-xs lg:text-sm whitespace-nowrap ${view === "overview" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-muted-foreground hover:text-foreground"} pb-1`}
             >
               Overview
             </button>
             <button
               onClick={() => setView("notifications")}
-              className={`text-xs lg:text-sm whitespace-nowrap ${view === "notifications" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-gray-400 hover:text-white"} pb-1 flex items-center gap-1`}
+              className={`text-xs lg:text-sm whitespace-nowrap ${view === "notifications" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-muted-foreground hover:text-foreground"} pb-1 flex items-center gap-1`}
             >
               Notificaciones
               <span className="w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
               onClick={() => setView("history")}
-              className={`text-xs lg:text-sm whitespace-nowrap ${view === "history" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-gray-400 hover:text-white"} pb-1`}
+              className={`text-xs lg:text-sm whitespace-nowrap ${view === "history" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-muted-foreground hover:text-foreground"} pb-1`}
             >
               Historial
             </button>
@@ -110,19 +110,19 @@ export default function DashboardPage() {
 
         <div className="flex flex-wrap items-center gap-2 lg:gap-3">
           {/* Date Range Picker - hidden on mobile */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0f1a] border border-cyan-500/20">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <span className="text-xs lg:text-sm text-white">{getDateRange()}</span>
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs lg:text-sm text-foreground">{getDateRange()}</span>
           </div>
 
           {/* Period Selector - responsive */}
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-2 lg:px-3 py-1.5 text-xs lg:text-sm rounded-md transition-colors ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
@@ -131,7 +131,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Filter Button - icon only on mobile */}
-          <Button variant="outline" size="sm" className="border-cyan-500/20 text-gray-400 bg-[#0a0f1a]">
+          <Button variant="outline" size="sm" className="border-cyan-500/20 text-muted-foreground bg-card">
             <Filter className="w-4 h-4 lg:mr-2" />
             <span className="hidden lg:inline">Filtrar</span>
           </Button>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
             size="icon"
             onClick={refetch}
             disabled={isLoading}
-            className="text-gray-400 hover:text-white shrink-0"
+            className="text-muted-foreground hover:text-foreground shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
@@ -218,15 +218,15 @@ export default function DashboardPage() {
             <SmartInsights data={data} isLoading={isLoading} />
 
             {/* Low Stock Alert */}
-            <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+            <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
                     <Package className="w-5 h-5 text-yellow-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-white">Avisos de Stock Bajo</h3>
-                    <p className="text-xs text-gray-500">Productos que requieren atención</p>
+                    <h3 className="text-sm font-medium text-foreground">Avisos de Stock Bajo</h3>
+                    <p className="text-xs text-muted-foreground">Productos que requieren atención</p>
                   </div>
                 </div>
                 <Link href="/dashboard/stock">
@@ -239,7 +239,7 @@ export default function DashboardPage() {
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
+                    <div key={i} className="h-14 rounded-lg bg-accent animate-pulse" />
                   ))}
                 </div>
               ) : data.lowStockProducts.length > 0 ? (
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                         >
                           <Package className={`w-4 h-4 ${product.stock <= 5 ? "text-red-400" : "text-yellow-400"}`} />
                         </div>
-                        <span className="text-sm text-white">{product.name}</span>
+                        <span className="text-sm text-foreground">{product.name}</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span
@@ -267,7 +267,7 @@ export default function DashboardPage() {
                         >
                           {product.stock} unid.
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {product.stock <= 5 ? "Crítico" : `${Math.ceil(product.stock / 2)} días`}
                         </span>
                       </div>
@@ -279,8 +279,8 @@ export default function DashboardPage() {
                   <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-3">
                     <Package className="w-6 h-6 text-green-400" />
                   </div>
-                  <p className="text-sm text-gray-400">¡Todo en orden!</p>
-                  <p className="text-xs text-gray-500">No hay productos con stock bajo</p>
+                  <p className="text-sm text-muted-foreground">¡Todo en orden!</p>
+                  <p className="text-xs text-muted-foreground">No hay productos con stock bajo</p>
                 </div>
               )}
             </div>
@@ -294,9 +294,9 @@ export default function DashboardPage() {
       {/* Notifications View */}
       {view === "notifications" && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Centro de Notificaciones</h2>
-            <p className="text-gray-400 text-sm mb-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Centro de Notificaciones</h2>
+            <p className="text-muted-foreground text-sm mb-6">
               Todas las alertas y notificaciones de tus kioscos en un solo lugar.
             </p>
 
@@ -305,21 +305,21 @@ export default function DashboardPage() {
           </div>
 
           {/* Low Stock Alerts expanded */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
                 <Package className="w-5 h-5 text-yellow-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Alertas de Stock</h3>
-                <p className="text-xs text-gray-500">Productos que requieren reposición</p>
+                <h3 className="text-lg font-semibold text-foreground">Alertas de Stock</h3>
+                <p className="text-xs text-muted-foreground">Productos que requieren reposición</p>
               </div>
             </div>
 
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
+                  <div key={i} className="h-14 rounded-lg bg-accent animate-pulse" />
                 ))}
               </div>
             ) : data.lowStockProducts.length > 0 ? (
@@ -339,13 +339,13 @@ export default function DashboardPage() {
                       >
                         <Package className={`w-4 h-4 ${product.stock <= 5 ? "text-red-400" : "text-yellow-400"}`} />
                       </div>
-                      <span className="text-sm text-white">{product.name}</span>
+                      <span className="text-sm text-foreground">{product.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-sm font-bold ${product.stock <= 5 ? "text-red-400" : "text-yellow-400"}`}>
                         {product.stock} unid.
                       </span>
-                      <span className="text-xs text-gray-500">{product.stock <= 5 ? "Crítico" : "Stock bajo"}</span>
+                      <span className="text-xs text-muted-foreground">{product.stock <= 5 ? "Crítico" : "Stock bajo"}</span>
                     </div>
                   </div>
                 ))}
@@ -355,8 +355,8 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-3">
                   <Package className="w-6 h-6 text-green-400" />
                 </div>
-                <p className="text-sm text-gray-400">¡Todo en orden!</p>
-                <p className="text-xs text-gray-500">No hay productos con stock bajo</p>
+                <p className="text-sm text-muted-foreground">¡Todo en orden!</p>
+                <p className="text-xs text-muted-foreground">No hay productos con stock bajo</p>
               </div>
             )}
           </div>
@@ -366,14 +366,14 @@ export default function DashboardPage() {
       {/* History View */}
       {view === "history" && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Historial de Ventas</h2>
-            <p className="text-gray-400 text-sm mb-6">Registro completo de todas las ventas realizadas.</p>
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Historial de Ventas</h2>
+            <p className="text-muted-foreground text-sm mb-6">Registro completo de todas las ventas realizadas.</p>
             <SalesHistory isLoading={isLoading} />
           </div>
 
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Actividad Reciente</h2>
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Actividad Reciente</h2>
             <RecentActivity />
           </div>
         </div>

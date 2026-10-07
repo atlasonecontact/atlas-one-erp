@@ -37,10 +37,10 @@ export function KPICardV2({
   const variantStyles = {
     default: {
       border: "border-cyan-500/10",
-      bg: "bg-[#0a0f1a]",
-      iconBg: "bg-white/5",
-      iconColor: "text-gray-400",
-      valueColor: "text-white",
+      bg: "bg-card",
+      iconBg: "bg-accent",
+      iconColor: "text-muted-foreground",
+      valueColor: "text-foreground",
     },
     primary: {
       border: "border-cyan-500/30",
@@ -85,9 +85,9 @@ export function KPICardV2({
     return (
       <div className={cn("rounded-xl border", styles.border, styles.bg, sizes.padding)}>
         <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-white/10 rounded w-24" />
-          <div className="h-8 bg-white/10 rounded w-32" />
-          <div className="h-3 bg-white/10 rounded w-20" />
+          <div className="h-4 bg-muted rounded w-24" />
+          <div className="h-8 bg-muted rounded w-32" />
+          <div className="h-3 bg-muted rounded w-20" />
         </div>
       </div>
     )
@@ -103,7 +103,7 @@ export function KPICardV2({
       )}
     >
       <div className="flex items-start justify-between mb-3">
-        <span className={cn("text-gray-400 font-medium", sizes.titleSize)}>{title}</span>
+        <span className={cn("text-muted-foreground font-medium", sizes.titleSize)}>{title}</span>
         {icon && (
           <div
             className={cn(
@@ -129,7 +129,7 @@ export function KPICardV2({
                 "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
                 isPositive && "bg-green-500/20 text-green-400",
                 isNegative && "bg-red-500/20 text-red-400",
-                isNeutral && "bg-gray-500/20 text-gray-400"
+                isNeutral && "bg-gray-500/20 text-muted-foreground"
               )}
             >
               {isPositive ? (
@@ -141,11 +141,11 @@ export function KPICardV2({
               )}
               <span>{isPositive ? "+" : ""}{change.toFixed(1)}%</span>
             </div>
-            <span className="text-xs text-gray-500">{changeLabel}</span>
+            <span className="text-xs text-muted-foreground">{changeLabel}</span>
           </div>
         )}
 
-        {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </div>
     </div>
   )

@@ -177,8 +177,8 @@ export function RecentActivity() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4">Actividad reciente</h3>
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Actividad reciente</h3>
         <div className="flex items-center justify-center h-32">
           <RefreshCw className="w-6 h-6 text-cyan-500 animate-spin" />
         </div>
@@ -187,12 +187,12 @@ export function RecentActivity() {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-lg font-semibold text-white mb-4">Actividad reciente</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-lg font-semibold text-foreground mb-4">Actividad reciente</h3>
 
       <div className="space-y-4">
         {activities.map((activity, i) => (
-          <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+          <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-accent transition-colors">
             <div
               className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                 activity.color === "cyan"
@@ -207,15 +207,15 @@ export function RecentActivity() {
               {activity.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white">{activity.title}</p>
-              <p className="text-sm text-gray-500 truncate">{activity.description}</p>
+              <p className="text-sm font-medium text-foreground">{activity.title}</p>
+              <p className="text-sm text-muted-foreground truncate">{activity.description}</p>
             </div>
-            <span className="text-xs text-gray-600 whitespace-nowrap">{activity.time}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
           </div>
         ))}
 
         {activities.length === 0 && (
-          <p className="text-gray-500 text-center py-4">Sin actividad reciente</p>
+          <p className="text-muted-foreground text-center py-4">Sin actividad reciente</p>
         )}
       </div>
     </div>
