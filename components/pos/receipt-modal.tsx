@@ -163,7 +163,7 @@ export function ReceiptModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <CheckCircle className="w-6 h-6 text-green-400" />
@@ -174,11 +174,11 @@ export function ReceiptModal({
         <div className="py-4">
           {/* Printer status */}
           {isSupported && (
-            <div className="mb-4 p-3 rounded-lg bg-white/5 border border-cyan-500/10">
+            <div className="mb-4 p-3 rounded-lg bg-accent border border-cyan-500/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bluetooth className={`w-4 h-4 ${selectedDevice?.connected ? "text-green-400" : "text-gray-500"}`} />
-                  <span className="text-sm text-gray-300">
+                  <Bluetooth className={`w-4 h-4 ${selectedDevice?.connected ? "text-green-400" : "text-muted-foreground"}`} />
+                  <span className="text-sm text-muted-foreground">
                     {selectedDevice?.connected 
                       ? `Conectado: ${selectedDevice.name}` 
                       : "Impresora no conectada"}
@@ -207,11 +207,11 @@ export function ReceiptModal({
           <div className="bg-white text-black rounded-lg p-6 font-mono text-sm">
             <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4">
               <h3 className="text-lg font-bold">{storeName}</h3>
-              {storeAddress && <p className="text-xs text-gray-500">{storeAddress}</p>}
+              {storeAddress && <p className="text-xs text-muted-foreground">{storeAddress}</p>}
             </div>
 
             <div className="border-b border-dashed border-gray-300 pb-4 mb-4">
-              <div className="flex justify-between text-xs text-gray-500 mb-2">
+              <div className="flex justify-between text-xs text-muted-foreground mb-2">
                 <span>Ticket #{saleNumber || `V-${saleIdProp || localTicketId}`}</span>
                 <span>{new Date().toLocaleString("es-AR")}</span>
               </div>
@@ -229,11 +229,11 @@ export function ReceiptModal({
             </div>
 
             <div className="space-y-1">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span>${subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-muted-foreground">
                 <span>IVA (21%)</span>
                 <span>${tax.toLocaleString()}</span>
               </div>
@@ -244,19 +244,19 @@ export function ReceiptModal({
             </div>
 
             <div className="text-center mt-4 pt-4 border-t border-dashed border-gray-300">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Pagado con: {method === "cash" ? "Efectivo" : method === "card" ? "Tarjeta" : method === "qr" ? "QR" : method}
               </p>
-              <p className="text-xs text-gray-500 mt-2">¡Gracias por su compra!</p>
+              <p className="text-xs text-muted-foreground mt-2">¡Gracias por su compra!</p>
             </div>
           </div>
 
           {/* Invoice CTA */}
-          <div className="mt-4 p-4 rounded-lg border border-cyan-500/10 bg-white/5 space-y-3">
+          <div className="mt-4 p-4 rounded-lg border border-cyan-500/10 bg-accent space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-white">Generar factura</p>
-                <p className="text-xs text-gray-400">Guarda el comprobante en la base de datos</p>
+                <p className="text-sm font-semibold text-foreground">Generar factura</p>
+                <p className="text-xs text-muted-foreground">Guarda el comprobante en la base de datos</p>
               </div>
               {arcaStatus?.ready ? (
                 <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">ARCA OK</Badge>
@@ -273,12 +273,12 @@ export function ReceiptModal({
                   onClick={() => setInvoiceType(type.id)}
                   className={`rounded-lg border px-3 py-2 text-left transition ${
                     invoiceType === type.id
-                      ? "border-cyan-500 bg-cyan-500/10 text-white"
-                      : "border-white/10 text-gray-300 hover:border-cyan-500/40"
+                      ? "border-cyan-500 bg-cyan-500/10 text-foreground"
+                      : "border-border text-muted-foreground hover:border-cyan-500/40"
                   } ${!arcaStatus?.ready || isOfflineSale ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <div className="text-sm font-semibold">{type.label}</div>
-                  <div className="text-[11px] text-gray-400">{type.helper}</div>
+                  <div className="text-[11px] text-muted-foreground">{type.helper}</div>
                 </button>
               ))}
             </div>
@@ -316,7 +316,7 @@ export function ReceiptModal({
               variant="outline"
               onClick={handlePrint}
               disabled={isPrinting}
-              className="flex-1 border-cyan-500/20 text-gray-300 hover:text-white bg-transparent gap-2"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2"
             >
               {isPrinting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

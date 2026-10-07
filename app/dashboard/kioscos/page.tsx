@@ -139,11 +139,11 @@ export default function KioscosPage() {
       case "active":
         return "bg-green-500/20 text-green-400 border-green-500/30"
       case "inactive":
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+        return "bg-gray-500/20 text-muted-foreground border-gray-500/30"
       case "suspended":
         return "bg-red-500/20 text-red-400 border-red-500/30"
       default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+        return "bg-gray-500/20 text-muted-foreground border-gray-500/30"
     }
   }
 
@@ -163,8 +163,8 @@ export default function KioscosPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Mis Kioscos</h1>
-          <p className="text-gray-400 mt-1">Gestiona todos tus puntos de venta</p>
+          <h1 className="text-2xl font-bold text-foreground">Mis Kioscos</h1>
+          <p className="text-muted-foreground mt-1">Gestiona todos tus puntos de venta</p>
         </div>
         <Button
           onClick={() => {
@@ -179,12 +179,12 @@ export default function KioscosPage() {
       </div>
 
       {kioscos.length === 0 ? (
-        <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
+        <div className="border border-cyan-500/20 rounded-xl bg-card/50 p-12 text-center">
           <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
             <MapPin className="w-8 h-8 text-cyan-400" />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No tienes kioscos registrados</h3>
-          <p className="text-gray-400 mb-6">Agrega tu primer kiosco para empezar a vender</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">No tienes kioscos registrados</h3>
+          <p className="text-muted-foreground mb-6">Agrega tu primer kiosco para empezar a vender</p>
           <Button
             onClick={() => {
               setSelectedKiosko(null)
@@ -201,12 +201,12 @@ export default function KioscosPage() {
           {kioscos.map((kiosko) => (
             <div
               key={kiosko.id}
-              className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-6 hover:border-cyan-500/40 transition-colors"
+              className="border border-cyan-500/20 rounded-xl bg-card/50 p-6 hover:border-cyan-500/40 transition-colors"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{kiosko.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                  <h3 className="text-lg font-semibold text-foreground">{kiosko.name}</h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <MapPin className="w-4 h-4" />
                     {kiosko.location || "Sin ubicación"}
                   </div>
@@ -224,7 +224,7 @@ export default function KioscosPage() {
               <div className="space-y-3 mb-4">
                 {kiosko.plan && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Plan:</span>
+                    <span className="text-muted-foreground">Plan:</span>
                     <span className="text-cyan-400 font-medium">
                       {kiosko.plan.display_name} (${kiosko.plan.price}/mes)
                     </span>
@@ -233,8 +233,8 @@ export default function KioscosPage() {
 
                 {kiosko.whatsapp_phone && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">WhatsApp:</span>
-                    <span className="text-white flex items-center gap-1">
+                    <span className="text-muted-foreground">WhatsApp:</span>
+                    <span className="text-foreground flex items-center gap-1">
                       <Phone className="w-3 h-3" />
                       {kiosko.whatsapp_phone}
                     </span>
@@ -242,7 +242,7 @@ export default function KioscosPage() {
                 )}
 
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-400">Colores:</span>
+                  <span className="text-muted-foreground">Colores:</span>
                   <div className="flex gap-2">
                     <div
                       className="w-6 h-6 rounded border border-gray-600"

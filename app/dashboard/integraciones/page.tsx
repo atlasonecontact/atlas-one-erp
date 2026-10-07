@@ -184,9 +184,9 @@ export default function IntegracionesPage() {
   if (kioscos.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Integraciones</h1>
-        <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
-          <p className="text-gray-400">Primero debes crear un kiosco para configurar integraciones.</p>
+        <h1 className="text-2xl font-bold text-foreground">Integraciones</h1>
+        <div className="border border-cyan-500/20 rounded-xl bg-card/50 p-12 text-center">
+          <p className="text-muted-foreground">Primero debes crear un kiosco para configurar integraciones.</p>
         </div>
       </div>
     )
@@ -196,20 +196,20 @@ export default function IntegracionesPage() {
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Integraciones</h1>
-        <p className="text-gray-400 text-sm">Conecta tu negocio con servicios externos</p>
+        <h1 className="text-2xl font-bold text-foreground">Integraciones</h1>
+        <p className="text-muted-foreground text-sm">Conecta tu negocio con servicios externos</p>
       </div>
 
       {kioscos.length > 1 && (
         <div className="space-y-2">
-          <Label className="text-gray-300">Seleccionar Kiosco</Label>
+          <Label className="text-muted-foreground">Seleccionar Kiosco</Label>
           <Select value={selectedKiosko} onValueChange={setSelectedKiosko}>
-            <SelectTrigger className="bg-[#0a0f1a] border-cyan-500/20 text-white">
+            <SelectTrigger className="bg-card border-cyan-500/20 text-foreground">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#0a0f1a] border-cyan-500/20">
+            <SelectContent className="bg-card border-cyan-500/20">
               {kioscos.map((kiosko) => (
-                <SelectItem key={kiosko.id} value={kiosko.id} className="text-white">
+                <SelectItem key={kiosko.id} value={kiosko.id} className="text-foreground">
                   {kiosko.name}
                 </SelectItem>
               ))}
@@ -219,7 +219,7 @@ export default function IntegracionesPage() {
       )}
 
       <Tabs defaultValue="arca" className="w-full">
-        <TabsList className="bg-[#0a0f1a] border border-cyan-500/10 grid grid-cols-4 w-full">
+        <TabsList className="bg-card border border-cyan-500/10 grid grid-cols-4 w-full">
           <TabsTrigger value="arca" title="ARCA" className="data-[state=active]:bg-cyan-500/20 gap-2 touch-target">
             <FileText className="w-4 h-4 shrink-0" />
             <span className="hidden sm:inline">ARCA</span>
@@ -248,13 +248,13 @@ export default function IntegracionesPage() {
 
         {/* ARCA (AFIP) Tab */}
         <TabsContent value="arca" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-blue-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   ARCA (AFIP) - Facturación Electrónica
                   {config.arca_verified && (
                     <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
@@ -263,7 +263,7 @@ export default function IntegracionesPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-gray-500">Emite facturas electrónicas autorizadas por AFIP</p>
+                <p className="text-sm text-muted-foreground">Emite facturas electrónicas autorizadas por AFIP</p>
               </div>
               <Switch
                 checked={config.arca_enabled}
@@ -298,46 +298,46 @@ export default function IntegracionesPage() {
                 {/* CUIT */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">CUIT</Label>
+                    <Label className="text-muted-foreground">CUIT</Label>
                     <Input
                       placeholder="20-12345678-9"
                       value={config.arca_cuit || ""}
                       onChange={(e) => setConfig({ ...config, arca_cuit: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Punto de Venta</Label>
+                    <Label className="text-muted-foreground">Punto de Venta</Label>
                     <Input
                       type="number"
                       placeholder="1"
                       value={config.arca_punto_venta || ""}
                       onChange={(e) => setConfig({ ...config, arca_punto_venta: parseInt(e.target.value) || null })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                 </div>
 
                 {/* Environment */}
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Ambiente</Label>
+                  <Label className="text-muted-foreground">Ambiente</Label>
                   <Select 
                     value={config.arca_environment} 
                     onValueChange={(v) => setConfig({ ...config, arca_environment: v as 'testing' | 'production' })}
                   >
-                    <SelectTrigger className="bg-[#0a0f1a] border-cyan-500/20 text-white">
+                    <SelectTrigger className="bg-card border-cyan-500/20 text-foreground">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#0a0f1a] border-cyan-500/20">
-                      <SelectItem value="testing" className="text-white">
+                    <SelectContent className="bg-card border-cyan-500/20">
+                      <SelectItem value="testing" className="text-foreground">
                         🧪 Testing (Homologación)
                       </SelectItem>
-                      <SelectItem value="production" className="text-white">
+                      <SelectItem value="production" className="text-foreground">
                         🚀 Producción
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Usa Testing para pruebas. Cambia a Producción solo cuando estés listo.
                   </p>
                 </div>
@@ -345,12 +345,12 @@ export default function IntegracionesPage() {
                 {/* Certificate Upload */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Certificado (.crt)</Label>
+                    <Label className="text-muted-foreground">Certificado (.crt)</Label>
                     <div className="relative">
                       <Input
                         type="file"
                         accept=".crt,.pem,.cer"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white file:bg-cyan-500/20 file:text-cyan-400 file:border-0 file:mr-3"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground file:bg-cyan-500/20 file:text-cyan-400 file:border-0 file:mr-3"
                         onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -368,12 +368,12 @@ export default function IntegracionesPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Clave Privada (.key)</Label>
+                    <Label className="text-muted-foreground">Clave Privada (.key)</Label>
                     <div className="relative">
                       <Input
                         type="file"
                         accept=".key,.pem"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white file:bg-cyan-500/20 file:text-cyan-400 file:border-0 file:mr-3"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground file:bg-cyan-500/20 file:text-cyan-400 file:border-0 file:mr-3"
                         onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -397,7 +397,7 @@ export default function IntegracionesPage() {
                   <Button
                     onClick={() => handleTestConnection('arca')}
                     disabled={!config.arca_cuit || !config.arca_certificate || !config.arca_private_key}
-                    className="bg-blue-500 hover:bg-blue-400 text-white"
+                    className="bg-blue-500 hover:bg-blue-400 text-foreground"
                   >
                     <Link2 className="w-4 h-4 mr-2" />
                     Probar Conexión
@@ -422,13 +422,13 @@ export default function IntegracionesPage() {
 
         {/* Mercado Pago Tab */}
         <TabsContent value="mercadopago" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-lg bg-sky-500/20 flex items-center justify-center">
                 <CreditCard className="w-6 h-6 text-sky-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   Mercado Pago
                   {config.mercadopago_verified && (
                     <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
@@ -437,7 +437,7 @@ export default function IntegracionesPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-gray-500">Acepta pagos con QR, tarjetas y Point</p>
+                <p className="text-sm text-muted-foreground">Acepta pagos con QR, tarjetas y Point</p>
               </div>
               <Switch
                 checked={config.mercadopago_enabled}
@@ -464,48 +464,48 @@ export default function IntegracionesPage() {
                 {/* Credentials */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Access Token</Label>
+                    <Label className="text-muted-foreground">Access Token</Label>
                     <Input
                       type="password"
                       placeholder="APP_USR-..."
                       value={config.mercadopago_access_token || ""}
                       onChange={(e) => setConfig({ ...config, mercadopago_access_token: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white font-mono"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground font-mono"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Public Key</Label>
+                    <Label className="text-muted-foreground">Public Key</Label>
                     <Input
                       placeholder="APP_USR-..."
                       value={config.mercadopago_public_key || ""}
                       onChange={(e) => setConfig({ ...config, mercadopago_public_key: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white font-mono"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground font-mono"
                     />
                   </div>
                 </div>
 
                 {/* Features */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="p-4 rounded-lg bg-white/5 text-center">
+                  <div className="p-4 rounded-lg bg-accent text-center">
                     <div className="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center mx-auto mb-2">
                       <CreditCard className="w-5 h-5 text-sky-400" />
                     </div>
-                    <p className="text-white text-sm font-medium">Checkout Pro</p>
-                    <p className="text-xs text-gray-500">Botón de pago</p>
+                    <p className="text-foreground text-sm font-medium">Checkout Pro</p>
+                    <p className="text-xs text-muted-foreground">Botón de pago</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-white/5 text-center">
+                  <div className="p-4 rounded-lg bg-accent text-center">
                     <div className="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center mx-auto mb-2">
                       <span className="text-sky-400 text-lg">◰</span>
                     </div>
-                    <p className="text-white text-sm font-medium">QR Dinámico</p>
-                    <p className="text-xs text-gray-500">Código por venta</p>
+                    <p className="text-foreground text-sm font-medium">QR Dinámico</p>
+                    <p className="text-xs text-muted-foreground">Código por venta</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-white/5 text-center">
+                  <div className="p-4 rounded-lg bg-accent text-center">
                     <div className="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center mx-auto mb-2">
                       <Settings className="w-5 h-5 text-sky-400" />
                     </div>
-                    <p className="text-white text-sm font-medium">Point</p>
-                    <p className="text-xs text-gray-500">Lector de tarjetas</p>
+                    <p className="text-foreground text-sm font-medium">Point</p>
+                    <p className="text-xs text-muted-foreground">Lector de tarjetas</p>
                   </div>
                 </div>
 
@@ -513,7 +513,7 @@ export default function IntegracionesPage() {
                 <Button
                   onClick={() => handleTestConnection('mercadopago')}
                   disabled={!config.mercadopago_access_token}
-                  className="bg-sky-500 hover:bg-sky-400 text-white"
+                  className="bg-sky-500 hover:bg-sky-400 text-foreground"
                 >
                   <Link2 className="w-4 h-4 mr-2" />
                   Verificar Credenciales
@@ -525,13 +525,13 @@ export default function IntegracionesPage() {
 
         {/* Pedidos Ya Tab */}
         <TabsContent value="pedidosya" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center">
                 <Bike className="w-6 h-6 text-red-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   Pedidos Ya
                   {config.pedidosya_verified && (
                     <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
@@ -540,7 +540,7 @@ export default function IntegracionesPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-gray-500">Sincroniza pedidos y productos con Pedidos Ya</p>
+                <p className="text-sm text-muted-foreground">Sincroniza pedidos y productos con Pedidos Ya</p>
               </div>
               <Switch
                 checked={config.pedidosya_enabled}
@@ -565,55 +565,55 @@ export default function IntegracionesPage() {
                 {/* Credentials */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Client ID</Label>
+                    <Label className="text-muted-foreground">Client ID</Label>
                     <Input
                       placeholder="Tu Client ID"
                       value={config.pedidosya_client_id || ""}
                       onChange={(e) => setConfig({ ...config, pedidosya_client_id: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Client Secret</Label>
+                    <Label className="text-muted-foreground">Client Secret</Label>
                     <Input
                       type="password"
                       placeholder="Tu Client Secret"
                       value={config.pedidosya_client_secret || ""}
                       onChange={(e) => setConfig({ ...config, pedidosya_client_secret: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Restaurant ID</Label>
+                  <Label className="text-muted-foreground">Restaurant ID</Label>
                   <Input
                     placeholder="ID de tu local en Pedidos Ya"
                     value={config.pedidosya_restaurant_id || ""}
                     onChange={(e) => setConfig({ ...config, pedidosya_restaurant_id: e.target.value })}
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                   />
                 </div>
 
                 {/* Features */}
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-400 font-medium">Funcionalidades:</p>
+                  <p className="text-sm text-muted-foreground font-medium">Funcionalidades:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Sincronizar menú</span>
+                      <span className="text-sm text-foreground">Sincronizar menú</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Recibir pedidos</span>
+                      <span className="text-sm text-foreground">Recibir pedidos</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Actualizar estados</span>
+                      <span className="text-sm text-foreground">Actualizar estados</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Control de stock</span>
+                      <span className="text-sm text-foreground">Control de stock</span>
                     </div>
                   </div>
                 </div>
@@ -622,7 +622,7 @@ export default function IntegracionesPage() {
                 <Button
                   onClick={() => handleTestConnection('pedidosya')}
                   disabled={!config.pedidosya_client_id || !config.pedidosya_client_secret}
-                  className="bg-red-500 hover:bg-red-400 text-white"
+                  className="bg-red-500 hover:bg-red-400 text-foreground"
                 >
                   <Link2 className="w-4 h-4 mr-2" />
                   Probar Conexión
@@ -634,13 +634,13 @@ export default function IntegracionesPage() {
 
         {/* Rappi Tab */}
         <TabsContent value="rappi" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
                 <ShoppingBag className="w-6 h-6 text-orange-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   Rappi
                   {config.rappi_verified && (
                     <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
@@ -649,7 +649,7 @@ export default function IntegracionesPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-gray-500">Integra tu catálogo y recibe pedidos de Rappi</p>
+                <p className="text-sm text-muted-foreground">Integra tu catálogo y recibe pedidos de Rappi</p>
               </div>
               <Switch
                 checked={config.rappi_enabled}
@@ -674,45 +674,45 @@ export default function IntegracionesPage() {
                 {/* Credentials */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Store ID</Label>
+                    <Label className="text-muted-foreground">Store ID</Label>
                     <Input
                       placeholder="ID de tu tienda en Rappi"
                       value={config.rappi_store_id || ""}
                       onChange={(e) => setConfig({ ...config, rappi_store_id: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-300">API Key</Label>
+                    <Label className="text-muted-foreground">API Key</Label>
                     <Input
                       type="password"
                       placeholder="Tu API Key de Rappi"
                       value={config.rappi_api_key || ""}
                       onChange={(e) => setConfig({ ...config, rappi_api_key: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                 </div>
 
                 {/* Features */}
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-400 font-medium">Funcionalidades:</p>
+                  <p className="text-sm text-muted-foreground font-medium">Funcionalidades:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Catálogo sincronizado</span>
+                      <span className="text-sm text-foreground">Catálogo sincronizado</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Pedidos en tiempo real</span>
+                      <span className="text-sm text-foreground">Pedidos en tiempo real</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Disponibilidad de productos</span>
+                      <span className="text-sm text-foreground">Disponibilidad de productos</span>
                     </div>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-white">Horarios automáticos</span>
+                      <span className="text-sm text-foreground">Horarios automáticos</span>
                     </div>
                   </div>
                 </div>
@@ -721,7 +721,7 @@ export default function IntegracionesPage() {
                 <Button
                   onClick={() => handleTestConnection('rappi')}
                   disabled={!config.rappi_store_id || !config.rappi_api_key}
-                  className="bg-orange-500 hover:bg-orange-400 text-white"
+                  className="bg-orange-500 hover:bg-orange-400 text-foreground"
                 >
                   <Link2 className="w-4 h-4 mr-2" />
                   Probar Conexión

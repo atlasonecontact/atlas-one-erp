@@ -470,9 +470,9 @@ export default function ConfiguracionPage() {
   if (kioscos.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Configuración</h1>
-        <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
-          <p className="text-gray-400">Primero debes crear un kiosco para configurar notificaciones.</p>
+        <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+        <div className="border border-cyan-500/20 rounded-xl bg-card/50 p-12 text-center">
+          <p className="text-muted-foreground">Primero debes crear un kiosco para configurar notificaciones.</p>
           <Button asChild className="mt-4">
             <a href="/dashboard/kioscos">Crear Kiosco</a>
           </Button>
@@ -485,20 +485,20 @@ export default function ConfiguracionPage() {
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Configuración</h1>
-        <p className="text-gray-400 text-sm">Administra la configuración de tu negocio</p>
+        <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+        <p className="text-muted-foreground text-sm">Administra la configuración de tu negocio</p>
       </div>
 
       {kioscos.length > 1 && (
         <div className="space-y-2">
-          <Label className="text-gray-300">Seleccionar Kiosco</Label>
+          <Label className="text-muted-foreground">Seleccionar Kiosco</Label>
           <Select value={selectedKiosko} onValueChange={setSelectedKiosko}>
-            <SelectTrigger className="bg-[#0a0f1a] border-cyan-500/20 text-white">
+            <SelectTrigger className="bg-card border-cyan-500/20 text-foreground">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#0a0f1a] border-cyan-500/20">
+            <SelectContent className="bg-card border-cyan-500/20">
               {kioscos.map((kiosko) => (
-                <SelectItem key={kiosko.id} value={kiosko.id} className="text-white">
+                <SelectItem key={kiosko.id} value={kiosko.id} className="text-foreground">
                   {kiosko.name}
                 </SelectItem>
               ))}
@@ -508,7 +508,7 @@ export default function ConfiguracionPage() {
       )}
 
       <Tabs defaultValue="kiosko" className="w-full">
-        <TabsList className="bg-[#0a0f1a] border border-cyan-500/10">
+        <TabsList className="bg-card border border-cyan-500/10">
           <TabsTrigger value="kiosko" className="data-[state=active]:bg-cyan-500/20">
             Mi Kiosco
           </TabsTrigger>
@@ -528,69 +528,69 @@ export default function ConfiguracionPage() {
 
         {/* Mi Kiosco Tab */}
         <TabsContent value="kiosko" className="space-y-6 mt-6">
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <Store className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Datos del Kiosco</h3>
-                <p className="text-sm text-gray-500">Información de tu local que aparece en tickets y reportes</p>
+                <h3 className="text-lg font-semibold text-foreground">Datos del Kiosco</h3>
+                <p className="text-sm text-muted-foreground">Información de tu local que aparece en tickets y reportes</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-300">Nombre del Kiosco</Label>
+                <Label className="text-muted-foreground">Nombre del Kiosco</Label>
                 <Input
                   value={kioskoData.name}
                   onChange={(e) => setKioskoData({ ...kioskoData, name: e.target.value })}
                   placeholder="Mi Kiosco Express"
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                  className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">CUIT</Label>
+                <Label className="text-muted-foreground">CUIT</Label>
                 <Input
                   value={kioskoData.cuit}
                   onChange={(e) => setKioskoData({ ...kioskoData, cuit: e.target.value })}
                   placeholder="20-12345678-9"
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                  className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-gray-300">Dirección</Label>
+                <Label className="text-muted-foreground">Dirección</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     value={kioskoData.location}
                     onChange={(e) => setKioskoData({ ...kioskoData, location: e.target.value })}
                     placeholder="Av. Corrientes 1234"
-                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-foreground"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Ciudad</Label>
+                <Label className="text-muted-foreground">Ciudad</Label>
                 <Input
                   value={kioskoData.city}
                   onChange={(e) => setKioskoData({ ...kioskoData, city: e.target.value })}
                   placeholder="Buenos Aires"
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                  className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Teléfono del local</Label>
+                <Label className="text-muted-foreground">Teléfono del local</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     value={kioskoData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="+54 11 1234-5678"
-                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="pl-10 bg-[#0d1424] border-cyan-500/20 text-foreground"
                   />
                 </div>
-                <p className="text-xs text-gray-500">📱 Datos de contacto del kiosco (aparece en tickets y reportes).</p>
+                <p className="text-xs text-muted-foreground">📱 Datos de contacto del kiosco (aparece en tickets y reportes).</p>
               </div>
             </div>
 
@@ -605,13 +605,13 @@ export default function ConfiguracionPage() {
 
         <TabsContent value="integrations" className="space-y-6 mt-6">
           {/* WhatsApp Section - Marked as "Coming Soon" */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6 relative overflow-hidden">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6 relative overflow-hidden">
             {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-[#0a0f1a]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+            <div className="absolute inset-0 bg-card/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
               <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-3 rounded-full border border-green-500/30 mb-3">
                 <span className="text-green-400 font-semibold text-lg">Proximamente</span>
               </div>
-              <p className="text-gray-400 text-sm text-center max-w-xs">
+              <p className="text-muted-foreground text-sm text-center max-w-xs">
                 La integracion con WhatsApp Business estara disponible pronto
               </p>
             </div>
@@ -622,8 +622,8 @@ export default function ConfiguracionPage() {
                   <MessageCircle className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">WhatsApp Business</h3>
-                  <p className="text-sm text-gray-500">Recibe notificaciones y consulta estadisticas por WhatsApp</p>
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">WhatsApp Business</h3>
+                  <p className="text-sm text-muted-foreground">Recibe notificaciones y consulta estadisticas por WhatsApp</p>
                 </div>
               </div>
               <Switch checked={false} disabled className="data-[state=checked]:bg-green-500 opacity-50" />
@@ -643,13 +643,13 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Telegram Section */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                 <Send className="w-5 h-5 text-blue-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   Telegram Bot
                   {telegramConfig.verified && (
                     <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
@@ -658,7 +658,7 @@ export default function ConfiguracionPage() {
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-gray-500">Consulta estadísticas y recibe alertas desde Telegram</p>
+                <p className="text-sm text-muted-foreground">Consulta estadísticas y recibe alertas desde Telegram</p>
               </div>
               <Switch
                 checked={telegramConfig.enabled}
@@ -690,7 +690,7 @@ export default function ConfiguracionPage() {
                         size="sm"
                         onClick={setupTelegramWebhook}
                         disabled={isCheckingTelegram}
-                        className="bg-purple-500 hover:bg-purple-400 text-white text-xs"
+                        className="bg-purple-500 hover:bg-purple-400 text-foreground text-xs"
                       >
                         Activar Webhook
                       </Button>
@@ -729,18 +729,18 @@ export default function ConfiguracionPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Tu Chat ID de Telegram</Label>
+                  <Label className="text-muted-foreground">Tu Chat ID de Telegram</Label>
                   <div className="flex gap-2">
                     <Input
                       placeholder="Ej: 123456789"
                       value={telegramConfig.chatId}
                       onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
-                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-lg font-mono"
+                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-foreground text-lg font-mono"
                     />
                     <Button
                       onClick={handleTestTelegram}
                       disabled={isTestingTelegram || !telegramConfig.chatId}
-                      className="bg-blue-500 hover:bg-blue-400 text-white font-semibold px-6"
+                      className="bg-blue-500 hover:bg-blue-400 text-foreground font-semibold px-6"
                     >
                       {isTestingTelegram ? (
                         <>
@@ -754,7 +754,7 @@ export default function ConfiguracionPage() {
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que todo funcione.
                   </p>
                 </div>
@@ -781,10 +781,10 @@ export default function ConfiguracionPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-accent">
                   <div>
-                    <p className="text-white font-medium">🔔 Notificar cada venta</p>
-                    <p className="text-sm text-gray-500">Recibís un mensaje cada vez que se hace una venta</p>
+                    <p className="text-foreground font-medium">🔔 Notificar cada venta</p>
+                    <p className="text-sm text-muted-foreground">Recibís un mensaje cada vez que se hace una venta</p>
                   </div>
                   <Switch
                     checked={telegramConfig.notifyOnSale}
@@ -798,19 +798,19 @@ export default function ConfiguracionPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/ventas</span>
-                      <p className="text-gray-400 text-xs mt-1">Ver ventas de hoy</p>
+                      <p className="text-muted-foreground text-xs mt-1">Ver ventas de hoy</p>
                     </div>
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/mes</span>
-                      <p className="text-gray-400 text-xs mt-1">Resumen del mes</p>
+                      <p className="text-muted-foreground text-xs mt-1">Resumen del mes</p>
                     </div>
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/stock</span>
-                      <p className="text-gray-400 text-xs mt-1">Productos con poco stock</p>
+                      <p className="text-muted-foreground text-xs mt-1">Productos con poco stock</p>
                     </div>
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/ayuda</span>
-                      <p className="text-gray-400 text-xs mt-1">Ver todos los comandos</p>
+                      <p className="text-muted-foreground text-xs mt-1">Ver todos los comandos</p>
                     </div>
                   </div>
                 </div>
@@ -821,14 +821,14 @@ export default function ConfiguracionPage() {
 
         <TabsContent value="general" className="space-y-6 mt-6">
           {/* User Profile */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <User className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Mi Perfil</h3>
-                <p className="text-sm text-gray-500">Tu información de cuenta</p>
+                <h3 className="text-lg font-semibold text-foreground">Mi Perfil</h3>
+                <p className="text-sm text-muted-foreground">Tu información de cuenta</p>
               </div>
             </div>
 
@@ -838,15 +838,15 @@ export default function ConfiguracionPage() {
               </div>
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-gray-500 text-xs">Nombre</Label>
-                  <p className="text-white font-medium">{user.name || "Sin nombre"}</p>
+                  <Label className="text-muted-foreground text-xs">Nombre</Label>
+                  <p className="text-foreground font-medium">{user.name || "Sin nombre"}</p>
                 </div>
                 <div>
-                  <Label className="text-gray-500 text-xs">Email</Label>
-                  <p className="text-white font-medium">{user.email}</p>
+                  <Label className="text-muted-foreground text-xs">Email</Label>
+                  <p className="text-foreground font-medium">{user.email}</p>
                 </div>
                 <div>
-                  <Label className="text-gray-500 text-xs">Rol</Label>
+                  <Label className="text-muted-foreground text-xs">Rol</Label>
                   <p className="text-cyan-400 font-medium capitalize">{user.role === "owner" ? "Dueño" : user.role}</p>
                 </div>
               </div>
@@ -854,14 +854,14 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Payment Methods */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Métodos de Pago</h3>
-                <p className="text-sm text-gray-500">Habilita o deshabilita métodos de pago</p>
+                <h3 className="text-lg font-semibold text-foreground">Métodos de Pago</h3>
+                <p className="text-sm text-muted-foreground">Habilita o deshabilita métodos de pago</p>
               </div>
             </div>
 
@@ -872,10 +872,10 @@ export default function ConfiguracionPage() {
                 { key: "qr", label: "QR", desc: "Mercado Pago, otros" },
                 { key: "transfer", label: "Transferencia", desc: "Transferencia bancaria" },
               ].map((method) => (
-                <div key={method.key} className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                <div key={method.key} className="flex items-center justify-between p-4 rounded-lg bg-accent">
                   <div>
-                    <p className="text-white font-medium">{method.label}</p>
-                    <p className="text-sm text-gray-500">{method.desc}</p>
+                    <p className="text-foreground font-medium">{method.label}</p>
+                    <p className="text-sm text-muted-foreground">{method.desc}</p>
                   </div>
                   <Switch
                     checked={paymentMethods[method.key as keyof typeof paymentMethods]}
@@ -888,24 +888,24 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Security */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Seguridad</h3>
-                <p className="text-sm text-gray-500">Opciones de seguridad de tu cuenta</p>
+                <h3 className="text-lg font-semibold text-foreground">Seguridad</h3>
+                <p className="text-sm text-muted-foreground">Opciones de seguridad de tu cuenta</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent">
+              <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent">
                 Cambiar contraseña
               </Button>
               <Button
                 variant="outline"
-                className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent ml-3"
+                className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent ml-3"
               >
                 Activar 2FA
               </Button>
@@ -915,14 +915,14 @@ export default function ConfiguracionPage() {
 
         <TabsContent value="notifications" className="space-y-6 mt-6">
           {/* Notifications */}
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <Bell className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Notificaciones</h3>
-                <p className="text-sm text-gray-500">Configura tus alertas</p>
+                <h3 className="text-lg font-semibold text-foreground">Notificaciones</h3>
+                <p className="text-sm text-muted-foreground">Configura tus alertas</p>
               </div>
             </div>
 
@@ -932,10 +932,10 @@ export default function ConfiguracionPage() {
                 { key: "dailySummary", label: "Resumen diario", desc: "Recibe un resumen al final del día" },
                 { key: "newSales", label: "Nuevas ventas", desc: "Notificación por cada venta" },
               ].map((notif) => (
-                <div key={notif.key} className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                <div key={notif.key} className="flex items-center justify-between p-4 rounded-lg bg-accent">
                   <div>
-                    <p className="text-white font-medium">{notif.label}</p>
-                    <p className="text-sm text-gray-500">{notif.desc}</p>
+                    <p className="text-foreground font-medium">{notif.label}</p>
+                    <p className="text-sm text-muted-foreground">{notif.desc}</p>
                   </div>
                   <Switch
                     checked={notifications[notif.key as keyof typeof notifications]}
@@ -955,8 +955,8 @@ export default function ConfiguracionPage() {
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">Eliminar Cuenta</h3>
-                <p className="text-sm text-gray-400 mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Eliminar Cuenta</h3>
+                <p className="text-sm text-muted-foreground mb-4">
                   Esta acción eliminará permanentemente tu cuenta, todos tus kioscos, empleados, productos, ventas y
                   configuraciones. Esta acción no se puede deshacer.
                 </p>
@@ -974,21 +974,21 @@ export default function ConfiguracionPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-gray-300">
+                    <Label className="text-muted-foreground">
                       Para confirmar, escribe <span className="font-bold text-red-400">ELIMINAR</span>
                     </Label>
                     <Input
                       value={deleteConfirmation}
                       onChange={(e) => setDeleteConfirmation(e.target.value)}
                       placeholder="ELIMINAR"
-                      className="bg-[#0d1424] border-red-500/30 text-white"
+                      className="bg-[#0d1424] border-red-500/30 text-foreground"
                     />
                   </div>
 
                   <Button
                     onClick={handleDeleteAccount}
                     disabled={isDeleting || deleteConfirmation !== "ELIMINAR"}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white"
+                    className="w-full bg-red-500 hover:bg-red-600 text-foreground"
                   >
                     {isDeleting ? "Eliminando cuenta..." : "Eliminar mi cuenta permanentemente"}
                   </Button>

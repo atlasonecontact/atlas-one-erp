@@ -85,26 +85,26 @@ export default function AdminCuentasPage() {
       <div className="flex items-center gap-3">
         <ShieldAlert className="h-6 w-6 text-cyan-400" />
         <div>
-          <h1 className="text-xl font-bold text-white">Cuentas</h1>
-          <p className="text-sm text-gray-400">Quién usa Atlas One y si tiene el acceso activo.</p>
+          <h1 className="text-xl font-bold text-foreground">Cuentas</h1>
+          <p className="text-sm text-muted-foreground">Quién usa Atlas One y si tiene el acceso activo.</p>
         </div>
       </div>
 
       {/* Mobile: cards */}
       <div className="space-y-3 md:hidden">
         {isLoading ? (
-          <p className="px-4 py-8 text-center text-sm text-gray-500">Cargando...</p>
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Cargando...</p>
         ) : accounts.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-gray-500">No hay cuentas todavía.</p>
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">No hay cuentas todavía.</p>
         ) : (
           accounts.map((a) => {
             const suspended = a.access_status === "suspended"
             return (
-              <div key={a.kiosko_id} className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 space-y-3">
+              <div key={a.kiosko_id} className="rounded-xl border border-cyan-500/10 bg-card p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white">{a.kiosko_name}</p>
-                    <p className="truncate text-xs text-gray-500">{a.business_name || "—"}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{a.kiosko_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{a.business_name || "—"}</p>
                   </div>
                   <span
                     className={cn(
@@ -115,9 +115,9 @@ export default function AdminCuentasPage() {
                     {suspended ? "Suspendida" : "Activa"}
                   </span>
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-muted-foreground">
                   <p className="truncate">{a.owner_name || "—"}</p>
-                  <p className="truncate text-gray-500">{a.owner_email || "—"}</p>
+                  <p className="truncate text-muted-foreground">{a.owner_email || "—"}</p>
                 </div>
                 <button
                   type="button"
@@ -140,10 +140,10 @@ export default function AdminCuentasPage() {
       </div>
 
       {/* Desktop: tabla */}
-      <div className="hidden overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a] md:block">
+      <div className="hidden overflow-hidden rounded-xl border border-cyan-500/10 bg-card md:block">
         <table className="w-full table-fixed">
           <thead>
-            <tr className="border-b border-cyan-500/10 bg-white/[0.03] text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <tr className="border-b border-cyan-500/10 bg-white/[0.03] text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="px-4 py-3">Kiosko / Negocio</th>
               <th className="hidden px-4 py-3 sm:table-cell">Dueño</th>
               <th className="w-[120px] px-4 py-3 text-center">Estado</th>
@@ -153,13 +153,13 @@ export default function AdminCuentasPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Cargando...
                 </td>
               </tr>
             ) : accounts.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No hay cuentas todavía.
                 </td>
               </tr>
@@ -169,12 +169,12 @@ export default function AdminCuentasPage() {
                 return (
                   <tr key={a.kiosko_id} className="border-b border-cyan-500/5">
                     <td className="px-4 py-3">
-                      <p className="truncate text-sm font-medium text-white">{a.kiosko_name}</p>
-                      <p className="truncate text-xs text-gray-500">{a.business_name || "—"}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{a.kiosko_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{a.business_name || "—"}</p>
                     </td>
                     <td className="hidden px-4 py-3 sm:table-cell">
-                      <p className="truncate text-sm text-gray-300">{a.owner_name || "—"}</p>
-                      <p className="truncate text-xs text-gray-500">{a.owner_email || "—"}</p>
+                      <p className="truncate text-sm text-muted-foreground">{a.owner_name || "—"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{a.owner_email || "—"}</p>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span

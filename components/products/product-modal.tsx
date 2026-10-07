@@ -330,7 +330,7 @@ export function ProductModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
           {matchedProduct ? (
             <>
               <DialogHeader>
@@ -338,36 +338,36 @@ export function ProductModal({
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20 space-y-1">
-                  <p className="text-white font-semibold text-lg">{matchedProduct.name}</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-foreground font-semibold text-lg">{matchedProduct.name}</p>
+                  <p className="text-sm text-muted-foreground">
                     {matchedProduct.category}
                     {matchedProduct.brand ? ` · ${matchedProduct.brand}` : ""}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-sm">
                     <div>
-                      <p className="text-gray-500">Stock actual</p>
-                      <p className="text-white font-medium">{matchedProduct.stock} un.</p>
+                      <p className="text-muted-foreground">Stock actual</p>
+                      <p className="text-foreground font-medium">{matchedProduct.stock} un.</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Costo</p>
-                      <p className="text-white font-medium">${matchedProduct.cost.toLocaleString()}</p>
+                      <p className="text-muted-foreground">Costo</p>
+                      <p className="text-foreground font-medium">${matchedProduct.cost.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Precio</p>
-                      <p className="text-white font-medium">${matchedProduct.price.toLocaleString()}</p>
+                      <p className="text-muted-foreground">Precio</p>
+                      <p className="text-foreground font-medium">${matchedProduct.price.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Agregar stock rápido</Label>
+                  <Label className="text-muted-foreground">Agregar stock rápido</Label>
                   <div className="flex gap-2">
                     <Input
                       type="number"
                       value={quickStockQty}
                       onChange={(e) => setQuickStockQty(e.target.value)}
                       placeholder="Cantidad"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                     <Button
                       type="button"
@@ -400,7 +400,7 @@ export function ProductModal({
                       setShowLots(!!(matchedProduct.lots && matchedProduct.lots.length > 0))
                       setMatchedProduct(null)
                     }}
-                    className="flex-1 border-cyan-500/20 text-gray-300 hover:bg-white/10 bg-transparent gap-2"
+                    className="flex-1 border-cyan-500/20 text-muted-foreground hover:bg-accent bg-transparent gap-2"
                   >
                     <Pencil className="w-4 h-4" />
                     Editar ficha
@@ -411,7 +411,7 @@ export function ProductModal({
                   type="button"
                   variant="ghost"
                   onClick={() => setMatchedProduct(null)}
-                  className="w-full text-gray-500 hover:text-white"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
                   Cancelar
                 </Button>
@@ -452,7 +452,7 @@ export function ProductModal({
                         }
                       }}
                       placeholder="Ej: 7790001234567"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white text-base h-11"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground text-base h-11"
                     />
                     <Button
                       type="button"
@@ -472,56 +472,56 @@ export function ProductModal({
                   )}
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <div className="space-y-4 rounded-xl border border-border bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <Tag className="w-3.5 h-3.5" />
                     Datos del producto
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Nombre del producto</Label>
+                    <Label className="text-muted-foreground">Nombre del producto</Label>
                     <Input
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Ej: Gaseosa Cola 500ml"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Marca</Label>
+                      <Label className="text-muted-foreground">Marca</Label>
                       <Input
                         value={formData.brand || ""}
                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                         placeholder="Ej: Coca-Cola"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Línea / Variante</Label>
+                      <Label className="text-muted-foreground">Línea / Variante</Label>
                       <Input
                         value={formData.variant || ""}
                         onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
                         placeholder="Ej: Zero"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Categoría</Label>
+                      <Label className="text-muted-foreground">Categoría</Label>
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                       >
-                        <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+                        <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-foreground">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-[#0d1424] border-cyan-500/20">
                           {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat} className="text-white hover:bg-white/10">
+                            <SelectItem key={cat} value={cat} className="text-foreground hover:bg-accent">
                               {cat}
                             </SelectItem>
                           ))}
@@ -529,57 +529,57 @@ export function ProductModal({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Subcategoría</Label>
+                      <Label className="text-muted-foreground">Subcategoría</Label>
                       <Input
                         value={formData.subcategory || ""}
                         onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
                         placeholder="Ej: Gaseosas"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5 text-gray-300">
-                      <Truck className="w-3.5 h-3.5 text-gray-500" />
+                    <Label className="flex items-center gap-1.5 text-muted-foreground">
+                      <Truck className="w-3.5 h-3.5 text-muted-foreground" />
                       Proveedor
                     </Label>
                     <Input
                       value={formData.supplier || ""}
                       onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                       placeholder="Ej: Distribuidora Norte"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <div className="space-y-4 rounded-xl border border-border bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <DollarSign className="w-3.5 h-3.5" />
                     Precio e IVA
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Costo</Label>
+                      <Label className="text-muted-foreground">Costo</Label>
                       <Input
                         type="number"
                         value={formData.cost}
                         onChange={(e) => setFormData({ ...formData, cost: Number(e.target.value) })}
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Precio de venta</Label>
+                      <Label className="text-muted-foreground">Precio de venta</Label>
                       <Input
                         type="number"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Margen</Label>
+                      <Label className="text-muted-foreground">Margen</Label>
                       <div
                         className={`h-10 flex items-center px-3 rounded-md border font-semibold ${
                           margin >= 30
@@ -596,68 +596,68 @@ export function ProductModal({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">IVA (%)</Label>
+                      <Label className="text-muted-foreground">IVA (%)</Label>
                       <Input
                         type="number"
                         value={formData.vat_rate ?? ""}
                         onChange={(e) => setFormData({ ...formData, vat_rate: Number(e.target.value) })}
                         placeholder="Ej: 21"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Unidad de medida</Label>
+                      <Label className="text-muted-foreground">Unidad de medida</Label>
                       <Input
                         value={formData.unit || ""}
                         onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                         placeholder="Ej: unidad, kg, l"
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <div className="space-y-4 rounded-xl border border-border bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <Boxes className="w-3.5 h-3.5" />
                     Stock
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Stock inicial</Label>
+                      <Label className="text-muted-foreground">Stock inicial</Label>
                       <Input
                         type="number"
                         value={formData.stock}
                         onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
                         disabled={showLots}
-                        className="bg-[#0d1424] border-cyan-500/20 text-white disabled:opacity-50"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground disabled:opacity-50"
                       />
-                      {showLots && <p className="text-xs text-gray-500">Se calcula de los lotes: {lotsTotal}</p>}
+                      {showLots && <p className="text-xs text-muted-foreground">Se calcula de los lotes: {lotsTotal}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Stock mínimo</Label>
+                      <Label className="text-muted-foreground">Stock mínimo</Label>
                       <Input
                         type="number"
                         value={formData.min_stock ?? ""}
                         onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Stock máximo</Label>
+                      <Label className="text-muted-foreground">Stock máximo</Label>
                       <Input
                         type="number"
                         value={formData.max_stock ?? ""}
                         onChange={(e) => setFormData({ ...formData, max_stock: Number(e.target.value) })}
-                        className="bg-[#0d1424] border-cyan-500/20 text-white"
+                        className="bg-[#0d1424] border-cyan-500/20 text-foreground"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5 text-gray-300">
-                      <CalendarClock className="w-3.5 h-3.5 text-gray-500" />
+                    <Label className="flex items-center gap-1.5 text-muted-foreground">
+                      <CalendarClock className="w-3.5 h-3.5 text-muted-foreground" />
                       Fecha de vencimiento (opcional)
                     </Label>
                     <Input
@@ -665,19 +665,19 @@ export function ProductModal({
                       value={formData.expiration_date || ""}
                       onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
                       disabled={showLots}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white disabled:opacity-50"
+                      className="bg-[#0d1424] border-cyan-500/20 text-foreground disabled:opacity-50"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                <div className="space-y-3 p-4 rounded-xl bg-white/[0.03] border border-border">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="flex items-center gap-1.5 text-gray-300">
-                        <Layers className="w-3.5 h-3.5 text-gray-500" />
+                      <Label className="flex items-center gap-1.5 text-muted-foreground">
+                        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
                         Gestionar por lotes
                       </Label>
-                      <p className="text-xs text-gray-500">Cantidad y vencimiento por lote de este producto</p>
+                      <p className="text-xs text-muted-foreground">Cantidad y vencimiento por lote de este producto</p>
                     </div>
                     <Button
                       type="button"
@@ -695,30 +695,30 @@ export function ProductModal({
                       {lots.map((lot, i) => (
                         <div key={i} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
                           <div className="space-y-1">
-                            <Label className="text-xs text-gray-500">Lote</Label>
+                            <Label className="text-xs text-muted-foreground">Lote</Label>
                             <Input
                               value={lot.lot_number}
                               onChange={(e) => updateLot(i, "lot_number", e.target.value)}
                               placeholder="Nº lote"
-                              className="bg-[#0d1424] border-cyan-500/20 text-white h-9"
+                              className="bg-[#0d1424] border-cyan-500/20 text-foreground h-9"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-gray-500">Cantidad</Label>
+                            <Label className="text-xs text-muted-foreground">Cantidad</Label>
                             <Input
                               type="number"
                               value={lot.quantity}
                               onChange={(e) => updateLot(i, "quantity", Number(e.target.value))}
-                              className="bg-[#0d1424] border-cyan-500/20 text-white h-9"
+                              className="bg-[#0d1424] border-cyan-500/20 text-foreground h-9"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-gray-500">Vencimiento</Label>
+                            <Label className="text-xs text-muted-foreground">Vencimiento</Label>
                             <Input
                               type="date"
                               value={lot.expiration_date}
                               onChange={(e) => updateLot(i, "expiration_date", e.target.value)}
-                              className="bg-[#0d1424] border-cyan-500/20 text-white h-9"
+                              className="bg-[#0d1424] border-cyan-500/20 text-foreground h-9"
                             />
                           </div>
                           <Button
@@ -726,7 +726,7 @@ export function ProductModal({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeLot(i)}
-                            className="text-gray-500 hover:text-red-400 h-9 w-9 shrink-0"
+                            className="text-muted-foreground hover:text-red-400 h-9 w-9 shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -743,7 +743,7 @@ export function ProductModal({
                         Agregar lote
                       </Button>
                       {lots.length > 0 && (
-                        <p className="text-xs text-gray-500">Stock total por lotes: {lotsTotal} unidades</p>
+                        <p className="text-xs text-muted-foreground">Stock total por lotes: {lotsTotal} unidades</p>
                       )}
                     </div>
                   )}
@@ -754,7 +754,7 @@ export function ProductModal({
                     type="button"
                     variant="outline"
                     onClick={onClose}
-                    className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                    className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
                   >
                     Cancelar
                   </Button>

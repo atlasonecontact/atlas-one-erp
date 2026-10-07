@@ -78,7 +78,7 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Procesar Pago</DialogTitle>
         </DialogHeader>
@@ -86,13 +86,13 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
         <div className="space-y-6 py-4">
           {/* Total */}
           <div className="text-center p-6 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-            <p className="text-sm text-gray-400 mb-1">Total a cobrar</p>
+            <p className="text-sm text-muted-foreground mb-1">Total a cobrar</p>
             <p className="text-4xl font-bold text-cyan-400">{formatCurrency(total)}</p>
           </div>
 
           {/* Payment methods */}
           <div className="space-y-3">
-            <p className="text-sm text-gray-400">Método de pago</p>
+            <p className="text-sm text-muted-foreground">Método de pago</p>
             <div className="grid grid-cols-3 gap-3">
               {paymentMethods.map((method) => (
                 <button
@@ -102,7 +102,7 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
                     "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all",
                     selectedMethod === method.id
                       ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                      : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30",
+                      : "border-cyan-500/10 text-muted-foreground hover:border-cyan-500/30",
                   )}
                 >
                   <method.icon className="w-6 h-6" />
@@ -115,13 +115,13 @@ export function PaymentModal({ open, onClose, total, onPayment, kioskoId, cartIt
           {/* Cash input */}
           {selectedMethod === "cash" && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-400">Efectivo recibido</p>
+              <p className="text-sm text-muted-foreground">Efectivo recibido</p>
               <Input
                 type="number"
                 placeholder="$0"
                 value={cashReceived}
                 onChange={(e) => setCashReceived(e.target.value)}
-                className="bg-[#0d1424] border-cyan-500/20 text-white text-2xl text-center py-6"
+                className="bg-[#0d1424] border-cyan-500/20 text-foreground text-2xl text-center py-6"
               />
               {cashAmount >= total ? (
                 <div className="flex justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">

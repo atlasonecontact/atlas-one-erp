@@ -109,7 +109,7 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-2xl border border-cyan-500/20 bg-[#0a0f1a] p-6"
+        className="w-full max-w-md rounded-2xl border border-cyan-500/20 bg-card p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-start justify-between gap-3">
@@ -118,17 +118,17 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
               <Moon className="h-5 w-5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Recargo por horario</h2>
-              <p className="text-xs text-gray-400">Sube el precio de todos los productos en una franja del día</p>
+              <h2 className="text-lg font-bold text-foreground">Recargo por horario</h2>
+              <p className="text-xs text-muted-foreground">Sube el precio de todos los productos en una franja del día</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 transition-colors hover:text-white">
+          <button onClick={onClose} className="text-muted-foreground transition-colors hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <label className="mb-5 flex cursor-pointer items-center justify-between rounded-lg border border-white/10 bg-white/5 p-3">
-          <span className="text-sm font-medium text-white">Activar recargo</span>
+        <label className="mb-5 flex cursor-pointer items-center justify-between rounded-lg border border-border bg-accent p-3">
+          <span className="text-sm font-medium text-foreground">Activar recargo</span>
           <input
             type="checkbox"
             checked={enabled}
@@ -138,7 +138,7 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
         </label>
 
         <div className="mb-4 space-y-2">
-          <label className="text-sm text-gray-300">Porcentaje de aumento</label>
+          <label className="text-sm text-muted-foreground">Porcentaje de aumento</label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -147,35 +147,35 @@ export function SurchargeModal({ open, onClose, kioskoId, config, onSaved }: Sur
               step={1}
               value={percentage}
               onChange={(e) => setPercentage(Math.max(0, Number(e.target.value)))}
-              className="h-11 w-28 rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-center text-lg font-mono text-white"
+              className="h-11 w-28 rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-center text-lg font-mono text-foreground"
             />
-            <span className="text-gray-400">%</span>
+            <span className="text-muted-foreground">%</span>
           </div>
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <label className="text-sm text-gray-300">Desde</label>
+            <label className="text-sm text-muted-foreground">Desde</label>
             <input
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="h-11 w-full rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-white"
+              className="h-11 w-full rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-foreground"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm text-gray-300">Hasta</label>
+            <label className="text-sm text-muted-foreground">Hasta</label>
             <input
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="h-11 w-full rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-white"
+              className="h-11 w-full rounded-md border border-cyan-500/20 bg-[#0d1424] px-3 text-foreground"
             />
           </div>
         </div>
 
         {startTime > endTime && (
-          <p className="mb-4 text-xs text-gray-500">
+          <p className="mb-4 text-xs text-muted-foreground">
             Cruza la medianoche: se aplica desde las {startTime} hasta las {endTime} del día siguiente.
           </p>
         )}

@@ -245,18 +245,18 @@ export function NotificationsDropdown() {
       case "order":
         return <Package className="w-4 h-4 text-cyan-400" />
       default:
-        return <Bell className="w-4 h-4 text-gray-400" />
+        return <Bell className="w-4 h-4 text-muted-foreground" />
     }
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-gray-400 hover:text-white hover:bg-white/5">
+        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-accent">
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-white"
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-foreground"
               style={{ backgroundColor: notifications.some((n) => n.urgent && !n.read) ? "#ef4444" : config.primary }}
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -266,7 +266,7 @@ export function NotificationsDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-80 bg-[#0a0f1a] text-white max-h-[500px] overflow-hidden flex flex-col"
+        className="w-80 bg-card text-foreground max-h-[500px] overflow-hidden flex flex-col"
         style={{ borderColor: config.border }}
       >
         {/* Header */}
@@ -278,7 +278,7 @@ export function NotificationsDropdown() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-gray-400 hover:text-white"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   onClick={markAllRead}
                   title="Marcar todas como leídas"
                 >
@@ -287,7 +287,7 @@ export function NotificationsDropdown() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-gray-400 hover:text-white"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   onClick={clearAll}
                   title="Limpiar todas"
                 >
@@ -298,7 +298,7 @@ export function NotificationsDropdown() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-gray-400 hover:text-white"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
               onClick={loadNotifications}
               title="Actualizar"
             >
@@ -314,7 +314,7 @@ export function NotificationsDropdown() {
               <RefreshCw className="w-6 h-6 text-cyan-500 animate-spin" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>No hay notificaciones</p>
             </div>
@@ -324,7 +324,7 @@ export function NotificationsDropdown() {
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`p-3 transition-colors ${notification.href ? "cursor-pointer" : ""} hover:bg-white/5 ${
+                  className={`p-3 transition-colors ${notification.href ? "cursor-pointer" : ""} hover:bg-accent ${
                     notification.urgent && !notification.read
                       ? "bg-red-500/10"
                       : !notification.read
@@ -336,18 +336,18 @@ export function NotificationsDropdown() {
                     <div className="mt-0.5">{getIcon(notification.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-white truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {notification.urgent && "⚠️ "}
                           {notification.title}
                         </p>
-                        <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {formatTimeAgo(notification.time)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400 truncate">{notification.message}</p>
+                      <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
                       {notification.kioskoName && (
-                        <p className="text-xs text-gray-600 mt-0.5">{notification.kioskoName}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{notification.kioskoName}</p>
                       )}
                     </div>
                   </div>

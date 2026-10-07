@@ -98,9 +98,9 @@ export function KioskoSelector() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
-        <Building2 className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-400">Cargando...</span>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent">
+        <Building2 className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Cargando...</span>
       </div>
     )
   }
@@ -120,7 +120,7 @@ export function KioskoSelector() {
         variant="ghost"
         size="sm"
         onClick={() => router.push("/dashboard/kioscos")}
-        className="text-gray-400 hover:text-white"
+        className="text-muted-foreground hover:text-foreground"
       >
         <Plus className="w-4 h-4 mr-2" />
         Crear kiosco
@@ -131,10 +131,10 @@ export function KioskoSelector() {
   // Employee with a single kiosko - show simple view with employee badge
   if (isEmployee && kioscos.length === 1) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent">
         <Building2 className="w-4 h-4 text-cyan-400" />
         <div className="flex flex-col">
-          <span className="text-sm text-white font-medium">{selectedKiosko?.name}</span>
+          <span className="text-sm text-foreground font-medium">{selectedKiosko?.name}</span>
           <div className="flex items-center gap-1">
             <User className="w-3 h-3 text-green-400" />
             <span className="text-xs text-green-400">Empleado</span>
@@ -146,11 +146,11 @@ export function KioskoSelector() {
 
   if (kioscos.length === 1) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent">
         <Building2 className="w-4 h-4 text-cyan-400" />
         <div className="flex flex-col">
-          <span className="text-sm text-white font-medium">{selectedKiosko?.name}</span>
-          <span className="text-xs text-gray-500">{selectedKiosko?.location}</span>
+          <span className="text-sm text-foreground font-medium">{selectedKiosko?.name}</span>
+          <span className="text-xs text-muted-foreground">{selectedKiosko?.location}</span>
         </div>
       </div>
     )
@@ -159,30 +159,30 @@ export function KioskoSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/5">
+        <Button variant="ghost" className="flex items-center gap-2 hover:bg-accent">
           <Building2 className="w-4 h-4 text-cyan-400" />
           <div className="flex flex-col items-start">
-            <span className="text-sm text-white font-medium">{selectedKiosko?.name || "Seleccionar kiosco"}</span>
-            {selectedKiosko && <span className="text-xs text-gray-500">{selectedKiosko.location}</span>}
+            <span className="text-sm text-foreground font-medium">{selectedKiosko?.name || "Seleccionar kiosco"}</span>
+            {selectedKiosko && <span className="text-xs text-muted-foreground">{selectedKiosko.location}</span>}
           </div>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64 bg-[#0a0f1a] border-cyan-500/20">
-        <DropdownMenuLabel className="text-gray-400 text-xs uppercase">Tus Kioscos</DropdownMenuLabel>
+      <DropdownMenuContent align="start" className="w-64 bg-card border-cyan-500/20">
+        <DropdownMenuLabel className="text-muted-foreground text-xs uppercase">Tus Kioscos</DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-cyan-500/10" />
         {kioscos.map((kiosko) => (
           <DropdownMenuItem
             key={kiosko.id}
             onClick={() => handleSelectKiosko(kiosko)}
-            className="flex items-center gap-3 cursor-pointer hover:bg-white/5 focus:bg-white/5"
+            className="flex items-center gap-3 cursor-pointer hover:bg-accent focus:bg-accent"
           >
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-white font-medium">{kiosko.name}</p>
+                <p className="text-sm text-foreground font-medium">{kiosko.name}</p>
                 {selectedKiosko?.id === kiosko.id && <Check className="w-4 h-4 text-cyan-400" />}
               </div>
-              <p className="text-xs text-gray-500">{kiosko.location}</p>
+              <p className="text-xs text-muted-foreground">{kiosko.location}</p>
             </div>
           </DropdownMenuItem>
         ))}

@@ -851,25 +851,25 @@ export default function VentasPage() {
   const sellerControl = (
     <>
     {userRole === "employee" ? (
-      <div className="flex justify-between text-sm text-gray-400">
+      <div className="flex justify-between text-sm text-muted-foreground">
         <span>Vendedor</span>
-        <span className="text-white">{employeeName || "Empleado"}</span>
+        <span className="text-foreground">{employeeName || "Empleado"}</span>
       </div>
     ) : (
       staff.length > 0 && (
-        <label className="flex items-center justify-between gap-3 text-sm text-gray-400">
+        <label className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>Vendedor</span>
           <select
             value={sellerId}
             onChange={(e) => chooseSeller(e.target.value)}
-            className="h-9 max-w-[180px] flex-1 rounded-md border bg-transparent px-2 text-white"
+            className="h-9 max-w-[180px] flex-1 rounded-md border bg-transparent px-2 text-foreground"
             style={{ borderColor: config.border }}
           >
-            <option value="" className="bg-[#0a0f1a]">
+            <option value="" className="bg-card">
               Yo (dueño)
             </option>
             {staff.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#0a0f1a]">
+              <option key={m.id} value={m.id} className="bg-card">
                 {m.name}
               </option>
             ))}
@@ -1089,20 +1089,20 @@ export default function VentasPage() {
         {/* Left side - Products */}
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Scanner status - hidden on mobile (we use camera scanner instead) */}
-          <div className="hidden lg:flex items-center gap-3 mb-4 p-3 rounded-lg bg-[#0a0f1a]/50 border border-cyan-500/10">
+          <div className="hidden lg:flex items-center gap-3 mb-4 p-3 rounded-lg bg-card/50 border border-cyan-500/10">
             <div className="flex items-center gap-2">
               {isListening ? (
                 <Wifi className="w-4 h-4 text-green-400" />
               ) : (
-                <WifiOff className="w-4 h-4 text-gray-500" />
+                <WifiOff className="w-4 h-4 text-muted-foreground" />
               )}
-              <span className={`text-sm ${isListening ? "text-green-400" : "text-gray-500"}`}>
+              <span className={`text-sm ${isListening ? "text-green-400" : "text-muted-foreground"}`}>
                 {isListening ? "Scanner activo" : "Scanner inactivo"}
               </span>
             </div>
 
             {lastScan && (
-              <span className="text-xs text-gray-500 ml-auto">
+              <span className="text-xs text-muted-foreground ml-auto">
                 Último: {lastScan.barcode} ({lastScan.timestamp.toLocaleTimeString()})
               </span>
             )}
@@ -1130,14 +1130,14 @@ export default function VentasPage() {
           {/* Search and filters */}
           <div className="flex items-center gap-2 lg:gap-4 mb-4 lg:mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Buscar productos o escanear..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500 h-11 lg:h-10 text-base lg:text-sm"
+                className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground h-11 lg:h-10 text-base lg:text-sm"
               />
             </div>
             {/* Desktop only buttons */}
@@ -1148,7 +1148,7 @@ export default function VentasPage() {
                 "gap-2 bg-transparent hidden lg:flex",
                 isListening
                   ? "border-green-500/30 text-green-400 hover:bg-green-500/10"
-                  : "border-cyan-500/20 text-gray-400 hover:text-white",
+                  : "border-cyan-500/20 text-muted-foreground hover:text-foreground",
               )}
             >
               <Barcode className="w-4 h-4" />
@@ -1157,7 +1157,7 @@ export default function VentasPage() {
             <Link href="/dashboard/ventas/historial">
               <Button
                 variant="outline"
-                className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2 h-11 lg:h-10"
+                className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2 h-11 lg:h-10"
               >
                 <History className="w-4 h-4" />
                 <span className="hidden sm:inline">Historial</span>
@@ -1172,7 +1172,7 @@ export default function VentasPage() {
                   ? "border-violet-500/40 text-violet-300 hover:bg-violet-500/10"
                   : surchargeConfig?.enabled
                     ? "border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
-                    : "border-cyan-500/20 text-gray-400 hover:text-white",
+                    : "border-cyan-500/20 text-muted-foreground hover:text-foreground",
               )}
               title={
                 surchargeActive
@@ -1211,7 +1211,7 @@ export default function VentasPage() {
                   "px-4 py-2.5 lg:py-2 rounded-xl text-sm font-medium transition-colors touch-target max-w-full truncate",
                   selectedCategory === cat
                     ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                    : "bg-[#0a0f1a] text-gray-400 border border-cyan-500/10 hover:text-white active:bg-white/5",
+                    : "bg-card text-muted-foreground border border-cyan-500/10 hover:text-foreground active:bg-accent",
                 )}
               >
                 {cat === "all" ? "Todos" : cat}
@@ -1227,7 +1227,7 @@ export default function VentasPage() {
                 <Button
                   variant="outline"
                   onClick={() => setVisibleCount((prev) => prev + PRODUCTS_PAGE_SIZE)}
-                  className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                  className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
                 >
                   Mostrar más ({filteredProducts.length - visibleProducts.length} restantes)
                 </Button>
@@ -1275,7 +1275,7 @@ export default function VentasPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowMobileCart(false)} />
 
           {/* Cart Sheet */}
-          <div className="absolute bottom-0 left-0 right-0 bg-[#0a0f1a] rounded-t-3xl max-h-[85vh] flex flex-col slide-up safe-area-bottom">
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl max-h-[85vh] flex flex-col slide-up safe-area-bottom">
             {/* Handle */}
             <div className="flex justify-center py-3">
               <div className="w-10 h-1 bg-gray-600 rounded-full" />
@@ -1286,7 +1286,7 @@ export default function VentasPage() {
               className="flex items-center justify-between px-4 pb-3 border-b"
               style={{ borderColor: config.border }}
             >
-              <h2 className="text-lg font-semibold text-white">Carrito ({cartItemCount})</h2>
+              <h2 className="text-lg font-semibold text-foreground">Carrito ({cartItemCount})</h2>
               <Button variant="ghost" size="icon" onClick={() => setShowMobileCart(false)}>
                 <X className="w-5 h-5" />
               </Button>
@@ -1301,7 +1301,7 @@ export default function VentasPage() {
                   style={{ borderColor: config.border }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{item.name}</p>
+                    <p className="text-foreground font-medium truncate">{item.name}</p>
                     <p className="text-sm" style={{ color: config.primary }}>
                       ${item.price.toLocaleString("es-AR")} c/u
                     </p>
@@ -1311,21 +1311,21 @@ export default function VentasPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-white/10 active:bg-white/20"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-foreground bg-accent active:bg-accent"
                     >
                       -
                     </button>
-                    <span className="w-8 text-center text-white font-medium">{item.quantity}</span>
+                    <span className="w-8 text-center text-foreground font-medium">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
                       disabled={item.quantity >= item.stock}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-white/10 active:bg-white/20 disabled:opacity-50"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-foreground bg-accent active:bg-accent disabled:opacity-50"
                     >
                       +
                     </button>
                   </div>
 
-                  <p className="text-white font-semibold w-20 text-right">
+                  <p className="text-foreground font-semibold w-20 text-right">
                     ${(item.price * item.quantity).toLocaleString("es-AR")}
                   </p>
                 </div>
@@ -1336,15 +1336,15 @@ export default function VentasPage() {
             <div className="p-4 border-t space-y-3" style={{ borderColor: config.border }}>
               {sellerControl}
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-400">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal</span>
                   <span>${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-400">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>IVA (21%)</span>
                   <span>${tax.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold text-white">
+                <div className="flex justify-between text-lg font-bold text-foreground">
                   <span>Total</span>
                   <span style={{ color: config.primary }}>
                     ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
@@ -1376,13 +1376,13 @@ export default function VentasPage() {
       {/* Sin caja abierta no se cobra */}
       {showOpenCash && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-md p-6 space-y-4">
-            <h2 className="text-xl font-bold text-white">Abrí la caja para empezar a vender</h2>
-            <p className="text-sm text-gray-400">
+          <div className="bg-card border border-cyan-500/20 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <h2 className="text-xl font-bold text-foreground">Abrí la caja para empezar a vender</h2>
+            <p className="text-sm text-muted-foreground">
               Ingresá con cuánto efectivo arrancás el turno. Después seguís con el cobro.
             </p>
             <div className="space-y-2">
-              <label className="text-sm text-gray-300">Saldo inicial</label>
+              <label className="text-sm text-muted-foreground">Saldo inicial</label>
               <Input
                 type="number"
                 min="0"
@@ -1393,7 +1393,7 @@ export default function VentasPage() {
                   if (e.key === "Enter") handleOpenCashAndContinue()
                 }}
                 placeholder="$0"
-                className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-6"
+                className="bg-[#0d1424] border-cyan-500/20 text-foreground text-xl text-center py-6"
               />
             </div>
             <div className="flex gap-3 justify-end">
@@ -1401,7 +1401,7 @@ export default function VentasPage() {
                 variant="outline"
                 onClick={() => setShowOpenCash(false)}
                 disabled={openingCash}
-                className="border-cyan-500/20 text-gray-300 bg-transparent"
+                className="border-cyan-500/20 text-muted-foreground bg-transparent"
               >
                 Cancelar
               </Button>

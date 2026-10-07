@@ -25,7 +25,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <Package className="mb-4 h-12 w-12 opacity-50" />
         <p>No se encontraron productos</p>
       </div>
@@ -33,10 +33,10 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
+    <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-card">
       <table className="w-full table-fixed">
         <thead>
-          <tr className="border-b border-cyan-500/10 bg-white/[0.03] text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <tr className="border-b border-cyan-500/10 bg-white/[0.03] text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <th className="px-3 py-3 sm:px-4">Producto</th>
             <th className="hidden w-[120px] px-3 py-3 text-right sm:table-cell">Precio</th>
             <th className="hidden w-[110px] px-3 py-3 text-center md:table-cell">Stock</th>
@@ -66,16 +66,16 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
                     <div
                       className={cn(
                         "mt-0.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:flex",
-                        product.isPromotion ? "bg-purple-500/15 text-purple-300" : "bg-white/5 text-gray-500",
+                        product.isPromotion ? "bg-purple-500/15 text-purple-300" : "bg-accent text-muted-foreground",
                       )}
                     >
                       <Package className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="break-words text-sm font-medium leading-snug text-white">{product.name}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+                      <p className="break-words text-sm font-medium leading-snug text-foreground">{product.name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                         <span>{product.category}</span>
-                        {product.barcode && <span className="font-mono text-gray-600">· {product.barcode}</span>}
+                        {product.barcode && <span className="font-mono text-muted-foreground">· {product.barcode}</span>}
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full px-2 py-0.5 md:hidden",

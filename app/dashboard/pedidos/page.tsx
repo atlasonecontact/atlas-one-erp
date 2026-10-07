@@ -178,13 +178,13 @@ export default function PedidosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Pedidos Delivery</h1>
-          <p className="text-gray-400 text-sm">Pedidos de Pedidos Ya, Rappi y otras apps</p>
+          <h1 className="text-2xl font-bold text-foreground">Pedidos Delivery</h1>
+          <p className="text-muted-foreground text-sm">Pedidos de Pedidos Ya, Rappi y otras apps</p>
         </div>
         <Button
           onClick={loadOrders}
           variant="outline"
-          className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+          className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Actualizar
@@ -202,7 +202,7 @@ export default function PedidosPage() {
               <p className="text-2xl font-bold text-yellow-400">
                 {orders.filter((o) => o.status === "pending").length}
               </p>
-              <p className="text-xs text-gray-400">Pendientes</p>
+              <p className="text-xs text-muted-foreground">Pendientes</p>
             </div>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function PedidosPage() {
               <p className="text-2xl font-bold text-orange-400">
                 {orders.filter((o) => o.status === "preparing").length}
               </p>
-              <p className="text-xs text-gray-400">Preparando</p>
+              <p className="text-xs text-muted-foreground">Preparando</p>
             </div>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function PedidosPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-green-400">{orders.filter((o) => o.status === "ready").length}</p>
-              <p className="text-xs text-gray-400">Listos</p>
+              <p className="text-xs text-muted-foreground">Listos</p>
             </div>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function PedidosPage() {
               <p className="text-2xl font-bold text-purple-400">
                 {orders.filter((o) => o.status === "picked_up").length}
               </p>
-              <p className="text-xs text-gray-400">En camino</p>
+              <p className="text-xs text-muted-foreground">En camino</p>
             </div>
           </div>
         </div>
@@ -250,14 +250,14 @@ export default function PedidosPage() {
         <Button
           variant={filter === "active" ? "default" : "outline"}
           onClick={() => setFilter("active")}
-          className={filter === "active" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-gray-400 bg-transparent"}
+          className={filter === "active" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-muted-foreground bg-transparent"}
         >
           Activos ({activeOrders.length})
         </Button>
         <Button
           variant={filter === "all" ? "default" : "outline"}
           onClick={() => setFilter("all")}
-          className={filter === "all" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-gray-400 bg-transparent"}
+          className={filter === "all" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-muted-foreground bg-transparent"}
         >
           Todos
         </Button>
@@ -265,7 +265,7 @@ export default function PedidosPage() {
           variant={filter === "completed" ? "default" : "outline"}
           onClick={() => setFilter("completed")}
           className={
-            filter === "completed" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-gray-400 bg-transparent"
+            filter === "completed" ? "bg-cyan-500 text-black" : "border-cyan-500/20 text-muted-foreground bg-transparent"
           }
         >
           Completados
@@ -275,10 +275,10 @@ export default function PedidosPage() {
       {/* Orders Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {orders.length === 0 ? (
-          <div className="col-span-2 text-center py-12 border border-cyan-500/10 rounded-xl bg-[#0a0f1a]/50">
-            <Package className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-            <p className="text-gray-400">No hay pedidos {filter === "active" ? "activos" : ""}</p>
-            <p className="text-sm text-gray-500 mt-1">
+          <div className="col-span-2 text-center py-12 border border-cyan-500/10 rounded-xl bg-card/50">
+            <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-muted-foreground">No hay pedidos {filter === "active" ? "activos" : ""}</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Los pedidos de Pedidos Ya y Rappi aparecerán aquí automáticamente
             </p>
           </div>
@@ -293,7 +293,7 @@ export default function PedidosPage() {
             return (
               <div
                 key={order.id}
-                className={`rounded-xl border bg-[#0a0f1a] p-4 cursor-pointer transition-all hover:border-cyan-500/30 ${
+                className={`rounded-xl border bg-card p-4 cursor-pointer transition-all hover:border-cyan-500/30 ${
                   selectedOrder?.id === order.id ? "border-cyan-500" : "border-cyan-500/10"
                 }`}
                 onClick={() => setSelectedOrder(order)}
@@ -307,8 +307,8 @@ export default function PedidosPage() {
                       />
                     </div>
                     <div>
-                      <span className="text-white font-medium">{provider.label}</span>
-                      <span className="text-gray-500 text-sm ml-2">#{order.provider_order_id}</span>
+                      <span className="text-foreground font-medium">{provider.label}</span>
+                      <span className="text-muted-foreground text-sm ml-2">#{order.provider_order_id}</span>
                     </div>
                   </div>
                   <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${status.color}/20`}>
@@ -323,20 +323,20 @@ export default function PedidosPage() {
                 <div className="space-y-1 mb-3">
                   {order.customer_name && (
                     <div className="flex items-center gap-2 text-sm">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="text-white">{order.customer_name}</span>
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-foreground">{order.customer_name}</span>
                     </div>
                   )}
                   {order.customer_address && (
                     <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                      <span className="text-gray-400 line-clamp-1">{order.customer_address}</span>
+                      <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <span className="text-muted-foreground line-clamp-1">{order.customer_address}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Items preview */}
-                <div className="text-sm text-gray-400 mb-3">
+                <div className="text-sm text-muted-foreground mb-3">
                   {order.items.slice(0, 2).map((item: any, i: number) => (
                     <div key={i} className="flex justify-between">
                       <span>
@@ -345,13 +345,13 @@ export default function PedidosPage() {
                       <span>${(item.quantity * item.price).toLocaleString()}</span>
                     </div>
                   ))}
-                  {order.items.length > 2 && <span className="text-gray-500">+{order.items.length - 2} más...</span>}
+                  {order.items.length > 2 && <span className="text-muted-foreground">+{order.items.length - 2} más...</span>}
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-3 border-t border-cyan-500/10">
                   <div>
-                    <span className="text-gray-500 text-xs">
+                    <span className="text-muted-foreground text-xs">
                       {new Date(order.received_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
@@ -384,14 +384,14 @@ export default function PedidosPage() {
           onClick={() => setSelectedOrder(null)}
         >
           <div
-            className="bg-[#0a0f1a] rounded-xl border border-cyan-500/20 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+            className="bg-card rounded-xl border border-cyan-500/20 max-w-lg w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">Pedido #{selectedOrder.provider_order_id}</h2>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)} className="text-gray-400">
+                <h2 className="text-xl font-bold text-foreground">Pedido #{selectedOrder.provider_order_id}</h2>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)} className="text-muted-foreground">
                   ✕
                 </Button>
               </div>
@@ -406,13 +406,13 @@ export default function PedidosPage() {
                     />
                   )
                 })()}
-                <span className="text-white font-medium">{statusConfig[selectedOrder.status].label}</span>
+                <span className="text-foreground font-medium">{statusConfig[selectedOrder.status].label}</span>
               </div>
 
               {/* Customer Info */}
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-400">Cliente</h3>
-                {selectedOrder.customer_name && <p className="text-white">{selectedOrder.customer_name}</p>}
+                <h3 className="text-sm font-medium text-muted-foreground">Cliente</h3>
+                {selectedOrder.customer_name && <p className="text-foreground">{selectedOrder.customer_name}</p>}
                 {selectedOrder.customer_phone && (
                   <a href={`tel:${selectedOrder.customer_phone}`} className="flex items-center gap-2 text-cyan-400">
                     <Phone className="w-4 h-4" />
@@ -421,8 +421,8 @@ export default function PedidosPage() {
                 )}
                 {selectedOrder.customer_address && (
                   <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                    <span className="text-gray-300">{selectedOrder.customer_address}</span>
+                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                    <span className="text-muted-foreground">{selectedOrder.customer_address}</span>
                   </div>
                 )}
                 {selectedOrder.customer_notes && (
@@ -434,14 +434,14 @@ export default function PedidosPage() {
 
               {/* Items */}
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-400">Productos</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">Productos</h3>
                 <div className="space-y-2">
                   {selectedOrder.items.map((item: any, i: number) => (
-                    <div key={i} className="flex justify-between p-2 bg-white/5 rounded">
-                      <span className="text-white">
+                    <div key={i} className="flex justify-between p-2 bg-accent rounded">
+                      <span className="text-foreground">
                         {item.quantity}x {item.name || item.title}
                       </span>
-                      <span className="text-gray-400">${(item.quantity * item.price).toLocaleString()}</span>
+                      <span className="text-muted-foreground">${(item.quantity * item.price).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -450,23 +450,23 @@ export default function PedidosPage() {
               {/* Totals */}
               <div className="border-t border-cyan-500/10 pt-3 space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white">${selectedOrder.subtotal.toLocaleString()}</span>
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">${selectedOrder.subtotal.toLocaleString()}</span>
                 </div>
                 {selectedOrder.delivery_fee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Envío</span>
-                    <span className="text-white">${selectedOrder.delivery_fee.toLocaleString()}</span>
+                    <span className="text-muted-foreground">Envío</span>
+                    <span className="text-foreground">${selectedOrder.delivery_fee.toLocaleString()}</span>
                   </div>
                 )}
                 {selectedOrder.discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Descuento</span>
+                    <span className="text-muted-foreground">Descuento</span>
                     <span className="text-green-400">-${selectedOrder.discount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-cyan-500/10">
-                  <span className="text-white">Total</span>
+                  <span className="text-foreground">Total</span>
                   <span className="text-cyan-400">${selectedOrder.total.toLocaleString()}</span>
                 </div>
               </div>
