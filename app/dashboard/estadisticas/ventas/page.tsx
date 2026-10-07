@@ -189,17 +189,17 @@ export default function VentasEstadisticasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Estadísticas de Ventas</h1>
-          <p className="text-gray-400 text-sm">Análisis detallado de ventas</p>
+          <h1 className="text-2xl font-bold text-foreground">Estadísticas de Ventas</h1>
+          <p className="text-muted-foreground text-sm">Análisis detallado de ventas</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
@@ -219,7 +219,7 @@ export default function VentasEstadisticasPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-cyan-400" />
@@ -229,46 +229,46 @@ export default function VentasEstadisticasPage() {
               {Math.abs(stats?.comparison.change || 0).toFixed(1)}%
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{formatCurrency(stats?.totalSales || 0)}</p>
-          <p className="text-sm text-gray-500">Ventas Totales</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{formatCurrency(stats?.totalSales || 0)}</p>
+          <p className="text-sm text-muted-foreground">Ventas Totales</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
               <ShoppingCart className="w-5 h-5 text-green-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{stats?.totalTransactions.toLocaleString()}</p>
-          <p className="text-sm text-gray-500">Transacciones</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{stats?.totalTransactions.toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground">Transacciones</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-yellow-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{formatCurrency(stats?.averageTicket || 0)}</p>
-          <p className="text-sm text-gray-500">Ticket Promedio</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{formatCurrency(stats?.averageTicket || 0)}</p>
+          <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-purple-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{peakHour?.hour}:00</p>
-          <p className="text-sm text-gray-500">Hora Pico</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{peakHour?.hour}:00</p>
+          <p className="text-sm text-muted-foreground">Hora Pico</p>
         </div>
       </div>
 
       {/* Métodos de Pago & Top Empleados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Métodos de Pago */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Métodos de Pago</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Métodos de Pago</h3>
           <div className="space-y-4">
             {stats?.salesByMethod.map((method) => {
               const total = stats.totalSales || 1
@@ -283,14 +283,14 @@ export default function VentasEstadisticasPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-cyan-400">{getIcon(method.method)}</span>
-                      <span className="text-sm text-white">{method.method}</span>
+                      <span className="text-sm text-foreground">{method.method}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm text-white">{formatCurrency(method.amount)}</span>
-                      <span className="text-xs text-gray-500 ml-2">({method.count} op.)</span>
+                      <span className="text-sm text-foreground">{formatCurrency(method.amount)}</span>
+                      <span className="text-xs text-muted-foreground ml-2">({method.count} op.)</span>
                     </div>
                   </div>
-                  <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-accent overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-cyan-500/60 to-indigo-400 transition-all duration-700"
                       style={{ width: `${percentage}%` }}
@@ -300,14 +300,14 @@ export default function VentasEstadisticasPage() {
               )
             })}
             {(!stats?.salesByMethod || stats.salesByMethod.length === 0) && (
-              <p className="text-gray-500 text-center py-4">Sin datos de métodos de pago</p>
+              <p className="text-muted-foreground text-center py-4">Sin datos de métodos de pago</p>
             )}
           </div>
         </div>
 
         {/* Top Empleados */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Top Vendedores</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Top Vendedores</h3>
           <div className="space-y-4">
             {stats?.topEmployees.map((employee, i) => {
               const maxSales = stats.topEmployees[0]?.sales || 1
@@ -319,10 +319,10 @@ export default function VentasEstadisticasPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-white font-medium">{employee.name}</p>
-                      <p className="text-sm text-gray-400">{employee.transactions} ventas</p>
+                      <p className="text-foreground font-medium">{employee.name}</p>
+                      <p className="text-sm text-muted-foreground">{employee.transactions} ventas</p>
                     </div>
-                    <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="w-full h-2.5 rounded-full bg-accent overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-500/60 to-indigo-400 transition-all duration-700"
                         style={{ width: `${percentage}%` }}
@@ -334,15 +334,15 @@ export default function VentasEstadisticasPage() {
               )
             })}
             {(!stats?.topEmployees || stats.topEmployees.length === 0) && (
-              <p className="text-gray-500 text-center py-4">Sin datos de empleados</p>
+              <p className="text-muted-foreground text-center py-4">Sin datos de empleados</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Ventas por Hora */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Ventas por Hora del Día</h3>
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Ventas por Hora del Día</h3>
         <div className="flex items-end gap-1 h-40">
           {Array.from({ length: 24 }, (_, i) => {
             const hourData = stats?.salesByHour.find(h => h.hour === i)
@@ -356,7 +356,7 @@ export default function VentasEstadisticasPage() {
                   title={`${i}:00 - ${formatCurrency(hourData?.amount || 0)}`}
                 />
                 {i % 4 === 0 && (
-                  <span className="text-xs text-gray-500 mt-2">{i}h</span>
+                  <span className="text-xs text-muted-foreground mt-2">{i}h</span>
                 )}
               </div>
             )

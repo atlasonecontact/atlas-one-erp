@@ -234,17 +234,17 @@ export default function FinanzasEstadisticasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Estadísticas Financieras</h1>
-          <p className="text-gray-400 text-sm">Control de ingresos, costos y rentabilidad</p>
+          <h1 className="text-2xl font-bold text-foreground">Estadísticas Financieras</h1>
+          <p className="text-muted-foreground text-sm">Control de ingresos, costos y rentabilidad</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
@@ -264,38 +264,38 @@ export default function FinanzasEstadisticasPage() {
 
       {/* Main KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-green-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{formatCurrency(stats?.totalRevenue || 0)}</p>
-          <p className="text-sm text-gray-500">Ingresos Brutos</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{formatCurrency(stats?.totalRevenue || 0)}</p>
+          <p className="text-sm text-muted-foreground">Ingresos Brutos</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
               <Receipt className="w-5 h-5 text-red-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{formatCurrency(stats?.totalCosts || 0)}</p>
-          <p className="text-sm text-gray-500">Costo de Ventas</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{formatCurrency(stats?.totalCosts || 0)}</p>
+          <p className="text-sm text-muted-foreground">Costo de Ventas</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-cyan-400" />
             </div>
             <span className="text-sm text-cyan-400">{stats?.grossMargin.toFixed(1)}%</span>
           </div>
-          <p className="text-2xl font-bold text-white mb-1">{formatCurrency(stats?.grossProfit || 0)}</p>
-          <p className="text-sm text-gray-500">Ganancia Bruta</p>
+          <p className="text-2xl font-bold text-foreground mb-1">{formatCurrency(stats?.grossProfit || 0)}</p>
+          <p className="text-sm text-muted-foreground">Ganancia Bruta</p>
         </div>
 
-        <div className={`rounded-xl border bg-[#0a0f1a] p-5 ${(stats?.netProfit || 0) >= 0 ? "border-green-500/20" : "border-red-500/20"}`}>
+        <div className={`rounded-xl border bg-card p-5 ${(stats?.netProfit || 0) >= 0 ? "border-green-500/20" : "border-red-500/20"}`}>
           <div className="flex items-center justify-between mb-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${(stats?.netProfit || 0) >= 0 ? "bg-green-500/20" : "bg-red-500/20"}`}>
               <PiggyBank className={`w-5 h-5 ${(stats?.netProfit || 0) >= 0 ? "text-green-400" : "text-red-400"}`} />
@@ -304,54 +304,54 @@ export default function FinanzasEstadisticasPage() {
           <p className={`text-2xl font-bold mb-1 ${(stats?.netProfit || 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
             {formatCurrency(stats?.netProfit || 0)}
           </p>
-          <p className="text-sm text-gray-500">Ganancia Neta</p>
+          <p className="text-sm text-muted-foreground">Ganancia Neta</p>
         </div>
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
               <Banknote className="w-5 h-5 text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Efectivo en Caja</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(stats?.cashInHand || 0)}</p>
+              <p className="text-sm text-muted-foreground">Efectivo en Caja</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(stats?.cashInHand || 0)}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
               <Calculator className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Gastos Operativos</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(stats?.totalExpenses || 0)}</p>
+              <p className="text-sm text-muted-foreground">Gastos Operativos</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(stats?.totalExpenses || 0)}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
               <CreditCard className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Cuentas por Pagar</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(stats?.payables || 0)}</p>
+              <p className="text-sm text-muted-foreground">Cuentas por Pagar</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(stats?.payables || 0)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tendencia de Ingresos */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Tendencia de Ingresos</h3>
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Tendencia de Ingresos</h3>
         {!stats?.revenueByDay || stats.revenueByDay.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Sin ventas en este período</p>
+          <p className="text-muted-foreground text-center py-8">Sin ventas en este período</p>
         ) : (
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -401,8 +401,8 @@ export default function FinanzasEstadisticasPage() {
 
       {/* Costos por Categoría */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Costos por Categoría</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Costos por Categoría</h3>
           <div className="space-y-4">
             {stats?.topCostCategories.map((cat) => {
               const maxCost = stats.topCostCategories[0]?.amount || 1
@@ -410,10 +410,10 @@ export default function FinanzasEstadisticasPage() {
               return (
                 <div key={cat.category}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-white">{cat.category}</span>
-                    <span className="text-sm text-gray-400">{formatCurrency(cat.amount)}</span>
+                    <span className="text-sm text-foreground">{cat.category}</span>
+                    <span className="text-sm text-muted-foreground">{formatCurrency(cat.amount)}</span>
                   </div>
-                  <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-accent overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-rose-500/60 to-rose-400 transition-all duration-700"
                       style={{ width: `${percentage}%` }}
@@ -423,30 +423,30 @@ export default function FinanzasEstadisticasPage() {
               )
             })}
             {(!stats?.topCostCategories || stats.topCostCategories.length === 0) && (
-              <p className="text-gray-500 text-center py-4">Sin datos de costos</p>
+              <p className="text-muted-foreground text-center py-4">Sin datos de costos</p>
             )}
           </div>
         </div>
 
         {/* Resumen del Período */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Resumen del Período</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Resumen del Período</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-              <span className="text-gray-400">Ingresos</span>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent">
+              <span className="text-muted-foreground">Ingresos</span>
               <span className="text-green-400 font-medium">{formatCurrency(stats?.totalRevenue || 0)}</span>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-              <span className="text-gray-400">Costo de ventas</span>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent">
+              <span className="text-muted-foreground">Costo de ventas</span>
               <span className="text-red-400 font-medium">-{formatCurrency(stats?.totalCosts || 0)}</span>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-              <span className="text-gray-400">Gastos operativos</span>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent">
+              <span className="text-muted-foreground">Gastos operativos</span>
               <span className="text-red-400 font-medium">-{formatCurrency(stats?.totalExpenses || 0)}</span>
             </div>
             <div className="border-t border-cyan-500/10 pt-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-500/10">
-                <span className="text-white font-medium">Resultado Neto</span>
+                <span className="text-foreground font-medium">Resultado Neto</span>
                 <span className={`font-bold text-lg ${(stats?.netProfit || 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
                   {formatCurrency(stats?.netProfit || 0)}
                 </span>

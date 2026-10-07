@@ -8,20 +8,20 @@ export default function AsientosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Asientos Contables</h1>
-        <p className="text-gray-400">Registro de movimientos por doble entrada</p>
+        <h1 className="text-2xl font-bold text-foreground">Asientos Contables</h1>
+        <p className="text-muted-foreground">Registro de movimientos por doble entrada</p>
       </div>
 
-      <Card className="bg-[#0a0f1a] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Clock className="w-5 h-5 text-amber-400" />
             Próximamente
           </CardTitle>
           <CardDescription>Automatizaremos asientos desde ventas, compras y stock.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-300 text-sm">Dejanos tu caso y lo priorizamos en tu cuenta.</p>
+          <p className="text-muted-foreground text-sm">Dejanos tu caso y lo priorizamos en tu cuenta.</p>
           <Button variant="outline" className="border-amber-500/40 text-amber-200 hover:bg-amber-500/10" asChild>
             <a href="mailto:hola@atlas.one?subject=Asientos%20contables%20-%20demo">Pedir esta funcionalidad</a>
           </Button>

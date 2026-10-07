@@ -102,8 +102,8 @@ export default function TicketsTablePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Tickets de Venta</h1>
-        <p className="text-gray-400">Tabla detallada de todas las transacciones reales</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Tickets de Venta</h1>
+        <p className="text-muted-foreground">Tabla detallada de todas las transacciones reales</p>
       </div>
 
       <div className="mb-8">
@@ -121,7 +121,7 @@ export default function TicketsTablePage() {
       <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Buscar por número de ticket..."
               value={searchTerm}
@@ -133,7 +133,7 @@ export default function TicketsTablePage() {
           <select
             value={invoiceFilter}
             onChange={(e) => setInvoiceFilter(e.target.value as "" | "yes" | "no")}
-            className="h-9 rounded-md border border-gray-700 bg-gray-800/50 px-3 text-sm text-white"
+            className="h-9 rounded-md border border-gray-700 bg-gray-800/50 px-3 text-sm text-foreground"
           >
             <option value="">Facturación: todos</option>
             <option value="yes">Solo facturados</option>
@@ -152,7 +152,7 @@ export default function TicketsTablePage() {
           </div>
         </div>
         {!loading && filteredTickets.length > 0 && (
-          <p className="mt-3 text-xs text-gray-400">
+          <p className="mt-3 text-xs text-muted-foreground">
             {invoicedCount} de {filteredTickets.length} tickets tienen factura electrónica.
           </p>
         )}
@@ -179,12 +179,12 @@ export default function TicketsTablePage() {
         {/* Mobile: cards */}
         <div className="divide-y divide-gray-800 md:hidden">
           {loading ? (
-            <div className="p-10 text-center text-gray-500">
+            <div className="p-10 text-center text-muted-foreground">
               <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
               Cargando tickets...
             </div>
           ) : paginatedTickets.length === 0 ? (
-            <div className="p-10 text-center text-gray-500">No hay tickets con estos filtros</div>
+            <div className="p-10 text-center text-muted-foreground">No hay tickets con estos filtros</div>
           ) : (
             paginatedTickets.map((ticket) => {
               const margin = marginOf(ticket.total, ticket.cost)
@@ -196,18 +196,18 @@ export default function TicketsTablePage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-mono text-white" title={ticket.number}>
+                      <p className="font-mono text-foreground" title={ticket.number}>
                         {shortId(ticket.number)}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {dateFmt.format(new Date(ticket.createdAt))} · {timeFmt.format(new Date(ticket.createdAt))}
                       </p>
                     </div>
-                    <span className="font-semibold text-white">{formatCurrency(ticket.total)}</span>
+                    <span className="font-semibold text-foreground">{formatCurrency(ticket.total)}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <Badge className="bg-gray-800 text-gray-300 border-gray-700">{ticket.units} unid.</Badge>
-                    <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-gray-300 border-gray-700"}>
+                    <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{ticket.units} unid.</Badge>
+                    <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-muted-foreground border-gray-700"}>
                       {paymentLabel(ticket.payment)}
                     </Badge>
                     {ticket.invoice ? (
@@ -221,7 +221,7 @@ export default function TicketsTablePage() {
                         {ticket.invoice.type} {ticket.invoice.number}
                       </Badge>
                     ) : (
-                      <span className="text-xs text-gray-500">Sin factura</span>
+                      <span className="text-xs text-muted-foreground">Sin factura</span>
                     )}
                     {margin !== null && (
                       <span className={`text-xs ${margin >= 30 ? "text-green-400" : "text-yellow-400"}`}>
@@ -229,7 +229,7 @@ export default function TicketsTablePage() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {ticket.branch} · {SHIFT_LABEL[ticket.shift]} · {ticket.seller}
                   </p>
                 </div>
@@ -259,14 +259,14 @@ export default function TicketsTablePage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="p-10 text-center text-gray-500">
+                  <td colSpan={11} className="p-10 text-center text-muted-foreground">
                     <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
                     Cargando tickets...
                   </td>
                 </tr>
               ) : paginatedTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-10 text-center text-gray-500">
+                  <td colSpan={11} className="p-10 text-center text-muted-foreground">
                     No hay tickets con estos filtros
                   </td>
                 </tr>
@@ -279,20 +279,20 @@ export default function TicketsTablePage() {
                       onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
                       className="border-b border-gray-800/50 hover:bg-gray-800/50 cursor-pointer transition-colors"
                     >
-                      <td className="p-4 text-white font-mono" title={ticket.number}>
+                      <td className="p-4 text-foreground font-mono" title={ticket.number}>
                         {shortId(ticket.number)}
                       </td>
-                      <td className="p-4 text-gray-300">{dateFmt.format(new Date(ticket.createdAt))}</td>
-                      <td className="p-4 text-gray-300">{timeFmt.format(new Date(ticket.createdAt))}</td>
-                      <td className="p-4 text-gray-300">{ticket.branch}</td>
-                      <td className="p-4 text-gray-300" title={ticket.shiftFromRegister ? "Según la caja" : "Según la hora"}>{SHIFT_LABEL[ticket.shift]}</td>
-                      <td className="p-4 text-gray-300">{ticket.seller}</td>
-                      <td className="p-4 text-right text-white font-semibold">{formatCurrency(ticket.total)}</td>
+                      <td className="p-4 text-muted-foreground">{dateFmt.format(new Date(ticket.createdAt))}</td>
+                      <td className="p-4 text-muted-foreground">{timeFmt.format(new Date(ticket.createdAt))}</td>
+                      <td className="p-4 text-muted-foreground">{ticket.branch}</td>
+                      <td className="p-4 text-muted-foreground" title={ticket.shiftFromRegister ? "Según la caja" : "Según la hora"}>{SHIFT_LABEL[ticket.shift]}</td>
+                      <td className="p-4 text-muted-foreground">{ticket.seller}</td>
+                      <td className="p-4 text-right text-foreground font-semibold">{formatCurrency(ticket.total)}</td>
                       <td className="p-4 text-center">
-                        <Badge className="bg-gray-800 text-gray-300 border-gray-700">{ticket.units}</Badge>
+                        <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{ticket.units}</Badge>
                       </td>
                       <td className="p-4">
-                        <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-gray-300 border-gray-700"}>
+                        <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-muted-foreground border-gray-700"}>
                           {paymentLabel(ticket.payment)}
                         </Badge>
                       </td>
@@ -309,12 +309,12 @@ export default function TicketsTablePage() {
                             {ticket.invoice.type} {ticket.invoice.number}
                           </Badge>
                         ) : (
-                          <span className="text-gray-500 text-sm">Sin factura</span>
+                          <span className="text-muted-foreground text-sm">Sin factura</span>
                         )}
                       </td>
                       <td className="p-4 text-right">
                         {margin === null ? (
-                          <span className="text-gray-500">-</span>
+                          <span className="text-muted-foreground">-</span>
                         ) : (
                           <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(1)}%</span>
                         )}
@@ -328,7 +328,7 @@ export default function TicketsTablePage() {
         </div>
 
         <div className="flex items-center justify-between p-4 border-t border-gray-800">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-muted-foreground">
             {filteredTickets.length === 0
               ? "0 tickets"
               : `Mostrando ${(page - 1) * itemsPerPage + 1} a ${Math.min(page * itemsPerPage, filteredTickets.length)} de ${filteredTickets.length} tickets`}
@@ -343,7 +343,7 @@ export default function TicketsTablePage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-white font-semibold">
+            <span className="text-foreground font-semibold">
               Página {page} de {totalPages}
             </span>
             <Button

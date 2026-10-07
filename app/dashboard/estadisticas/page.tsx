@@ -258,17 +258,17 @@ export default function EstadisticasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Estadísticas Detalladas</h1>
-          <p className="text-gray-400 text-sm">Análisis profundo de tu negocio</p>
+          <h1 className="text-2xl font-bold text-foreground">Estadísticas Detalladas</h1>
+          <p className="text-muted-foreground text-sm">Análisis profundo de tu negocio</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7D" : p === "30d" ? "30D" : "90D"}
@@ -288,7 +288,7 @@ export default function EstadisticasPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiStats.map((stat, i) => (
-          <div key={i} className="rounded-xl border bg-[#0a0f1a] p-5" style={{ borderColor: config.border }}>
+          <div key={i} className="rounded-xl border bg-card p-5" style={{ borderColor: config.border }}>
             <div className="flex items-center justify-between mb-3">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -303,14 +303,14 @@ export default function EstadisticasPage() {
                 </div>
               )}
             </div>
-            <p className="text-2xl font-bold text-white mb-1">{stat.value}</p>
-            <p className="text-sm text-gray-500">{stat.label}</p>
+            <p className="text-2xl font-bold text-foreground mb-1">{stat.value}</p>
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="bg-[#0a0f1a] border" style={{ borderColor: config.border }}>
+        <TabsList className="bg-card border" style={{ borderColor: config.border }}>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="productos">Productos</TabsTrigger>
           <TabsTrigger value="empleados">Empleados</TabsTrigger>
@@ -319,8 +319,8 @@ export default function EstadisticasPage() {
 
         <TabsContent value="general" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border bg-[#0a0f1a] p-6" style={{ borderColor: config.border }}>
-              <h3 className="text-lg font-semibold text-white mb-4">Ventas por Categoría</h3>
+            <div className="rounded-xl border bg-card p-6" style={{ borderColor: config.border }}>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Ventas por Categoría</h3>
               <div className="h-80">
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -329,13 +329,13 @@ export default function EstadisticasPage() {
                         <div key={cat.name} className="flex items-center gap-3">
                           <div className="w-4 h-4 rounded" style={{ backgroundColor: cat.color }} />
                           <div>
-                            <p className="text-sm text-white font-medium">{cat.name}</p>
-                            <p className="text-xs text-gray-500">{cat.value}%</p>
+                            <p className="text-sm text-foreground font-medium">{cat.name}</p>
+                            <p className="text-xs text-muted-foreground">{cat.value}%</p>
                           </div>
                         </div>
                       ))}
                       {(!stats?.salesByCategory || stats.salesByCategory.length === 0) && (
-                        <p className="text-gray-500 col-span-2">Sin datos</p>
+                        <p className="text-muted-foreground col-span-2">Sin datos</p>
                       )}
                     </div>
                   </div>
@@ -343,16 +343,16 @@ export default function EstadisticasPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border bg-[#0a0f1a] p-6" style={{ borderColor: config.border }}>
-              <h3 className="text-lg font-semibold text-white mb-4">Métodos de Pago</h3>
+            <div className="rounded-xl border bg-card p-6" style={{ borderColor: config.border }}>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Métodos de Pago</h3>
               <div className="space-y-4">
                 {(stats?.paymentMethods || []).map((payment) => (
                   <div key={payment.method}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-white">{payment.method}</span>
-                      <span className="text-sm text-gray-400">{formatCurrency(payment.amount)}</span>
+                      <span className="text-sm text-foreground">{payment.method}</span>
+                      <span className="text-sm text-muted-foreground">{formatCurrency(payment.amount)}</span>
                     </div>
-                    <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="w-full h-2.5 rounded-full bg-accent overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${payment.percentage}%`, background: `linear-gradient(90deg, ${payment.color}66, ${payment.color})` }}
@@ -361,7 +361,7 @@ export default function EstadisticasPage() {
                   </div>
                 ))}
                 {(!stats?.paymentMethods || stats.paymentMethods.length === 0) && (
-                  <p className="text-gray-500 text-center py-4">Sin datos de pagos</p>
+                  <p className="text-muted-foreground text-center py-4">Sin datos de pagos</p>
                 )}
               </div>
             </div>
@@ -369,9 +369,9 @@ export default function EstadisticasPage() {
         </TabsContent>
 
         <TabsContent value="productos" className="space-y-6 mt-6">
-          <div className="rounded-xl border bg-[#0a0f1a]" style={{ borderColor: config.border }}>
+          <div className="rounded-xl border bg-card" style={{ borderColor: config.border }}>
             <div className="p-6 border-b" style={{ borderColor: config.border }}>
-              <h3 className="text-lg font-semibold text-white">Rendimiento de Productos</h3>
+              <h3 className="text-lg font-semibold text-foreground">Rendimiento de Productos</h3>
             </div>
             {/* Mobile: cards */}
             <div className="divide-y md:hidden" style={{ borderColor: config.border }}>
@@ -384,10 +384,10 @@ export default function EstadisticasPage() {
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white truncate">{product.name}</p>
-                    <p className="text-xs text-gray-400">{product.percentage.toFixed(1)}% del total</p>
+                    <p className="text-foreground truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">{product.percentage.toFixed(1)}% del total</p>
                   </div>
-                  <span className="text-white font-medium">${product.sales.toLocaleString()}</span>
+                  <span className="text-foreground font-medium">${product.sales.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -397,9 +397,9 @@ export default function EstadisticasPage() {
               <table className="w-full">
                 <thead className="border-b" style={{ borderColor: config.border }}>
                   <tr>
-                    <th className="text-left p-4 text-sm font-medium text-gray-400">Producto</th>
-                    <th className="text-right p-4 text-sm font-medium text-gray-400">Ventas</th>
-                    <th className="text-right p-4 text-sm font-medium text-gray-400">Unidades</th>
+                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Producto</th>
+                    <th className="text-right p-4 text-sm font-medium text-muted-foreground">Ventas</th>
+                    <th className="text-right p-4 text-sm font-medium text-muted-foreground">Unidades</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,11 +413,11 @@ export default function EstadisticasPage() {
                           >
                             {i + 1}
                           </div>
-                          <span className="text-white">{product.name}</span>
+                          <span className="text-foreground">{product.name}</span>
                         </div>
                       </td>
-                      <td className="p-4 text-right text-white">${product.sales.toLocaleString()}</td>
-                      <td className="p-4 text-right text-gray-400">{product.units}</td>
+                      <td className="p-4 text-right text-foreground">${product.sales.toLocaleString()}</td>
+                      <td className="p-4 text-right text-muted-foreground">{product.units}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -427,9 +427,9 @@ export default function EstadisticasPage() {
         </TabsContent>
 
         <TabsContent value="empleados" className="space-y-6 mt-6">
-          <div className="rounded-xl border bg-[#0a0f1a]" style={{ borderColor: config.border }}>
+          <div className="rounded-xl border bg-card" style={{ borderColor: config.border }}>
             <div className="p-6 border-b" style={{ borderColor: config.border }}>
-              <h3 className="text-lg font-semibold text-white">Rendimiento de Empleados</h3>
+              <h3 className="text-lg font-semibold text-foreground">Rendimiento de Empleados</h3>
             </div>
             <div className="p-6">
               <div className="space-y-4">
@@ -443,10 +443,10 @@ export default function EstadisticasPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-white font-medium">{employee.name}</p>
-                        <p className="text-sm text-gray-400">{employee.transactions} transacciones</p>
+                        <p className="text-foreground font-medium">{employee.name}</p>
+                        <p className="text-sm text-muted-foreground">{employee.transactions} transacciones</p>
                       </div>
-                      <div className="w-full h-2.5 rounded-full bg-white/5 overflow-hidden">
+                      <div className="w-full h-2.5 rounded-full bg-accent overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -459,7 +459,7 @@ export default function EstadisticasPage() {
                   </div>
                 ))}
                 {(!stats?.employeePerformance || stats.employeePerformance.length === 0) && (
-                  <p className="text-gray-500 text-center py-4">Sin datos de empleados</p>
+                  <p className="text-muted-foreground text-center py-4">Sin datos de empleados</p>
                 )}
               </div>
             </div>
@@ -467,8 +467,8 @@ export default function EstadisticasPage() {
         </TabsContent>
 
         <TabsContent value="horarios" className="space-y-6 mt-6">
-          <div className="rounded-xl border bg-[#0a0f1a] p-6" style={{ borderColor: config.border }}>
-            <h3 className="text-lg font-semibold text-white mb-4">Ventas por Hora</h3>
+          <div className="rounded-xl border bg-card p-6" style={{ borderColor: config.border }}>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Ventas por Hora</h3>
             <div className="h-80">
               <div className="grid grid-cols-14 gap-1 h-full items-end">
                 {(stats?.hourlyData || []).slice(8, 22).map((item, i) => {
@@ -483,7 +483,7 @@ export default function EstadisticasPage() {
                           backgroundColor: config.primary,
                         }}
                       />
-                      <span className="text-xs text-gray-500">{item.hour}</span>
+                      <span className="text-xs text-muted-foreground">{item.hour}</span>
                     </div>
                   )
                 })}

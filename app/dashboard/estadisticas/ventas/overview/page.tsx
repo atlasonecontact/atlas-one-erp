@@ -134,17 +134,17 @@ export default function VentasOverviewPage() {
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Análisis de Ventas</h1>
-          <p className="text-gray-400 mt-1">Vista ejecutiva de ventas y rendimiento, con tus datos reales</p>
+          <h1 className="text-3xl font-bold text-foreground">Análisis de Ventas</h1>
+          <p className="text-muted-foreground mt-1">Vista ejecutiva de ventas y rendimiento, con tus datos reales</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-4 py-2 text-sm rounded-md transition-colors font-medium ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
@@ -186,41 +186,41 @@ export default function VentasOverviewPage() {
               </div>
             )}
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.totalSales)}</p>
-          <p className="text-sm text-gray-400">Ventas Totales</p>
-          {cmp !== undefined && <p className="text-xs text-gray-500 mt-1">vs {days} días anteriores</p>}
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats.totalSales)}</p>
+          <p className="text-sm text-muted-foreground">Ventas Totales</p>
+          {cmp !== undefined && <p className="text-xs text-muted-foreground mt-1">vs {days} días anteriores</p>}
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
             <Calendar className="w-6 h-6 text-blue-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.avgDailySales)}</p>
-          <p className="text-sm text-gray-400">Promedio Diario</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats.avgDailySales)}</p>
+          <p className="text-sm text-muted-foreground">Promedio Diario</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-green-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.avgWeeklySales)}</p>
-          <p className="text-sm text-gray-400">Promedio Semanal</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats.avgWeeklySales)}</p>
+          <p className="text-sm text-muted-foreground">Promedio Semanal</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <ShoppingCart className="w-6 h-6 text-yellow-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.avgTicket)}</p>
-          <p className="text-sm text-gray-400">Ticket Promedio ({stats.tickets} tickets)</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats.avgTicket)}</p>
+          <p className="text-sm text-muted-foreground">Ticket Promedio ({stats.tickets} tickets)</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Package className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.unitsSold.toLocaleString("es-AR")}</p>
-          <p className="text-sm text-gray-400">Unidades Vendidas</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{stats.unitsSold.toLocaleString("es-AR")}</p>
+          <p className="text-sm text-muted-foreground">Unidades Vendidas</p>
         </div>
       </div>
 
@@ -277,18 +277,18 @@ export default function VentasOverviewPage() {
                 return (
                   <div key={product.name + i}>
                     <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-white">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/5 text-[11px] text-slate-400">
+                      <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent text-[11px] text-muted-foreground">
                           {i + 1}
                         </span>
                         <span className="truncate">{product.name}</span>
                       </span>
                       <div className="shrink-0 text-right">
-                        <span className="font-semibold text-white">{formatCurrency(product.sales)}</span>
-                        <span className="ml-2 text-xs text-slate-500">({product.units} un.)</span>
+                        <span className="font-semibold text-foreground">{formatCurrency(product.sales)}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">({product.units} un.)</span>
                       </div>
                     </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-accent">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{

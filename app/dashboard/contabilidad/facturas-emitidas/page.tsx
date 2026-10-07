@@ -149,25 +149,25 @@ export default function FacturasEmitidasPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Facturas Emitidas</h1>
-          <p className="text-gray-400">Historial de comprobantes fiscales guardados en la base</p>
+          <h1 className="text-2xl font-bold text-foreground">Facturas Emitidas</h1>
+          <p className="text-muted-foreground">Historial de comprobantes fiscales guardados en la base</p>
         </div>
         <div className="flex items-center gap-3">
-          <Card className="bg-[#0a0f1a] border-gray-800">
+          <Card className="bg-card border-gray-800">
             <CardContent className="p-4 flex items-center gap-3">
               <FileText className="w-5 h-5 text-blue-400" />
               <div>
-                <p className="text-xs text-gray-400">Total Facturas</p>
-                <p className="text-lg font-bold text-white">{totalFacturas}</p>
+                <p className="text-xs text-muted-foreground">Total Facturas</p>
+                <p className="text-lg font-bold text-foreground">{totalFacturas}</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#0a0f1a] border-gray-800">
+          <Card className="bg-card border-gray-800">
             <CardContent className="p-4 flex items-center gap-3">
               <DollarSign className="w-5 h-5 text-emerald-400" />
               <div>
-                <p className="text-xs text-gray-400">Total Facturado</p>
-                <p className="text-lg font-bold text-white">${totalEmitido.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Facturado</p>
+                <p className="text-lg font-bold text-foreground">${totalEmitido.toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
@@ -189,17 +189,17 @@ export default function FacturasEmitidasPage() {
       )}
 
       {/* Filters */}
-      <Card className="bg-[#0a0f1a] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Buscar por número, cliente o documento..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#030712] border-gray-800"
+                className="pl-10 bg-input border-border"
               />
             </div>
             <Button variant="outline" className="border-gray-700 bg-transparent" disabled>
@@ -219,25 +219,25 @@ export default function FacturasEmitidasPage() {
       </Card>
 
       {/* Table */}
-      <Card className="bg-[#0a0f1a] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-gray-800 hover:bg-transparent">
-                <TableHead className="text-gray-400">Número</TableHead>
-                <TableHead className="text-gray-400">Tipo</TableHead>
-                <TableHead className="text-gray-400">Fecha</TableHead>
-                <TableHead className="text-gray-400">Receptor</TableHead>
-                <TableHead className="text-gray-400">Doc.</TableHead>
-                <TableHead className="text-gray-400 text-right">Monto</TableHead>
-                <TableHead className="text-gray-400">Estado</TableHead>
-                <TableHead className="text-gray-400 text-right">Acciones</TableHead>
+                <TableHead className="text-muted-foreground">Número</TableHead>
+                <TableHead className="text-muted-foreground">Tipo</TableHead>
+                <TableHead className="text-muted-foreground">Fecha</TableHead>
+                <TableHead className="text-muted-foreground">Receptor</TableHead>
+                <TableHead className="text-muted-foreground">Doc.</TableHead>
+                <TableHead className="text-muted-foreground text-right">Monto</TableHead>
+                <TableHead className="text-muted-foreground">Estado</TableHead>
+                <TableHead className="text-muted-foreground text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow className="border-gray-800">
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-10">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                     Cargando facturas...
                   </TableCell>
                 </TableRow>
@@ -245,7 +245,7 @@ export default function FacturasEmitidasPage() {
 
               {!isLoading && filtered.length === 0 && (
                 <TableRow className="border-gray-800">
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-10">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                     No hay facturas para mostrar
                   </TableCell>
                 </TableRow>
@@ -260,13 +260,13 @@ export default function FacturasEmitidasPage() {
                   const monto = Number(invoice.importe_total || 0)
 
                   return (
-                    <TableRow key={invoice.id} className="border-gray-800 hover:bg-white/5">
-                      <TableCell className="font-mono text-white">{numero}</TableCell>
+                    <TableRow key={invoice.id} className="border-gray-800 hover:bg-accent">
+                      <TableCell className="font-mono text-foreground">{numero}</TableCell>
                       <TableCell>{getTypeBadge(invoice.tipo_comprobante)}</TableCell>
-                      <TableCell className="text-gray-300">{formattedDate}</TableCell>
-                      <TableCell className="text-white">{invoice.razon_social_receptor || "-"}</TableCell>
-                      <TableCell className="text-gray-400 font-mono">{invoice.numero_documento_receptor || "-"}</TableCell>
-                      <TableCell className={`text-right font-medium ${monto < 0 ? "text-red-400" : "text-white"}`}>
+                      <TableCell className="text-muted-foreground">{formattedDate}</TableCell>
+                      <TableCell className="text-foreground">{invoice.razon_social_receptor || "-"}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono">{invoice.numero_documento_receptor || "-"}</TableCell>
+                      <TableCell className={`text-right font-medium ${monto < 0 ? "text-red-400" : "text-foreground"}`}>
                         ${Math.abs(monto).toLocaleString()}
                       </TableCell>
                       <TableCell>{getStatusBadge(invoice.status)}</TableCell>

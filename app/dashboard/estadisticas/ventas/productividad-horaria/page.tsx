@@ -82,7 +82,7 @@ export default function ProductividadHorariaPage() {
   }
 
   const getHeatColor = (value: number, count: number) => {
-    if (count === 0) return "bg-white/5"
+    if (count === 0) return "bg-accent"
     if (value > 80) return "bg-red-500"
     if (value > 60) return "bg-orange-500"
     if (value > 40) return "bg-yellow-500"
@@ -102,17 +102,17 @@ export default function ProductividadHorariaPage() {
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Productividad Horaria</h1>
-          <p className="text-gray-400 mt-1">Análisis de rendimiento por franja horaria, con tus ventas reales</p>
+          <h1 className="text-3xl font-bold text-foreground">Productividad Horaria</h1>
+          <p className="text-muted-foreground mt-1">Análisis de rendimiento por franja horaria, con tus ventas reales</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-4 py-2 text-sm rounded-md transition-colors font-medium ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
@@ -146,34 +146,34 @@ export default function ProductividadHorariaPage() {
           <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-cyan-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.ticketsPerHour}</p>
-          <p className="text-sm text-gray-400">Tickets por Hora</p>
-          <p className="text-xs text-gray-500 mt-1">Por hora con ventas</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{stats.ticketsPerHour}</p>
+          <p className="text-sm text-muted-foreground">Tickets por Hora</p>
+          <p className="text-xs text-muted-foreground mt-1">Por hora con ventas</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-green-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatCurrency(stats.salesPerHour)}</p>
-          <p className="text-sm text-gray-400">Ventas por Hora</p>
-          <p className="text-xs text-gray-500 mt-1">Por hora con ventas</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats.salesPerHour)}</p>
+          <p className="text-sm text-muted-foreground">Ventas por Hora</p>
+          <p className="text-xs text-muted-foreground mt-1">Por hora con ventas</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <Clock className="w-6 h-6 text-yellow-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.peakHour === null ? "-" : `${stats.peakHour}:00`}</p>
-          <p className="text-sm text-gray-400">Hora Pico</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{stats.peakHour === null ? "-" : `${stats.peakHour}:00`}</p>
+          <p className="text-sm text-muted-foreground">Hora Pico</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Calendar className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.peakDay}</p>
-          <p className="text-sm text-gray-400">Día Pico</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{stats.peakDay}</p>
+          <p className="text-sm text-muted-foreground">Día Pico</p>
         </div>
       </div>
 
@@ -212,21 +212,21 @@ export default function ProductividadHorariaPage() {
         </ChartCard>
       </div>
 
-      <div className="rounded-2xl border border-white/[0.07] bg-gradient-to-b from-[#0e1526] to-[#0a0f1a] p-5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] sm:p-6">
-        <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white"><span className="h-4 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-indigo-400" />Mapa de Calor: Día de Semana vs Hora</h3>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] sm:p-6">
+        <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-foreground"><span className="h-4 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-indigo-400" />Mapa de Calor: Día de Semana vs Hora</h3>
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full">
             <div className="flex gap-1 mb-2">
               <div className="w-16" />
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="w-8 text-center text-xs text-gray-500">
+                <div key={i} className="w-8 text-center text-xs text-muted-foreground">
                   {i}
                 </div>
               ))}
             </div>
             {stats.heatmapData.map((dayData) => (
               <div key={dayData.day} className="flex gap-1 mb-1">
-                <div className="w-16 text-sm text-gray-400 flex items-center">{dayData.day}</div>
+                <div className="w-16 text-sm text-muted-foreground flex items-center">{dayData.day}</div>
                 {dayData.hours.map((hourData) => (
                   <div
                     key={hourData.hour}
@@ -239,7 +239,7 @@ export default function ProductividadHorariaPage() {
           </div>
         </div>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <span className="text-xs text-gray-500">Baja actividad</span>
+          <span className="text-xs text-muted-foreground">Baja actividad</span>
           <div className="flex gap-1">
             <div className="w-6 h-6 rounded bg-blue-500/50" />
             <div className="w-6 h-6 rounded bg-green-500" />
@@ -247,7 +247,7 @@ export default function ProductividadHorariaPage() {
             <div className="w-6 h-6 rounded bg-orange-500" />
             <div className="w-6 h-6 rounded bg-red-500" />
           </div>
-          <span className="text-xs text-gray-500">Alta actividad</span>
+          <span className="text-xs text-muted-foreground">Alta actividad</span>
         </div>
       </div>
 

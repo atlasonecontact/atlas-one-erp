@@ -87,16 +87,16 @@ export default function IngresosWalletsPage() {
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Ingresos por Wallets</h1>
-          <p className="mt-1 text-gray-400">Ventas cobradas por QR o transferencia, con tus datos reales</p>
+          <h1 className="text-3xl font-bold text-foreground">Ingresos por Wallets</h1>
+          <p className="mt-1 text-muted-foreground">Ventas cobradas por QR o transferencia, con tus datos reales</p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-[#0a0f1a] p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-cyan-500/20 bg-card p-1">
           {["7d", "30d", "90d"].map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
@@ -129,33 +129,33 @@ export default function IngresosWalletsPage() {
               </div>
             )}
           </div>
-          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
-          <p className="text-sm text-gray-400">Ingresos por Wallet</p>
-          {cmp !== undefined && <p className="mt-1 text-xs text-gray-500">vs {days} días anteriores</p>}
+          <p className="mb-1 text-3xl font-bold text-foreground">{formatCurrency(stats.totalRevenue)}</p>
+          <p className="text-sm text-muted-foreground">Ingresos por Wallet</p>
+          {cmp !== undefined && <p className="mt-1 text-xs text-muted-foreground">vs {days} días anteriores</p>}
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
             <Receipt className="h-6 w-6 text-blue-400" />
           </div>
-          <p className="mb-1 text-3xl font-bold text-white">{stats.count.toLocaleString("es-AR")}</p>
-          <p className="text-sm text-gray-400">Transacciones</p>
+          <p className="mb-1 text-3xl font-bold text-foreground">{stats.count.toLocaleString("es-AR")}</p>
+          <p className="text-sm text-muted-foreground">Transacciones</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
             <TrendingUp className="h-6 w-6 text-green-400" />
           </div>
-          <p className="mb-1 text-3xl font-bold text-white">{formatCurrency(stats.avgTicket)}</p>
-          <p className="text-sm text-gray-400">Ticket Promedio</p>
+          <p className="mb-1 text-3xl font-bold text-foreground">{formatCurrency(stats.avgTicket)}</p>
+          <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
             <Percent className="h-6 w-6 text-purple-400" />
           </div>
-          <p className="mb-1 text-3xl font-bold text-white">{stats.shareOfTotal.toFixed(1)}%</p>
-          <p className="text-sm text-gray-400">del total de ventas</p>
+          <p className="mb-1 text-3xl font-bold text-foreground">{stats.shareOfTotal.toFixed(1)}%</p>
+          <p className="text-sm text-muted-foreground">del total de ventas</p>
         </div>
       </div>
 
@@ -196,35 +196,35 @@ export default function IngresosWalletsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/15">
               <QrCode className="h-5 w-5 text-violet-400" />
             </div>
             <div>
-              <p className="font-medium text-white">QR</p>
-              <p className="text-xs text-gray-500">{stats.byMethod[0].count} transacciones</p>
+              <p className="font-medium text-foreground">QR</p>
+              <p className="text-xs text-muted-foreground">{stats.byMethod[0].count} transacciones</p>
             </div>
           </div>
-          <p className="text-xl font-bold text-white">{formatCurrency(stats.byMethod[0].value)}</p>
+          <p className="text-xl font-bold text-foreground">{formatCurrency(stats.byMethod[0].value)}</p>
         </div>
-        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="flex items-center justify-between rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/15">
               <Landmark className="h-5 w-5 text-sky-400" />
             </div>
             <div>
-              <p className="font-medium text-white">Transferencia</p>
-              <p className="text-xs text-gray-500">{stats.byMethod[1].count} transacciones</p>
+              <p className="font-medium text-foreground">Transferencia</p>
+              <p className="text-xs text-muted-foreground">{stats.byMethod[1].count} transacciones</p>
             </div>
           </div>
-          <p className="text-xl font-bold text-white">{formatCurrency(stats.byMethod[1].value)}</p>
+          <p className="text-xl font-bold text-foreground">{formatCurrency(stats.byMethod[1].value)}</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
         <div className="mb-4 flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-white">Últimas Ventas por Wallet</h3>
+          <h3 className="text-lg font-semibold text-foreground">Últimas Ventas por Wallet</h3>
           <span className="rounded-full border border-cyan-500/20 px-2 py-0.5 text-xs text-cyan-400">
             {stats.recent.length}
           </span>
@@ -232,13 +232,13 @@ export default function IngresosWalletsPage() {
         {/* Mobile: cards */}
         <div className="space-y-2 md:hidden">
           {stats.recent.map((t) => (
-            <div key={t.id} className="rounded-lg border border-gray-800 bg-white/[0.02] p-3">
+            <div key={t.id} className="rounded-lg border border-border bg-accent/50 p-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-medium text-white">{t.branch}</p>
-                  <p className="text-xs text-gray-400">{t.seller}</p>
+                  <p className="text-sm font-medium text-foreground">{t.branch}</p>
+                  <p className="text-xs text-muted-foreground">{t.seller}</p>
                 </div>
-                <span className="text-sm font-semibold text-white">{formatCurrency(t.total)}</span>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(t.total)}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span
@@ -250,7 +250,7 @@ export default function IngresosWalletsPage() {
                 >
                   {(t.payment || "").toLowerCase() === "qr" ? "QR" : "Transferencia"}
                 </span>
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   {new Date(t.createdAt).toLocaleString("es-AR", {
                     day: "2-digit",
                     month: "2-digit",
@@ -259,13 +259,13 @@ export default function IngresosWalletsPage() {
                   })}
                 </span>
               </div>
-              <p className="mt-1 font-mono text-xs text-gray-500" title={t.number}>
+              <p className="mt-1 font-mono text-xs text-muted-foreground" title={t.number}>
                 #{t.number.slice(-8)}
               </p>
             </div>
           ))}
           {stats.recent.length === 0 && (
-            <p className="py-8 text-center text-sm text-gray-500">Sin ventas por wallet en este período.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">Sin ventas por wallet en este período.</p>
           )}
         </div>
 
@@ -273,7 +273,7 @@ export default function IngresosWalletsPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-left text-gray-400">
+              <tr className="border-b border-gray-800 text-left text-muted-foreground">
                 <th className="py-2 pr-4 font-medium">Fecha</th>
                 <th className="py-2 pr-4 font-medium">Método</th>
                 <th className="py-2 pr-4 font-medium">Sucursal</th>
@@ -284,8 +284,8 @@ export default function IngresosWalletsPage() {
             </thead>
             <tbody>
               {stats.recent.map((t) => (
-                <tr key={t.id} className="border-b border-gray-800/60 hover:bg-white/[0.02]">
-                  <td className="py-2.5 pr-4 text-gray-300">
+                <tr key={t.id} className="border-b border-border hover:bg-accent/50">
+                  <td className="py-2.5 pr-4 text-muted-foreground">
                     {new Date(t.createdAt).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                   </td>
                   <td className="py-2.5 pr-4">
@@ -299,17 +299,17 @@ export default function IngresosWalletsPage() {
                       {(t.payment || "").toLowerCase() === "qr" ? "QR" : "Transferencia"}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-300">{t.branch}</td>
-                  <td className="py-2.5 pr-4 text-gray-300">{t.seller}</td>
-                  <td className="py-2.5 pr-4 font-mono text-xs text-gray-400" title={t.number}>
+                  <td className="py-2.5 pr-4 text-muted-foreground">{t.branch}</td>
+                  <td className="py-2.5 pr-4 text-muted-foreground">{t.seller}</td>
+                  <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground" title={t.number}>
                     {t.number.slice(-8)}
                   </td>
-                  <td className="py-2.5 pl-4 text-right font-semibold text-white">{formatCurrency(t.total)}</td>
+                  <td className="py-2.5 pl-4 text-right font-semibold text-foreground">{formatCurrency(t.total)}</td>
                 </tr>
               ))}
               {stats.recent.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     Sin ventas por wallet en este período.
                   </td>
                 </tr>

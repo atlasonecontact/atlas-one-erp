@@ -162,8 +162,8 @@ export default function ComportamientoCompraPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Comportamiento de Compra</h1>
-        <p className="text-gray-400">Análisis de patrones de compra y oportunidades de upsell, con tus ventas reales</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Comportamiento de Compra</h1>
+        <p className="text-muted-foreground">Análisis de patrones de compra y oportunidades de upsell, con tus ventas reales</p>
       </div>
 
       <div className="mb-8">
@@ -313,31 +313,31 @@ export default function ComportamientoCompraPage() {
           </div>
 
           <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mt-6">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
               Insights y Oportunidades
             </h3>
             {data.tickets === 0 ? (
-              <p className="text-sm text-gray-500">Todavía no hay ventas para analizar.</p>
+              <p className="text-sm text-muted-foreground">Todavía no hay ventas para analizar.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-gray-800/50 p-4 rounded-lg border border-green-500/30">
                   <div className="text-green-400 font-semibold mb-2">Oportunidad de Upsell</div>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     El {data.smallShare.toFixed(0)}% de los tickets tienen 2 unidades o menos. Armar combos o packs puede
                     subir las unidades por ticket.
                   </p>
                 </div>
                 <div className="bg-gray-800/50 p-4 rounded-lg border border-cyan-500/30">
                   <div className="text-cyan-400 font-semibold mb-2">Patrón de Compra</div>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Los tickets de {data.topBin?.range} son el {data.topBinShare.toFixed(0)}% del total: es tu tramo de
                     precio más frecuente.
                   </p>
                 </div>
                 <div className="bg-gray-800/50 p-4 rounded-lg border border-purple-500/30">
                   <div className="text-purple-400 font-semibold mb-2">Frecuencia</div>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Se registran {data.a.perDay.toFixed(1)} tickets por día
                     {freqChange !== undefined
                       ? `, un ${Math.abs(freqChange).toFixed(1)}% ${freqChange >= 0 ? "más" : "menos"} que en el período anterior`

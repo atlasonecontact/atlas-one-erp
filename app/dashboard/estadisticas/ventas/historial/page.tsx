@@ -58,7 +58,7 @@ interface Row {
 type SortKey = "date" | "product" | "quantity" | "subtotal"
 
 const selectClass =
-  "h-10 w-full min-w-0 rounded-md border border-cyan-500/10 bg-[#0a0f1a] px-3 text-sm text-white focus:border-cyan-500/40 focus:outline-none"
+  "h-10 w-full min-w-0 rounded-md border border-cyan-500/10 bg-card px-3 text-sm text-foreground focus:border-cyan-500/40 focus:outline-none"
 
 export default function HistorialVentasDatasetPage() {
   const supabase = useMemo(() => createClient(), [])
@@ -292,28 +292,28 @@ export default function HistorialVentasDatasetPage() {
   const SortIcon = ({ k }: { k: SortKey }) =>
     sortKey === k ? sortDesc ? <ArrowDown className="ml-1 inline h-3 w-3" /> : <ArrowUp className="ml-1 inline h-3 w-3" /> : null
 
-  const th = "whitespace-nowrap px-2.5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
-  const thSort = `${th} cursor-pointer select-none hover:text-white`
+  const th = "whitespace-nowrap px-2.5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+  const thSort = `${th} cursor-pointer select-none hover:text-foreground`
 
   return (
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Historial de Ventas</h1>
-          <p className="text-sm text-gray-400">Cada producto vendido, en formato de tabla: fecha, hora, método de pago y más</p>
+          <h1 className="text-2xl font-bold text-foreground">Historial de Ventas</h1>
+          <p className="text-sm text-muted-foreground">Cada producto vendido, en formato de tabla: fecha, hora, método de pago y más</p>
         </div>
         <Button
           variant="outline"
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="gap-2 border-cyan-500/20 bg-transparent text-gray-300 hover:text-white"
+          className="gap-2 border-cyan-500/20 bg-transparent text-muted-foreground hover:text-foreground"
         >
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
       </div>
 
-      <div className="space-y-4 rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
+      <div className="space-y-4 rounded-xl border border-cyan-500/10 bg-card p-4">
         <div className="flex flex-wrap items-center gap-2">
           {chips.map((c) => (
             <button
@@ -325,7 +325,7 @@ export default function HistorialVentasDatasetPage() {
               className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                 activeChip === c.label
                   ? "border-cyan-500/40 bg-cyan-500/20 text-cyan-300"
-                  : "border-white/10 text-gray-400 hover:text-white"
+                  : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               {c.label}
@@ -334,17 +334,17 @@ export default function HistorialVentasDatasetPage() {
         </div>
 
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Desde
             <Input
               type="date"
               value={dateFrom}
               max={dateTo}
               onChange={(e) => e.target.value && setDateFrom(e.target.value)}
-              className="border-cyan-500/10 bg-[#050810] text-white"
+              className="border-cyan-500/10 bg-input text-foreground"
             />
           </label>
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Hasta
             <Input
               type="date"
@@ -352,10 +352,10 @@ export default function HistorialVentasDatasetPage() {
               min={dateFrom}
               max={today}
               onChange={(e) => e.target.value && setDateTo(e.target.value)}
-              className="border-cyan-500/10 bg-[#050810] text-white"
+              className="border-cyan-500/10 bg-input text-foreground"
             />
           </label>
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Hora desde
             <select value={hourFrom} onChange={(e) => setHourFrom(e.target.value)} className={selectClass}>
               <option value="">00:00</option>
@@ -366,7 +366,7 @@ export default function HistorialVentasDatasetPage() {
               ))}
             </select>
           </label>
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Hora hasta
             <select value={hourTo} onChange={(e) => setHourTo(e.target.value)} className={selectClass}>
               <option value="">24:00</option>
@@ -377,7 +377,7 @@ export default function HistorialVentasDatasetPage() {
               ))}
             </select>
           </label>
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Método de pago
             <select value={payment} onChange={(e) => setPayment(e.target.value)} className={selectClass}>
               <option value="">Todos</option>
@@ -387,7 +387,7 @@ export default function HistorialVentasDatasetPage() {
               <option value="transfer">Transferencia</option>
             </select>
           </label>
-          <label className="space-y-1 text-xs text-gray-400">
+          <label className="space-y-1 text-xs text-muted-foreground">
             Vendedor
             <select value={sellerFilter} onChange={(e) => setSellerFilter(e.target.value)} className={selectClass}>
               <option value="">Todos</option>
@@ -402,15 +402,15 @@ export default function HistorialVentasDatasetPage() {
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative min-w-[240px] flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar producto o número de venta..."
-              className="border-cyan-500/10 bg-[#050810] pl-10 text-white placeholder:text-gray-500"
+              className="border-cyan-500/10 bg-input pl-10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-300">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input type="checkbox" checked={includeVoided} onChange={(e) => setIncludeVoided(e.target.checked)} />
             Incluir ventas anuladas
           </label>
@@ -418,16 +418,16 @@ export default function HistorialVentasDatasetPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Filas</p>
-          <p className="text-xl font-bold text-white">{totals.lines}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Filas</p>
+          <p className="text-xl font-bold text-foreground">{totals.lines}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Unidades vendidas</p>
-          <p className="text-xl font-bold text-white">{totals.units}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Unidades vendidas</p>
+          <p className="text-xl font-bold text-foreground">{totals.units}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Total vendido</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Total vendido</p>
           <p className="text-xl font-bold text-green-400">{formatCurrency(totals.amount)}</p>
         </div>
       </div>
@@ -443,14 +443,14 @@ export default function HistorialVentasDatasetPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
+      <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-card">
         {loading ? (
-          <div className="p-10 text-center text-gray-500">
+          <div className="p-10 text-center text-muted-foreground">
             <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
             Cargando ventas...
           </div>
         ) : visible.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">No hay ventas con estos filtros</div>
+          <div className="p-10 text-center text-muted-foreground">No hay ventas con estos filtros</div>
         ) : (
           <>
             {/* Pantallas medianas y chicas: una tarjeta por producto vendido */}
@@ -461,44 +461,44 @@ export default function HistorialVentasDatasetPage() {
                   <div key={r.id} className="space-y-2 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className={`font-medium break-words ${voided ? "text-gray-500 line-through" : "text-white"}`}>{r.product}</p>
-                        <p className="text-xs text-gray-500">{r.category}</p>
+                        <p className={`font-medium break-words ${voided ? "text-muted-foreground line-through" : "text-foreground"}`}>{r.product}</p>
+                        <p className="text-xs text-muted-foreground">{r.category}</p>
                       </div>
-                      <p className={`shrink-0 font-semibold ${voided ? "text-gray-500 line-through" : "text-white"}`}>
+                      <p className={`shrink-0 font-semibold ${voided ? "text-muted-foreground line-through" : "text-foreground"}`}>
                         {formatCurrency(r.subtotal)}
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
                       <div>
-                        <span className="text-gray-500">Fecha </span>
+                        <span className="text-muted-foreground">Fecha </span>
                         <span className="text-gray-200">{dateFmt.format(new Date(r.createdAt))}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Hora </span>
+                        <span className="text-muted-foreground">Hora </span>
                         <span className="font-mono text-gray-200">{timeFmt.format(new Date(r.createdAt))}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Cant. </span>
+                        <span className="text-muted-foreground">Cant. </span>
                         <span className="text-gray-200">
                           {r.quantity} × {formatCurrency(r.unitPrice)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Pago </span>
+                        <span className="text-muted-foreground">Pago </span>
                         <span className="text-gray-200">{paymentLabel(r.payment)}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Vendedor </span>
+                        <span className="text-muted-foreground">Vendedor </span>
                         <span className="text-gray-200">{r.seller}</span>
                       </div>
                       {multiBranch && (
                         <div>
-                          <span className="text-gray-500">Sucursal </span>
+                          <span className="text-muted-foreground">Sucursal </span>
                           <span className="text-gray-200">{r.branch}</span>
                         </div>
                       )}
                       <div>
-                        <span className="text-gray-500">Venta </span>
+                        <span className="text-muted-foreground">Venta </span>
                         <span className="font-mono text-cyan-400" title={r.saleNumber}>
                           #{r.saleNumber.slice(-6).toUpperCase()}
                         </span>
@@ -548,16 +548,16 @@ export default function HistorialVentasDatasetPage() {
               <tbody>
                 {visible.map((r) => {
                   const voided = r.status === "cancelled"
-                  const muted = voided ? "text-gray-500 line-through" : "text-white"
+                  const muted = voided ? "text-muted-foreground line-through" : "text-foreground"
                   return (
-                    <tr key={r.id} className="border-b border-cyan-500/5 align-top text-sm transition-colors hover:bg-white/5">
+                    <tr key={r.id} className="border-b border-cyan-500/5 align-top text-sm transition-colors hover:bg-accent">
                       <td className="px-2.5 py-3">
                         <p className={`whitespace-nowrap ${muted}`}>{dateFmt.format(new Date(r.createdAt))}</p>
-                        <p className="font-mono text-xs text-gray-400">{timeFmt.format(new Date(r.createdAt))}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{timeFmt.format(new Date(r.createdAt))}</p>
                       </td>
                       <td className="px-2.5 py-3">
                         <p className={`break-words ${muted}`}>{r.product}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {r.category} ·{" "}
                           <span className="font-mono text-cyan-400" title={r.saleNumber}>
                             #{r.saleNumber.slice(-6).toUpperCase()}
@@ -565,13 +565,13 @@ export default function HistorialVentasDatasetPage() {
                         </p>
                       </td>
                       <td className={`px-2.5 py-3 text-right ${muted}`}>{r.quantity}</td>
-                      <td className="hidden whitespace-nowrap px-2.5 py-3 text-right text-gray-300 2xl:table-cell">
+                      <td className="hidden whitespace-nowrap px-2.5 py-3 text-right text-muted-foreground 2xl:table-cell">
                         {formatCurrency(r.unitPrice)}
                       </td>
                       <td className={`whitespace-nowrap px-2.5 py-3 text-right font-medium ${muted}`}>{formatCurrency(r.subtotal)}</td>
-                      <td className="px-2.5 py-3 text-gray-300">{paymentLabel(r.payment)}</td>
-                      <td className="px-2.5 py-3 text-gray-300 break-words">{r.seller}</td>
-                      {multiBranch && <td className="px-2.5 py-3 text-gray-300 break-words">{r.branch}</td>}
+                      <td className="px-2.5 py-3 text-muted-foreground">{paymentLabel(r.payment)}</td>
+                      <td className="px-2.5 py-3 text-muted-foreground break-words">{r.seller}</td>
+                      {multiBranch && <td className="px-2.5 py-3 text-muted-foreground break-words">{r.branch}</td>}
                       <td className="px-2.5 py-3">
                         <span
                           className={`whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium ${
@@ -590,13 +590,13 @@ export default function HistorialVentasDatasetPage() {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <label className="flex items-center gap-2">
           Filas por página
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
-            className="h-9 rounded-md border border-cyan-500/10 bg-[#0a0f1a] px-2 text-white"
+            className="h-9 rounded-md border border-cyan-500/10 bg-card px-2 text-foreground"
           >
             {[25, 50, 100, 200].map((n) => (
               <option key={n} value={n}>

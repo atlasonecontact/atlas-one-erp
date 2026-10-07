@@ -130,17 +130,17 @@ export default function DesempenoVendedorPage() {
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white">Desempeño por Vendedor</h1>
-          <p className="text-gray-400 mt-1">Cuánto vendió cada vendedor, turno por turno, con tus ventas reales</p>
+          <h1 className="text-3xl font-bold text-foreground">Desempeño por Vendedor</h1>
+          <p className="text-muted-foreground mt-1">Cuánto vendió cada vendedor, turno por turno, con tus ventas reales</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/20 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/20 rounded-lg p-1">
             {["7d", "30d", "90d"].map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-4 py-2 text-sm rounded-md transition-colors font-medium ${
-                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  period === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "7d" ? "7 Días" : p === "30d" ? "30 Días" : "90 Días"}
@@ -175,32 +175,32 @@ export default function DesempenoVendedorPage() {
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
-          <p className="text-2xl font-bold text-white mb-1 truncate">{topSeller ? topSeller.seller : "-"}</p>
-          <p className="text-sm text-gray-400">Vendedor Top {topSeller ? `(${formatMoney(topSeller.total)})` : ""}</p>
+          <p className="text-2xl font-bold text-foreground mb-1 truncate">{topSeller ? topSeller.seller : "-"}</p>
+          <p className="text-sm text-muted-foreground">Vendedor Top {topSeller ? `(${formatMoney(topSeller.total)})` : ""}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-cyan-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{formatMoney(avgTicket)}</p>
-          <p className="text-sm text-gray-400">Ticket Promedio</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{formatMoney(avgTicket)}</p>
+          <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
             <Users className="w-6 h-6 text-green-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{stats.sellers.length}</p>
-          <p className="text-sm text-gray-400">Vendedores Activos</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{stats.sellers.length}</p>
+          <p className="text-sm text-muted-foreground">Vendedores Activos</p>
         </div>
 
         <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Clock className="w-6 h-6 text-purple-400" />
           </div>
-          <p className="text-3xl font-bold text-white mb-1">{bestShift && bestShift.sales > 0 ? bestShift.shift : "-"}</p>
-          <p className="text-sm text-gray-400">Turno Más Productivo</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{bestShift && bestShift.sales > 0 ? bestShift.shift : "-"}</p>
+          <p className="text-sm text-muted-foreground">Turno Más Productivo</p>
         </div>
       </div>
 
@@ -230,22 +230,22 @@ export default function DesempenoVendedorPage() {
         </div>
       </ChartCard>
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
-        <h3 className="text-lg font-semibold text-white mb-6">Ranking de Vendedores</h3>
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-6">Ranking de Vendedores</h3>
         {/* Mobile: cards */}
         <div className="space-y-2 md:hidden">
           {stats.sellers.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">Sin ventas para mostrar.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">Sin ventas para mostrar.</p>
           ) : (
             stats.sellers.map((s, i) => (
-              <div key={s.seller + i} className="rounded-lg border border-gray-800 bg-white/[0.02] p-3">
+              <div key={s.seller + i} className="rounded-lg border border-border bg-accent/50 p-3">
                 <div className="flex items-center gap-3">
                   {i === 0 ? (
                     <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-xs font-bold text-yellow-400">
                       1
                     </span>
                   ) : i === 1 ? (
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-400/20 text-xs font-bold text-gray-300">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-400/20 text-xs font-bold text-muted-foreground">
                       2
                     </span>
                   ) : i === 2 ? (
@@ -253,18 +253,18 @@ export default function DesempenoVendedorPage() {
                       3
                     </span>
                   ) : (
-                    <span className="w-6 shrink-0 pl-1.5 text-xs text-gray-500">{i + 1}</span>
+                    <span className="w-6 shrink-0 pl-1.5 text-xs text-muted-foreground">{i + 1}</span>
                   )}
-                  <p className="flex-1 truncate font-medium text-white">{s.seller}</p>
+                  <p className="flex-1 truncate font-medium text-foreground">{s.seller}</p>
                   <span className="font-semibold text-cyan-400">{formatMoney(s.total)}</span>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-xs text-gray-400">
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-xs text-muted-foreground">
                   {s.byShift.map((b) => (
                     <span key={b.shift}>
                       {b.shift}: {formatMoney(b.sales)}
                     </span>
                   ))}
-                  <span className="text-gray-500">{s.tickets} tickets</span>
+                  <span className="text-muted-foreground">{s.tickets} tickets</span>
                 </div>
               </div>
             ))
@@ -275,7 +275,7 @@ export default function DesempenoVendedorPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-800">
+              <tr className="text-left text-muted-foreground border-b border-gray-800">
                 <th className="pb-3 pr-4">#</th>
                 <th className="pb-3 pr-4">Vendedor</th>
                 {SHIFTS.map((shift) => (
@@ -290,7 +290,7 @@ export default function DesempenoVendedorPage() {
             <tbody>
               {stats.sellers.length === 0 ? (
                 <tr>
-                  <td colSpan={SHIFTS.length + 4} className="py-8 text-center text-gray-500">
+                  <td colSpan={SHIFTS.length + 4} className="py-8 text-center text-muted-foreground">
                     Sin ventas para mostrar.
                   </td>
                 </tr>
@@ -303,7 +303,7 @@ export default function DesempenoVendedorPage() {
                           1
                         </span>
                       ) : i === 1 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-400/20 text-gray-300 text-xs font-bold">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-400/20 text-muted-foreground text-xs font-bold">
                           2
                         </span>
                       ) : i === 2 ? (
@@ -311,17 +311,17 @@ export default function DesempenoVendedorPage() {
                           3
                         </span>
                       ) : (
-                        <span className="text-gray-500 text-xs pl-1.5">{i + 1}</span>
+                        <span className="text-muted-foreground text-xs pl-1.5">{i + 1}</span>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-white font-medium">{s.seller}</td>
+                    <td className="py-3 pr-4 text-foreground font-medium">{s.seller}</td>
                     {s.byShift.map((b) => (
-                      <td key={b.shift} className="py-3 pr-4 text-right text-gray-300">
+                      <td key={b.shift} className="py-3 pr-4 text-right text-muted-foreground">
                         {formatMoney(b.sales)}
                       </td>
                     ))}
                     <td className="py-3 pr-4 text-right text-cyan-400 font-semibold">{formatMoney(s.total)}</td>
-                    <td className="py-3 text-right text-gray-300">{s.tickets}</td>
+                    <td className="py-3 text-right text-muted-foreground">{s.tickets}</td>
                   </tr>
                 ))
               )}

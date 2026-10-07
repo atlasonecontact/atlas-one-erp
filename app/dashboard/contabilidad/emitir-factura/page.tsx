@@ -148,8 +148,8 @@ export default function EmitirFacturaPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Emitir Factura</h1>
-        <p className="text-gray-400">Selecciona el tipo de comprobante que deseas emitir</p>
+        <h1 className="text-2xl font-bold text-foreground">Emitir Factura</h1>
+        <p className="text-muted-foreground">Selecciona el tipo de comprobante que deseas emitir</p>
       </div>
 
       {/* Invoice Types Grid */}
@@ -171,18 +171,18 @@ export default function EmitirFacturaPage() {
               className={`cursor-pointer transition-all duration-300 hover:scale-[1.02] ${
                 isSelected
                   ? `${type.bgColor} ${type.borderColor} border-2`
-                  : "bg-[#0a0f1a] border-gray-800 hover:border-gray-700"
+                  : "bg-card border-gray-800 hover:border-gray-700"
               }`}
               onClick={() => setSelectedType(type.id)}
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl bg-gradient-to-br ${type.color}`}>
-                    <Icon className="w-6 h-6 text-white" />
+                    <Icon className="w-6 h-6 text-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold">{type.name}</h3>
-                    <p className="text-gray-400 text-sm mt-1">{type.description}</p>
+                    <h3 className="text-foreground font-semibold">{type.name}</h3>
+                    <p className="text-muted-foreground text-sm mt-1">{type.description}</p>
                   </div>
                 </div>
               </CardContent>
@@ -207,13 +207,13 @@ export default function EmitirFacturaPage() {
       )}
 
       {/* Recent Activity */}
-      <Card className="bg-[#0a0f1a] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardHeader>
-          <CardTitle className="text-white">Últimas Facturas Emitidas</CardTitle>
+          <CardTitle className="text-foreground">Últimas Facturas Emitidas</CardTitle>
           <CardDescription>Acceso rápido a tus comprobantes recientes</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-muted-foreground">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No hay facturas emitidas recientemente</p>
             <p className="text-sm">Selecciona un tipo de comprobante para comenzar</p>

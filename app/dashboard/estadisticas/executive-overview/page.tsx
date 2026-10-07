@@ -395,8 +395,8 @@ export default function ExecutiveOverviewPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Resumen Ejecutivo</h1>
-        <p className="text-gray-400">Vista ejecutiva de rendimiento y eficiencia del negocio, con tus ventas reales</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Resumen Ejecutivo</h1>
+        <p className="text-muted-foreground">Vista ejecutiva de rendimiento y eficiencia del negocio, con tus ventas reales</p>
       </div>
 
       <div className="mb-8">
@@ -417,7 +417,7 @@ export default function ExecutiveOverviewPage() {
       )}
 
       {loading ? (
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-10 text-center text-gray-400">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-10 text-center text-muted-foreground">
           Cargando ventas...
         </div>
       ) : (
@@ -548,7 +548,7 @@ export default function ExecutiveOverviewPage() {
 
             <ChartCard title="Top Vendedores" subtitle="Ranking por facturación" className="lg:col-span-2">
               {data.sellerData.length === 0 ? (
-                <p className="py-16 text-center text-sm text-slate-500">Sin ventas para mostrar.</p>
+                <p className="py-16 text-center text-sm text-muted-foreground">Sin ventas para mostrar.</p>
               ) : (
                 <div style={{ height: Math.max(220, data.sellerData.length * 52) }}>
                   <ResponsiveContainer width="100%" height="100%">
