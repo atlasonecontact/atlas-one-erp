@@ -26,7 +26,6 @@ interface VisualProduct {
   name: string
   sku: string | null
   brand: string | null
-  line: string | null
   variant: string | null
   presentation: string | null
   net_content: number | null
@@ -75,7 +74,7 @@ export default function CatalogoVisualPage() {
   const [category, setCategory] = useState(ALL)
   const [subcategory, setSubcategory] = useState(ALL)
   const [brand, setBrand] = useState(ALL)
-  const [line, setLine] = useState(ALL)
+  const [variantFilter, setVariantFilter] = useState(ALL)
   const [formato, setFormato] = useState(ALL)
   const [stockFilter, setStockFilter] = useState<StockFilter>("all")
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>("active")
@@ -93,7 +92,7 @@ export default function CatalogoVisualPage() {
       supabase
         .from("products")
         .select(
-          "id, name, sku, brand, line, variant, presentation, net_content, unit, category, subcategory, barcode, price, stock_quantity, is_active, image_url",
+          "id, name, sku, brand, variant, presentation, net_content, unit, category, subcategory, barcode, price, stock_quantity, is_active, image_url",
         )
         .eq("kiosko_id", kiosko_id)
         .order("name"),
@@ -129,7 +128,7 @@ export default function CatalogoVisualPage() {
       categories: uniq(products.map((p) => p.category)),
       subcategories: uniq(products.filter((p) => category === ALL || p.category === category).map((p) => p.subcategory)),
       brands: uniq(products.map((p) => p.brand)),
-      lines: uniq(products.map((p) => p.line)),
+      variants: uniq(products.map((p) => p.variant)),
       formatos: uniq(products.map(formatoDe)),
     }
   }, [products, category])
@@ -142,14 +141,14 @@ export default function CatalogoVisualPage() {
       if (category !== ALL && p.category !== category) return false
       if (subcategory !== ALL && p.subcategory !== subcategory) return false
       if (brand !== ALL && p.brand !== brand) return false
-      if (line !== ALL && p.line !== line) return false
+      if (variantFilter !== ALL && p.variant !== variantFilter) return false
       if (formato !== ALL && formatoDe(p) !== formato) return false
       if (stockFilter === "with_stock" && p.stock_quantity <= 0) return false
       if (stockFilter === "low_stock" && !(p.stock_quantity > 0 && p.stock_quantity <= 10)) return false
       if (stockFilter === "no_stock" && p.stock_quantity > 0) return false
 
       if (q) {
-        const haystack = [p.name, p.sku, p.barcode, p.brand, p.category, p.line, p.variant, formatoDe(p)]
+        const haystack = [p.name, p.sku, p.barcode, p.brand, p.category, p.variant, formatoDe(p)]
           .filter(Boolean)
           .join(" ")
           .toLowerCase()
@@ -157,7 +156,7 @@ export default function CatalogoVisualPage() {
       }
       return true
     })
-  }, [products, search, category, subcategory, brand, line, formato, stockFilter, estadoFilter])
+  }, [products, search, category, subcategory, brand, variantFilter, formato, stockFilter, estadoFilter])
 
   const stats = useMemo(() => {
     const conImagen = products.filter((p) => p.image_url).length
@@ -408,7 +407,7 @@ export default function CatalogoVisualPage() {
                 options={options.subcategories}
               />
               <FilterSelect label="Marca" value={brand} onChange={setBrand} options={options.brands} />
-              <FilterSelect label="Línea" value={line} onChange={setLine} options={options.lines} />
+              <FilterSelect label="Variante" value={variantFilter} onChange={setVariantFilter} options={options.variants} />
               <FilterSelect label="Formato" value={formato} onChange={setFormato} options={options.formatos} />
               <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
                 <SelectTrigger className="w-[150px] bg-[#0a0f1a] border-cyan-500/10 text-white">
