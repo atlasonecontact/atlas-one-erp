@@ -175,7 +175,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Nuevo Pedido Interno</DialogTitle>
         </DialogHeader>
@@ -183,7 +183,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
         <div className="space-y-6 py-4">
           {/* Destino */}
           <div className="space-y-3">
-            <Label className="text-sm text-gray-400">Destino del Pedido</Label>
+            <Label className="text-sm text-muted-foreground">Destino del Pedido</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
@@ -196,7 +196,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
               >
                 <Warehouse className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
                 <p className="text-sm font-medium">Stock Central</p>
-                <p className="text-xs text-gray-500 mt-1">Depósito principal</p>
+                <p className="text-xs text-muted-foreground mt-1">Depósito principal</p>
               </button>
               <button
                 type="button"
@@ -209,7 +209,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
               >
                 <Building2 className="w-6 h-6 text-purple-400 mx-auto mb-2" />
                 <p className="text-sm font-medium">Sucursal</p>
-                <p className="text-xs text-gray-500 mt-1">Otra sucursal</p>
+                <p className="text-xs text-muted-foreground mt-1">Otra sucursal</p>
               </button>
             </div>
           </div>
@@ -217,12 +217,12 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
           {/* Seleccionar Sucursal */}
           {tipoDestino === "sucursal" && (
             <div className="space-y-2">
-              <Label className="text-sm text-gray-400">Sucursal de Destino</Label>
+              <Label className="text-sm text-muted-foreground">Sucursal de Destino</Label>
               <Select value={destinoKioscoId} onValueChange={setDestinoKioscoId}>
-                <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+                <SelectTrigger className="bg-popover border-cyan-500/20 text-foreground">
                   <SelectValue placeholder="Seleccionar sucursal" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+                <SelectContent className="bg-popover border-cyan-500/20">
                   {kioscos.map((kiosco) => (
                     <SelectItem key={kiosco.id} value={kiosco.id}>
                       {kiosco.name}
@@ -236,7 +236,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
           {/* Items */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm text-gray-400">Productos</Label>
+              <Label className="text-sm text-muted-foreground">Productos</Label>
               <Button
                 type="button"
                 variant="outline"
@@ -250,7 +250,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
             </div>
 
             {items.length === 0 ? (
-              <div className="p-6 rounded-lg border border-dashed border-gray-700 text-center text-gray-500">
+              <div className="p-6 rounded-lg border border-dashed border-gray-700 text-center text-muted-foreground">
                 No hay items agregados. Haz clic en "Agregar Item" para comenzar.
               </div>
             ) : (
@@ -259,21 +259,21 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
                   <div key={index} className="p-4 rounded-lg bg-gray-800/50 border border-gray-700 space-y-3">
                     <div className="grid grid-cols-12 gap-3">
                       <div className="col-span-5">
-                        <Label className="text-xs text-gray-500 mb-1">Producto</Label>
+                        <Label className="text-xs text-muted-foreground mb-1">Producto</Label>
                         <Select value={item.producto_id} onValueChange={(value) => handleProductoSelect(index, value)}>
-                          <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white h-9">
+                          <SelectTrigger className="bg-popover border-cyan-500/20 text-foreground h-9">
                             <SelectValue placeholder="Seleccionar" />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+                          <SelectContent className="bg-popover border-cyan-500/20">
                             <div className="px-2 py-2">
                               <div className="relative">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500" />
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
                                 <Input
                                   type="text"
                                   placeholder="Buscar..."
                                   value={searchProducto}
                                   onChange={(e) => setSearchProducto(e.target.value)}
-                                  className="pl-7 h-8 bg-gray-800 border-gray-700 text-white text-xs"
+                                  className="pl-7 h-8 bg-gray-800 border-gray-700 text-foreground text-xs"
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </div>
@@ -287,23 +287,23 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
                         </Select>
                       </div>
                       <div className="col-span-2">
-                        <Label className="text-xs text-gray-500 mb-1">Cantidad</Label>
+                        <Label className="text-xs text-muted-foreground mb-1">Cantidad</Label>
                         <Input
                           type="number"
                           min="1"
                           value={item.cantidad}
                           onChange={(e) => handleItemChange(index, "cantidad", Number.parseInt(e.target.value) || 0)}
-                          className="bg-[#0d1424] border-cyan-500/20 text-white h-9"
+                          className="bg-popover border-cyan-500/20 text-foreground h-9"
                         />
                       </div>
                       <div className="col-span-4">
-                        <Label className="text-xs text-gray-500 mb-1">Notas</Label>
+                        <Label className="text-xs text-muted-foreground mb-1">Notas</Label>
                         <Input
                           type="text"
                           placeholder="Opcional"
                           value={item.observaciones}
                           onChange={(e) => handleItemChange(index, "observaciones", e.target.value)}
-                          className="bg-[#0d1424] border-cyan-500/20 text-white h-9"
+                          className="bg-popover border-cyan-500/20 text-foreground h-9"
                         />
                       </div>
                       <div className="col-span-1 flex items-end">
@@ -326,12 +326,12 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
 
           {/* Observaciones */}
           <div className="space-y-2">
-            <Label className="text-sm text-gray-400">Observaciones Generales (Opcional)</Label>
+            <Label className="text-sm text-muted-foreground">Observaciones Generales (Opcional)</Label>
             <Textarea
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Agregar notas adicionales sobre el pedido..."
-              className="bg-[#0d1424] border-cyan-500/20 text-white min-h-[80px]"
+              className="bg-popover border-cyan-500/20 text-foreground min-h-[80px]"
             />
           </div>
 
@@ -342,7 +342,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
               variant="outline"
               onClick={handleClose}
               disabled={loading}
-              className="border-gray-700 text-gray-400 hover:bg-gray-800 bg-transparent"
+              className="border-gray-700 text-muted-foreground hover:bg-gray-800 bg-transparent"
             >
               Cancelar
             </Button>

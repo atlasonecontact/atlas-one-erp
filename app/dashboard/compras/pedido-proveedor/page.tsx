@@ -132,7 +132,7 @@ export default function PedidoProveedorPage() {
       case "partial":
         return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
       default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+        return "bg-gray-500/20 text-muted-foreground border-gray-500/30"
     }
   }
 
@@ -162,8 +162,8 @@ export default function PedidoProveedorPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Pedido a Proveedor OC</h1>
-          <p className="text-gray-400 text-sm">Gestiona las órdenes de compra y su estado de pago</p>
+          <h1 className="text-2xl font-bold text-foreground">Pedido a Proveedor OC</h1>
+          <p className="text-muted-foreground text-sm">Gestiona las órdenes de compra y su estado de pago</p>
         </div>
         <Button
           onClick={() => setShowNewOrderModal(true)}
@@ -186,52 +186,52 @@ export default function PedidoProveedorPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
               <Package className="w-5 h-5 text-cyan-400" />
             </div>
-            <p className="text-sm text-gray-400">Total OC</p>
+            <p className="text-sm text-muted-foreground">Total OC</p>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.totalOrders}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalOrders}</p>
         </div>
 
-        <div className="rounded-xl border border-green-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-green-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-green-400" />
             </div>
-            <p className="text-sm text-gray-400">Pagadas</p>
+            <p className="text-sm text-muted-foreground">Pagadas</p>
           </div>
           <p className="text-2xl font-bold text-green-400">{stats.totalPaid}</p>
         </div>
 
-        <div className="rounded-xl border border-red-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-red-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
               <XCircle className="w-5 h-5 text-red-400" />
             </div>
-            <p className="text-sm text-gray-400">No Pagadas</p>
+            <p className="text-sm text-muted-foreground">No Pagadas</p>
           </div>
           <p className="text-2xl font-bold text-red-400">{stats.totalUnpaid}</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-cyan-400" />
             </div>
-            <p className="text-sm text-gray-400">Monto Total</p>
+            <p className="text-sm text-muted-foreground">Monto Total</p>
           </div>
-          <p className="text-xl font-bold text-white">${stats.totalAmount.toLocaleString()}</p>
+          <p className="text-xl font-bold text-foreground">${stats.totalAmount.toLocaleString()}</p>
         </div>
 
-        <div className="rounded-xl border border-purple-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-purple-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <Package className="w-5 h-5 text-purple-400" />
             </div>
-            <p className="text-sm text-gray-400">Unidades</p>
+            <p className="text-sm text-muted-foreground">Unidades</p>
           </div>
           <p className="text-2xl font-bold text-purple-400">{stats.totalUnits.toLocaleString()}</p>
         </div>
@@ -239,32 +239,32 @@ export default function PedidoProveedorPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar por proveedor o número de OC..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+          className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Orders: cards en mobile, tabla en desktop */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         {/* Mobile */}
         <div className="md:hidden divide-y divide-cyan-500/10">
           {loading ? (
-            <p className="p-8 text-center text-gray-500">Cargando órdenes de compra...</p>
+            <p className="p-8 text-center text-muted-foreground">Cargando órdenes de compra...</p>
           ) : filteredPurchases.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No hay órdenes de compra registradas</p>
+            <p className="p-8 text-center text-muted-foreground">No hay órdenes de compra registradas</p>
           ) : (
             filteredPurchases.map((purchase) => (
               <div key={purchase.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <span className="text-cyan-400 font-mono font-semibold text-sm">{purchase.purchase_number}</span>
-                    <p className="text-white font-medium truncate">{purchase.supplier_name}</p>
-                    <p className="text-xs text-gray-500">{formatDate(purchase.created_at)}</p>
+                    <p className="text-foreground font-medium truncate">{purchase.supplier_name}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(purchase.created_at)}</p>
                   </div>
                   <span
                     className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPaymentStatusStyle(purchase.payment_status)}`}
@@ -278,14 +278,14 @@ export default function PedidoProveedorPage() {
                     <Package className="w-4 h-4" />
                     {purchase.total_units?.toLocaleString() || 0} un.
                   </span>
-                  <span className="text-white font-semibold text-lg">
+                  <span className="text-foreground font-semibold text-lg">
                     ${Number(purchase.total_amount).toLocaleString()}
                   </span>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full border-cyan-500/20 text-gray-300 hover:text-cyan-400 hover:bg-cyan-500/10 gap-1.5"
+                  className="w-full border-cyan-500/20 text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10 gap-1.5"
                 >
                   <Eye className="w-4 h-4" />
                   Ver orden
@@ -299,50 +299,50 @@ export default function PedidoProveedorPage() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-cyan-500/10 bg-[#0a0f1a]">
-                <th className="text-left text-sm font-medium text-gray-400 p-4">Número OC</th>
-                <th className="text-left text-sm font-medium text-gray-400 p-4">Proveedor</th>
-                <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
+              <tr className="border-b border-cyan-500/10 bg-card">
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Número OC</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
+                <th className="text-left text-sm font-medium text-muted-foreground p-4">Fecha</th>
                 <th className="text-right text-sm font-semibold text-purple-400 p-4 bg-purple-500/5">
                   <div className="flex items-center justify-end gap-2">
                     <Package className="w-4 h-4" />
                     Unidades Pedidas
                   </div>
                 </th>
-                <th className="text-right text-sm font-medium text-gray-400 p-4">Monto Total</th>
+                <th className="text-right text-sm font-medium text-muted-foreground p-4">Monto Total</th>
                 <th className="text-center text-sm font-semibold text-cyan-400 p-4 bg-cyan-500/5">
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
                     Estado de Pago
                   </div>
                 </th>
-                <th className="text-right text-sm font-medium text-gray-400 p-4">Acciones</th>
+                <th className="text-right text-sm font-medium text-muted-foreground p-4">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
                     Cargando órdenes de compra...
                   </td>
                 </tr>
               ) : filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
                     No hay órdenes de compra registradas
                   </td>
                 </tr>
               ) : (
                 filteredPurchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                  <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-accent transition-colors">
                     <td className="p-4">
                       <span className="text-cyan-400 font-mono font-semibold">{purchase.purchase_number}</span>
                     </td>
                     <td className="p-4">
-                      <span className="text-white font-medium">{purchase.supplier_name}</span>
+                      <span className="text-foreground font-medium">{purchase.supplier_name}</span>
                     </td>
                     <td className="p-4">
-                      <span className="text-gray-400">{formatDate(purchase.created_at)}</span>
+                      <span className="text-muted-foreground">{formatDate(purchase.created_at)}</span>
                     </td>
                     <td className="p-4 text-right bg-purple-500/5">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
@@ -351,7 +351,7 @@ export default function PedidoProveedorPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <span className="text-white font-semibold text-lg">
+                      <span className="text-foreground font-semibold text-lg">
                         ${Number(purchase.total_amount).toLocaleString()}
                       </span>
                     </td>
@@ -369,7 +369,7 @@ export default function PedidoProveedorPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10"
+                        className="text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>

@@ -266,7 +266,7 @@ export default function PedidosInternosPage() {
       case "cancelado":
         return "bg-red-500/20 text-red-400"
       default:
-        return "bg-gray-500/20 text-gray-400"
+        return "bg-gray-500/20 text-muted-foreground"
     }
   }
 
@@ -311,8 +311,8 @@ export default function PedidosInternosPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Pedidos Internos</h1>
-          <p className="text-gray-400 text-sm">Gestiona pedidos de mercadería entre sucursales y stock central</p>
+          <h1 className="text-2xl font-bold text-foreground">Pedidos Internos</h1>
+          <p className="text-muted-foreground text-sm">Gestiona pedidos de mercadería entre sucursales y stock central</p>
         </div>
         {permissions.can_create_internal_order && (
           <Button
@@ -327,35 +327,35 @@ export default function PedidosInternosPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
               <Clock className="w-5 h-5 text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Pendientes</p>
+              <p className="text-sm text-muted-foreground">Pendientes</p>
               <p className="text-2xl font-bold text-yellow-400">{stats.pendientes}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
               <Truck className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">En Proceso</p>
+              <p className="text-sm text-muted-foreground">En Proceso</p>
               <p className="text-2xl font-bold text-cyan-400">{stats.enProceso}</p>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
               <PackageCheck className="w-5 h-5 text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Recibidos</p>
+              <p className="text-sm text-muted-foreground">Recibidos</p>
               <p className="text-2xl font-bold text-green-400">{stats.recibidos}</p>
             </div>
           </div>
@@ -364,27 +364,27 @@ export default function PedidosInternosPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar por número o destino..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+          className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Pedidos: cards en mobile, tabla en desktop */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         {/* Mobile */}
         <div className="md:hidden divide-y divide-cyan-500/10">
           {loading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
               Cargando pedidos...
             </div>
           ) : filteredPedidos.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No hay pedidos internos registrados</p>
+            <p className="p-8 text-center text-muted-foreground">No hay pedidos internos registrados</p>
           ) : (
             filteredPedidos.map((pedido) => (
               <div key={pedido.id} className="p-4 space-y-3">
@@ -394,10 +394,10 @@ export default function PedidosInternosPage() {
                       <span className="text-cyan-400 font-mono text-sm">{pedido.numero_pedido}</span>
                       <div className="flex items-center gap-2 mt-1">
                         <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
-                        <span className="text-white text-sm truncate">{pedido.solicitante_nombre}</span>
+                        <span className="text-foreground text-sm truncate">{pedido.solicitante_nombre}</span>
                       </div>
                       {pedido.origen_nombre && (
-                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                           <Warehouse className="w-3 h-3" /> desde {pedido.origen_nombre}
                         </p>
                       )}
@@ -409,7 +409,7 @@ export default function PedidosInternosPage() {
                       {getEstadoLabel(pedido.estado)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                     <span>
                       {pedido.items_count} items ({pedido.items_total} unidades)
                     </span>
@@ -455,7 +455,7 @@ export default function PedidosInternosPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleVerDetalle(pedido.id)}
-                    className="text-gray-400 hover:text-white gap-1.5"
+                    className="text-muted-foreground hover:text-foreground gap-1.5"
                   >
                     Ver detalle
                     <ChevronRight
@@ -465,17 +465,17 @@ export default function PedidosInternosPage() {
                 </div>
 
                 {selectedPedido === pedido.id && (
-                  <div className="rounded-lg bg-white/5 p-3 space-y-3">
+                  <div className="rounded-lg bg-muted p-3 space-y-3">
                     {pedido.observaciones && (
                       <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-muted-foreground">
                           <span className="font-medium text-cyan-400">Observaciones:</span> {pedido.observaciones}
                         </p>
                       </div>
                     )}
                     {pedido.motivo_rechazo && (
                       <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-muted-foreground">
                           <span className="font-medium text-red-400">Motivo del rechazo:</span>{" "}
                           {pedido.motivo_rechazo}
                         </p>
@@ -485,11 +485,11 @@ export default function PedidosInternosPage() {
                       {pedidoItems.map((item: any) => (
                         <div key={item.id} className="flex items-center justify-between text-sm border-b border-cyan-500/5 pb-2">
                           <div className="min-w-0">
-                            <p className="text-white truncate">{item.producto?.name || "N/A"}</p>
-                            <p className="text-xs text-gray-500">{item.producto?.category || "N/A"}</p>
+                            <p className="text-foreground truncate">{item.producto?.name || "N/A"}</p>
+                            <p className="text-xs text-muted-foreground">{item.producto?.category || "N/A"}</p>
                           </div>
                           <div className="text-right shrink-0 ml-2">
-                            <p className="text-white">{item.cantidad} ped.</p>
+                            <p className="text-foreground">{item.cantidad} ped.</p>
                             <p className="text-xs text-cyan-400">{item.cantidad_recibida} recib.</p>
                           </div>
                         </div>
@@ -506,25 +506,25 @@ export default function PedidosInternosPage() {
         <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Número</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Solicitante</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Items</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha Solicitud</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
-              <th className="text-right text-sm font-medium text-gray-400 p-4">Acciones</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Número</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Solicitante</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Items</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Fecha Solicitud</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
+              <th className="text-right text-sm font-medium text-muted-foreground p-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Cargando pedidos...
                 </td>
               </tr>
             ) : filteredPedidos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   No hay pedidos internos registrados
                 </td>
               </tr>
@@ -533,7 +533,7 @@ export default function PedidosInternosPage() {
                 <>
                   <tr
                     key={pedido.id}
-                    className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors cursor-pointer"
+                    className="border-b border-cyan-500/5 hover:bg-accent transition-colors cursor-pointer"
                     onClick={() => handleVerDetalle(pedido.id)}
                   >
                     <td className="p-4">
@@ -543,9 +543,9 @@ export default function PedidosInternosPage() {
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-purple-400" />
                         <div>
-                          <span className="text-white">{pedido.solicitante_nombre}</span>
+                          <span className="text-foreground">{pedido.solicitante_nombre}</span>
                           {pedido.origen_nombre && (
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <Warehouse className="w-3 h-3" /> desde {pedido.origen_nombre}
                             </p>
                           )}
@@ -553,11 +553,11 @@ export default function PedidosInternosPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="text-gray-400">
+                      <span className="text-muted-foreground">
                         {pedido.items_count} items ({pedido.items_total} unidades)
                       </span>
                     </td>
-                    <td className="p-4 text-gray-400">{formatDate(pedido.fecha_solicitud)}</td>
+                    <td className="p-4 text-muted-foreground">{formatDate(pedido.fecha_solicitud)}</td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(pedido.estado)}`}
@@ -611,26 +611,26 @@ export default function PedidosInternosPage() {
                           </Button>
                         )}
                         <ChevronRight
-                          className={`w-4 h-4 text-gray-400 transition-transform ${selectedPedido === pedido.id ? "rotate-90" : ""}`}
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${selectedPedido === pedido.id ? "rotate-90" : ""}`}
                         />
                       </div>
                     </td>
                   </tr>
                   {selectedPedido === pedido.id && (
-                    <tr className="bg-white/5">
+                    <tr className="bg-muted">
                       <td colSpan={6} className="p-6">
                         <div className="space-y-4">
-                          <h4 className="text-sm font-semibold text-white mb-3">Detalle del Pedido</h4>
+                          <h4 className="text-sm font-semibold text-foreground mb-3">Detalle del Pedido</h4>
                           {pedido.observaciones && (
                             <div className="mb-4 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                              <p className="text-sm text-gray-300">
+                              <p className="text-sm text-muted-foreground">
                                 <span className="font-medium text-cyan-400">Observaciones:</span> {pedido.observaciones}
                               </p>
                             </div>
                           )}
                           {pedido.motivo_rechazo && (
                             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                              <p className="text-sm text-gray-300">
+                              <p className="text-sm text-muted-foreground">
                                 <span className="font-medium text-red-400">Motivo del rechazo:</span>{" "}
                                 {pedido.motivo_rechazo}
                               </p>
@@ -639,21 +639,21 @@ export default function PedidosInternosPage() {
                           <table className="w-full">
                             <thead>
                               <tr className="border-b border-cyan-500/20">
-                                <th className="text-left text-xs font-medium text-gray-500 pb-2">Producto</th>
-                                <th className="text-left text-xs font-medium text-gray-500 pb-2">Categoría</th>
-                                <th className="text-right text-xs font-medium text-gray-500 pb-2">Cantidad</th>
-                                <th className="text-right text-xs font-medium text-gray-500 pb-2">Recibida</th>
-                                <th className="text-left text-xs font-medium text-gray-500 pb-2">Notas</th>
+                                <th className="text-left text-xs font-medium text-muted-foreground pb-2">Producto</th>
+                                <th className="text-left text-xs font-medium text-muted-foreground pb-2">Categoría</th>
+                                <th className="text-right text-xs font-medium text-muted-foreground pb-2">Cantidad</th>
+                                <th className="text-right text-xs font-medium text-muted-foreground pb-2">Recibida</th>
+                                <th className="text-left text-xs font-medium text-muted-foreground pb-2">Notas</th>
                               </tr>
                             </thead>
                             <tbody>
                               {pedidoItems.map((item: any) => (
                                 <tr key={item.id} className="border-b border-cyan-500/5">
-                                  <td className="py-2 text-sm text-white">{item.producto?.name || "N/A"}</td>
-                                  <td className="py-2 text-sm text-gray-400">{item.producto?.category || "N/A"}</td>
-                                  <td className="py-2 text-sm text-white text-right">{item.cantidad}</td>
+                                  <td className="py-2 text-sm text-foreground">{item.producto?.name || "N/A"}</td>
+                                  <td className="py-2 text-sm text-muted-foreground">{item.producto?.category || "N/A"}</td>
+                                  <td className="py-2 text-sm text-foreground text-right">{item.cantidad}</td>
                                   <td className="py-2 text-sm text-cyan-400 text-right">{item.cantidad_recibida}</td>
-                                  <td className="py-2 text-sm text-gray-400">{item.observaciones || "-"}</td>
+                                  <td className="py-2 text-sm text-muted-foreground">{item.observaciones || "-"}</td>
                                 </tr>
                               ))}
                             </tbody>

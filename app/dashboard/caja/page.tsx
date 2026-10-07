@@ -433,8 +433,8 @@ export default function CajaPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Caja</h1>
-            <p className="text-gray-400 text-sm">Control de caja y movimientos del día</p>
+            <h1 className="text-2xl font-bold text-foreground">Caja</h1>
+            <p className="text-muted-foreground text-sm">Control de caja y movimientos del día</p>
           </div>
         </div>
 
@@ -442,8 +442,8 @@ export default function CajaPage() {
           <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-yellow-500/20 text-yellow-400 mx-auto mb-4">
             <Wallet className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">No hay kiosko configurado</h3>
-          <p className="text-gray-400 mb-6">
+          <h3 className="text-xl font-bold text-foreground mb-2">No hay kiosko configurado</h3>
+          <p className="text-muted-foreground mb-6">
             Para usar la caja, primero necesitás configurar un kiosko en tu cuenta.
             <br />
             Andá a Configuración para crear tu primer kiosko.
@@ -464,8 +464,8 @@ export default function CajaPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Caja</h1>
-          <p className="text-gray-400 text-sm">Control de caja y movimientos del turno</p>
+          <h1 className="text-2xl font-bold text-foreground">Caja</h1>
+          <p className="text-muted-foreground text-sm">Control de caja y movimientos del turno</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <Button
@@ -477,14 +477,14 @@ export default function CajaPage() {
               setShowMovementModal(true)
             }}
             variant="outline"
-            className={`border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2 ${isOpen ? "" : "opacity-60"}`}
+            className={`border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2 ${isOpen ? "" : "opacity-60"}`}
           >
             <Plus className="w-4 h-4" />
             Movimiento
           </Button>
           <Button
             onClick={() => (isOpen ? setShowCloseModal(true) : setShowOpenModal(true))}
-            className={isOpen ? "bg-red-500 hover:bg-red-400 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
+            className={isOpen ? "bg-red-500 hover:bg-red-400 text-foreground" : "bg-cyan-500 hover:bg-cyan-400 text-black"}
           >
             {isOpen ? "Cerrar Caja" : "Abrir Caja"}
           </Button>
@@ -503,12 +503,12 @@ export default function CajaPage() {
               <Wallet className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Estado de caja</p>
+              <p className="text-sm text-muted-foreground">Estado de caja</p>
               <p className={`text-xl font-bold ${isOpen ? "text-green-400" : "text-red-400"}`}>
                 {isOpen ? "Caja Abierta" : "Caja Cerrada"}
               </p>
               {isOpen && currentRegister && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {currentRegister.shift ? `Turno ${currentRegister.shift} · ` : ""}
                   {currentRegister.cashier_name ? `${currentRegister.cashier_name} · ` : ""}
                   desde {new Date(currentRegister.opened_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
@@ -517,8 +517,8 @@ export default function CajaPage() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-400">Efectivo esperado en caja</p>
-            <p className="text-3xl font-bold text-white">{formatCurrency(currentBalance)}</p>
+            <p className="text-sm text-muted-foreground">Efectivo esperado en caja</p>
+            <p className="text-3xl font-bold text-foreground">{formatCurrency(currentBalance)}</p>
           </div>
         </div>
       </div>
@@ -531,14 +531,14 @@ export default function CajaPage() {
               <div className="flex items-center gap-3">
                 <PiggyBank className="w-7 h-7 text-amber-400" />
                 <div>
-                  <p className="text-xs text-gray-300">En la caja fuerte</p>
+                  <p className="text-xs text-muted-foreground">En la caja fuerte</p>
                   <p className="text-2xl font-bold text-amber-400">{formatCurrency(earnings.safe)}</p>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-gray-300">Ganado este mes (hasta hoy)</p>
+                <p className="text-xs text-muted-foreground">Ganado este mes (hasta hoy)</p>
                 <p className="text-2xl font-bold text-green-400">{formatCurrency(earnings.month)}</p>
-                <p className="text-xs text-gray-400">Hoy: {formatCurrency(earnings.today)}</p>
+                <p className="text-xs text-muted-foreground">Hoy: {formatCurrency(earnings.today)}</p>
               </div>
             </div>
             <Link href="/dashboard/caja/plata" className="text-sm text-cyan-400 hover:text-cyan-300">
@@ -550,108 +550,108 @@ export default function CajaPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Apertura</span>
+            <span className="text-sm text-muted-foreground">Apertura</span>
             <DollarSign className="w-5 h-5 text-cyan-400" />
           </div>
-          <p className="text-2xl font-bold text-white">{formatCurrency(openingBalance)}</p>
+          <p className="text-2xl font-bold text-foreground">{formatCurrency(openingBalance)}</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Ventas del turno</span>
+            <span className="text-sm text-muted-foreground">Ventas del turno</span>
             <TrendingUp className="w-5 h-5 text-green-400" />
           </div>
           <p className="text-2xl font-bold text-green-400">{formatCurrency(totalSales)}</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Egresos</span>
+            <span className="text-sm text-muted-foreground">Egresos</span>
             <TrendingDown className="w-5 h-5 text-red-400" />
           </div>
           <p className="text-2xl font-bold text-red-400">{formatCurrency(totalOut)}</p>
-          {totalIn > 0 && <p className="text-xs text-gray-500 mt-1">Ingresos: {formatCurrency(totalIn)}</p>}
+          {totalIn > 0 && <p className="text-xs text-muted-foreground mt-1">Ingresos: {formatCurrency(totalIn)}</p>}
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400">Transacciones</span>
+            <span className="text-sm text-muted-foreground">Transacciones</span>
             <Wallet className="w-5 h-5 text-cyan-400" />
           </div>
-          <p className="text-2xl font-bold text-white">{totalTransactions}</p>
+          <p className="text-2xl font-bold text-foreground">{totalTransactions}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Payment Methods Breakdown */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Desglose por Método de Pago</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Desglose por Método de Pago</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
                   <Banknote className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">Efectivo</p>
-                  <p className="text-xs text-gray-500">{salesByMethod.cashCount} transacciones</p>
+                  <p className="text-foreground font-medium">Efectivo</p>
+                  <p className="text-xs text-muted-foreground">{salesByMethod.cashCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.cash)}</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(salesByMethod.cash)}</p>
             </div>
 
-            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">Tarjeta</p>
-                  <p className="text-xs text-gray-500">{salesByMethod.cardCount} transacciones</p>
+                  <p className="text-foreground font-medium">Tarjeta</p>
+                  <p className="text-xs text-muted-foreground">{salesByMethod.cardCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.card)}</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(salesByMethod.card)}</p>
             </div>
 
-            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <QrCode className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">QR / Transferencia</p>
-                  <p className="text-xs text-gray-500">{salesByMethod.qrCount} transacciones</p>
+                  <p className="text-foreground font-medium">QR / Transferencia</p>
+                  <p className="text-xs text-muted-foreground">{salesByMethod.qrCount} transacciones</p>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.qr)}</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(salesByMethod.qr)}</p>
             </div>
 
             {salesByMethod.other > 0 && (
-              <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
-                <p className="text-white font-medium">Otros métodos</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(salesByMethod.other)}</p>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
+                <p className="text-foreground font-medium">Otros métodos</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrency(salesByMethod.other)}</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Movements */}
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Movimientos del turno</h3>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Movimientos del turno</h3>
           {movements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <TrendingDown className="w-12 h-12 mb-3 opacity-50" />
               <p className="text-sm">No hay movimientos registrados</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {movements.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-muted">
                   <div className="min-w-0">
-                    <p className="text-white font-medium truncate">{m.notes || MOVEMENT_LABEL[m.type] || "Movimiento"}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-foreground font-medium truncate">{m.notes || MOVEMENT_LABEL[m.type] || "Movimiento"}</p>
+                    <p className="text-xs text-muted-foreground">
                       {MOVEMENT_LABEL[m.type] || m.type} ·{" "}
                       {new Date(m.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
                     </p>
@@ -668,13 +668,13 @@ export default function CajaPage() {
       </div>
 
       {/* Historial de cierres */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <History className="w-5 h-5 text-cyan-400" />
           Historial de cierres
         </h3>
         {history.length === 0 ? (
-          <p className="text-sm text-gray-500 py-6 text-center">Todavía no hay cierres de caja.</p>
+          <p className="text-sm text-muted-foreground py-6 text-center">Todavía no hay cierres de caja.</p>
         ) : (
           <>
             {/* Mobile: cards */}
@@ -683,15 +683,15 @@ export default function CajaPage() {
                 const diff = Number(h.cash_difference ?? 0)
                 const hasWithdrawal = Number(h.withdrawn_amount ?? 0) > 0
                 return (
-                  <div key={h.id} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div key={h.id} className="rounded-lg border border-border bg-muted p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-white font-medium">
+                        <p className="text-foreground font-medium">
                           {h.closed_at
                             ? new Date(h.closed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
                             : "-"}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {h.shift || "-"}
                           {h.cashier_name ? ` · ${h.cashier_name}` : ""}
                         </p>
@@ -706,26 +706,26 @@ export default function CajaPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-xs text-gray-500">Ganado</p>
+                        <p className="text-xs text-muted-foreground">Ganado</p>
                         <p className="text-green-400 font-semibold">
                           {h.shift_sales_total != null ? formatCurrency(Number(h.shift_sales_total)) : "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Esperado</p>
-                        <p className="text-gray-300">{h.expected_cash != null ? formatCurrency(Number(h.expected_cash)) : "-"}</p>
+                        <p className="text-xs text-muted-foreground">Esperado</p>
+                        <p className="text-muted-foreground">{h.expected_cash != null ? formatCurrency(Number(h.expected_cash)) : "-"}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Contado</p>
-                        <p className="text-gray-300">{h.counted_cash != null ? formatCurrency(Number(h.counted_cash)) : "-"}</p>
+                        <p className="text-xs text-muted-foreground">Contado</p>
+                        <p className="text-muted-foreground">{h.counted_cash != null ? formatCurrency(Number(h.counted_cash)) : "-"}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Queda</p>
-                        <p className="text-gray-300">{h.left_for_next != null ? formatCurrency(Number(h.left_for_next)) : "-"}</p>
+                        <p className="text-xs text-muted-foreground">Queda</p>
+                        <p className="text-muted-foreground">{h.left_for_next != null ? formatCurrency(Number(h.left_for_next)) : "-"}</p>
                       </div>
                     </div>
                     {hasWithdrawal && (
-                      <p className="text-xs text-gray-400 pt-2 border-t border-white/5">
+                      <p className="text-xs text-muted-foreground pt-2 border-t border-border">
                         Retiro: {formatCurrency(Number(h.withdrawn_amount))} → {DESTINATION_LABEL[h.withdrawn_destination || ""] || ""}
                       </p>
                     )}
@@ -738,7 +738,7 @@ export default function CajaPage() {
             <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-gray-500 border-b border-white/10">
+                <tr className="text-left text-muted-foreground border-b border-border">
                   <th className="py-2 pr-4 font-medium">Cierre</th>
                   <th className="py-2 pr-4 font-medium">Turno</th>
                   <th className="py-2 pr-4 font-medium text-right">Ganado</th>
@@ -754,7 +754,7 @@ export default function CajaPage() {
                   const diff = Number(h.cash_difference ?? 0)
                   const hasWithdrawal = Number(h.withdrawn_amount ?? 0) > 0
                   return (
-                    <tr key={h.id} className="border-b border-white/5 text-gray-300">
+                    <tr key={h.id} className="border-b border-border text-muted-foreground">
                       <td className="py-3 pr-4 whitespace-nowrap">
                         {h.closed_at
                           ? new Date(h.closed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
@@ -762,7 +762,7 @@ export default function CajaPage() {
                       </td>
                       <td className="py-3 pr-4 whitespace-nowrap">
                         {h.shift || "-"}
-                        {h.cashier_name ? <span className="text-gray-500"> · {h.cashier_name}</span> : null}
+                        {h.cashier_name ? <span className="text-muted-foreground"> · {h.cashier_name}</span> : null}
                       </td>
                       <td className="py-3 pr-4 text-right text-green-400 font-semibold">
                         {h.shift_sales_total != null ? formatCurrency(Number(h.shift_sales_total)) : "-"}
@@ -805,13 +805,13 @@ export default function CajaPage() {
 
       {/* Open Cash Modal */}
       <Dialog open={showOpenModal} onOpenChange={setShowOpenModal}>
-        <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+        <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Abrir Caja</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-gray-300">Turno</Label>
+              <Label className="text-muted-foreground">Turno</Label>
               <div className="grid grid-cols-3 gap-2">
                 {SHIFTS.map((s) => (
                   <button
@@ -821,7 +821,7 @@ export default function CajaPage() {
                     className={`py-2 rounded-lg border text-sm transition-colors ${
                       shift === s
                         ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                        : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
+                        : "border-cyan-500/10 text-muted-foreground hover:border-cyan-500/30"
                     }`}
                   >
                     {s}
@@ -830,15 +830,15 @@ export default function CajaPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-gray-300">Saldo inicial</Label>
+              <Label className="text-muted-foreground">Saldo inicial</Label>
               <Input
                 type="number"
                 value={newOpeningBalance}
                 onChange={(e) => setNewOpeningBalance(e.target.value)}
                 placeholder="$0"
-                className="bg-[#0d1424] border-cyan-500/20 text-white"
+                className="bg-popover border-cyan-500/20 text-foreground"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {lastClosed && (lastClosed.left_for_next ?? lastClosed.closing_balance) != null
                   ? `Quedó en la caja del turno anterior: ${formatCurrency(Number(lastClosed.left_for_next ?? lastClosed.closing_balance))}. Corregilo si contaste otra cosa.`
                   : "Ingresá el dinero con el que iniciás la caja"}
@@ -849,7 +849,7 @@ export default function CajaPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowOpenModal(false)}
-                className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
               >
                 Cancelar
               </Button>
@@ -905,17 +905,17 @@ function MovementModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Movimiento de caja</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="text-gray-300">Tipo</Label>
+            <Label className="text-muted-foreground">Tipo</Label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="w-full h-10 rounded-md bg-[#0d1424] border border-cyan-500/20 text-white px-3 text-sm"
+              className="w-full h-10 rounded-md bg-popover border border-cyan-500/20 text-foreground px-3 text-sm"
             >
               {MOVEMENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -926,23 +926,23 @@ function MovementModal({
             </select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-300">Descripción (opcional)</Label>
+            <Label className="text-muted-foreground">Descripción (opcional)</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ej: compra de insumos de limpieza"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
+              className="bg-popover border-cyan-500/20 text-foreground"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-300">Monto</Label>
+            <Label className="text-muted-foreground">Monto</Label>
             <Input
               type="number"
               min="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="$0"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
+              className="bg-popover border-cyan-500/20 text-foreground"
             />
             {formError && <p className="text-sm text-red-400">{formError}</p>}
           </div>
@@ -951,7 +951,7 @@ function MovementModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
             >
               Cancelar
             </Button>
@@ -1015,7 +1015,7 @@ function CloseCashModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Cerrar Caja — Arqueo</DialogTitle>
         </DialogHeader>
@@ -1023,18 +1023,18 @@ function CloseCashModal({
           <div className="flex justify-between p-4 rounded-lg bg-green-500/10 border border-green-500/20">
             <div>
               <p className="text-green-300">Ganado en este turno</p>
-              <p className="text-xs text-gray-400">Todas las ventas: se suma completo a la Caja fuerte</p>
+              <p className="text-xs text-muted-foreground">Todas las ventas: se suma completo a la Caja fuerte</p>
             </div>
             <span className="text-green-400 font-bold">{formatCurrency(shiftSales)}</span>
           </div>
 
-          <div className="flex justify-between p-4 rounded-lg bg-white/5">
-            <span className="text-gray-400">Efectivo esperado (teórico)</span>
-            <span className="text-white font-bold">{formatCurrency(expectedCash)}</span>
+          <div className="flex justify-between p-4 rounded-lg bg-muted">
+            <span className="text-muted-foreground">Efectivo esperado (teórico)</span>
+            <span className="text-foreground font-bold">{formatCurrency(expectedCash)}</span>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-300">Efectivo contado en caja</Label>
+            <Label className="text-muted-foreground">Efectivo contado en caja</Label>
             <Input
               type="number"
               min="0"
@@ -1042,9 +1042,9 @@ function CloseCashModal({
               onChange={(e) => setCounted(e.target.value)}
               placeholder="$0"
               autoFocus
-              className="bg-[#0d1424] border-cyan-500/20 text-white text-xl text-center py-5"
+              className="bg-popover border-cyan-500/20 text-foreground text-xl text-center py-5"
             />
-            <p className="text-xs text-gray-500">Contá el efectivo físico de la caja antes de confirmar el cierre</p>
+            <p className="text-xs text-muted-foreground">Contá el efectivo físico de la caja antes de confirmar el cierre</p>
           </div>
 
           {counted !== "" && (
@@ -1064,19 +1064,19 @@ function CloseCashModal({
 
           <div className="space-y-3 p-4 rounded-lg border border-cyan-500/10 bg-white/[0.03]">
             <div className="space-y-2">
-              <Label className="text-gray-300">Queda en la caja para el próximo turno (cambio)</Label>
+              <Label className="text-muted-foreground">Queda en la caja para el próximo turno (cambio)</Label>
               <Input
                 type="number"
                 min="0"
                 value={left}
                 onChange={(e) => setLeft(e.target.value)}
                 placeholder="$0"
-                className="bg-[#0d1424] border-cyan-500/20 text-white"
+                className="bg-popover border-cyan-500/20 text-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300">El efectivo que sacás de la caja va a</Label>
+              <Label className="text-muted-foreground">El efectivo que sacás de la caja va a</Label>
               <div className="grid grid-cols-2 gap-2">
                 {(["safe", "owner"] as const).map((d) => (
                   <button
@@ -1086,7 +1086,7 @@ function CloseCashModal({
                     className={`py-2 rounded-lg border text-sm transition-colors ${
                       destination === d
                         ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                        : "border-cyan-500/10 text-gray-400 hover:border-cyan-500/30"
+                        : "border-cyan-500/10 text-muted-foreground hover:border-cyan-500/30"
                     }`}
                   >
                     {DESTINATION_LABEL[d]}
@@ -1097,21 +1097,21 @@ function CloseCashModal({
 
             {counted !== "" && (
               <div className="flex justify-between text-sm pt-1">
-                <span className="text-gray-400">
+                <span className="text-muted-foreground">
                   {destination === "safe" ? "Efectivo a la caja fuerte" : "Efectivo que retira el dueño"}
                 </span>
-                <span className="text-white font-semibold">{formatCurrency(withdrawnAmount)}</span>
+                <span className="text-foreground font-semibold">{formatCurrency(withdrawnAmount)}</span>
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-300">Notas (opcional)</Label>
+            <Label className="text-muted-foreground">Notas (opcional)</Label>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ej: faltante por vuelto mal dado"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
+              className="bg-popover border-cyan-500/20 text-foreground"
             />
           </div>
 
@@ -1120,14 +1120,14 @@ function CloseCashModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={!canSubmit || submitting}
-              className="flex-1 bg-red-500 hover:bg-red-400 text-white font-semibold"
+              className="flex-1 bg-red-500 hover:bg-red-400 text-foreground font-semibold"
             >
               {submitting ? "Cerrando..." : "Confirmar Cierre"}
             </Button>

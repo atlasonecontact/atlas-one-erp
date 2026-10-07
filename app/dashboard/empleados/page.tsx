@@ -185,9 +185,9 @@ export default function EmpleadosPage() {
   if (kioscos.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Empleados</h1>
-        <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
-          <p className="text-gray-400">Primero debes crear un kiosco para agregar empleados.</p>
+        <h1 className="text-2xl font-bold text-foreground">Empleados</h1>
+        <div className="border border-cyan-500/20 rounded-xl bg-card/50 p-12 text-center">
+          <p className="text-muted-foreground">Primero debes crear un kiosco para agregar empleados.</p>
           <Button className="mt-4 bg-cyan-500 hover:bg-cyan-400 text-black">Crear Kiosco</Button>
         </div>
       </div>
@@ -199,8 +199,8 @@ export default function EmpleadosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Empleados</h1>
-          <p className="text-gray-400 text-sm">Gestiona tu equipo de trabajo</p>
+          <h1 className="text-2xl font-bold text-foreground">Empleados</h1>
+          <p className="text-muted-foreground text-sm">Gestiona tu equipo de trabajo</p>
         </div>
         <Button
           onClick={() => {
@@ -236,20 +236,20 @@ export default function EmpleadosPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Total empleados</p>
-          <p className="text-2xl font-bold text-white">{employees.length}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Total empleados</p>
+          <p className="text-2xl font-bold text-foreground">{employees.length}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Activos</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Activos</p>
           <p className="text-2xl font-bold text-green-400">{employees.filter((e) => e.status === "active").length}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Inactivos</p>
-          <p className="text-2xl font-bold text-gray-400">{employees.filter((e) => e.status !== "active").length}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Inactivos</p>
+          <p className="text-2xl font-bold text-muted-foreground">{employees.filter((e) => e.status !== "active").length}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Con permisos full</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Con permisos full</p>
           <p className="text-2xl font-bold text-cyan-400">
             {employees.filter((e) => getPermissionCount(e.permissions) === 4).length}
           </p>
@@ -258,13 +258,13 @@ export default function EmpleadosPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar empleados..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+          className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
@@ -272,14 +272,14 @@ export default function EmpleadosPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 animate-pulse">
+            <div key={i} className="rounded-xl border border-cyan-500/10 bg-card p-5 animate-pulse">
               <div className="h-20 bg-gray-700 rounded" />
             </div>
           ))}
         </div>
       ) : filteredEmployees.length === 0 ? (
-        <div className="border border-cyan-500/20 rounded-xl bg-[#0a0f1a]/50 p-12 text-center">
-          <p className="text-gray-400">No hay empleados registrados en este kiosco.</p>
+        <div className="border border-cyan-500/20 rounded-xl bg-card/50 p-12 text-center">
+          <p className="text-muted-foreground">No hay empleados registrados en este kiosco.</p>
           <Button
             onClick={() => {
               setEditingEmployee(null)
@@ -296,7 +296,7 @@ export default function EmpleadosPage() {
           {filteredEmployees.map((employee) => (
             <div
               key={employee.id}
-              className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5 hover:border-cyan-500/30 transition-colors"
+              className="rounded-xl border border-cyan-500/10 bg-card p-5 hover:border-cyan-500/30 transition-colors"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -304,15 +304,15 @@ export default function EmpleadosPage() {
                     {employee.name?.charAt(0) || "?"}
                   </div>
                   <div>
-                    <p className="text-white font-medium">{employee.name}</p>
-                    <p className="text-xs text-gray-500 truncate max-w-[150px]">@{employee.username}</p>
+                    <p className="text-foreground font-medium">{employee.name}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[150px]">@{employee.username}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleEdit(employee)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <Edit2 className="w-4 h-4" />
                 </Button>
@@ -347,40 +347,40 @@ export default function EmpleadosPage() {
               <div className="space-y-2 mb-4 text-sm">
                 {/* PIN: no se puede mostrar el valor (está hasheado), sólo si tiene uno configurado */}
                 {employee.pin_hash && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <KeyRound className="w-3 h-3" />
-                    <span className="text-gray-300">PIN configurado</span>
+                    <span className="text-muted-foreground">PIN configurado</span>
                   </div>
                 )}
 
                 {/* Phone */}
                 {employee.phone && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="w-3 h-3" />
-                    <span className="text-gray-300">{employee.phone}</span>
+                    <span className="text-muted-foreground">{employee.phone}</span>
                   </div>
                 )}
 
                 {/* Shifts */}
                 {employee.shifts && employee.shifts.length > 0 && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-3 h-3" />
-                    <span className="text-gray-300">{formatShifts(employee.shifts)}</span>
+                    <span className="text-muted-foreground">{formatShifts(employee.shifts)}</span>
                   </div>
                 )}
 
                 {/* Hire date */}
                 {employee.hire_date && (
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="w-3 h-3" />
-                    <span className="text-gray-300">
+                    <span className="text-muted-foreground">
                       Desde {new Date(employee.hire_date).toLocaleDateString("es-AR")}
                     </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-gray-400">Permisos:</span>
+                  <span className="text-muted-foreground">Permisos:</span>
                   <span className="text-cyan-400">{getPermissionCount(employee.permissions)}/4</span>
                 </div>
                 <div className="flex flex-wrap gap-1">

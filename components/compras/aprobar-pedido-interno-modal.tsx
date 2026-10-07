@@ -77,7 +77,7 @@ export function AprobarPedidoInternoModal({ open, onClose, pedido, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Warehouse className="w-5 h-5 text-cyan-400" />
@@ -86,10 +86,10 @@ export function AprobarPedidoInternoModal({ open, onClose, pedido, onSuccess }: 
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {pedido.solicitante_nombre ? (
               <>
-                Pedido de <span className="text-white font-medium">{pedido.solicitante_nombre}</span>. Elegí de qué
+                Pedido de <span className="text-foreground font-medium">{pedido.solicitante_nombre}</span>. Elegí de qué
                 local sale esta mercadería — se le va a restar el stock a ese local y se le va a sumar a quien pidió.
               </>
             ) : (
@@ -98,14 +98,14 @@ export function AprobarPedidoInternoModal({ open, onClose, pedido, onSuccess }: 
           </p>
 
           <div className="space-y-2">
-            <Label className="text-gray-300">Local de origen</Label>
+            <Label className="text-muted-foreground">Local de origen</Label>
             <Select value={origenKioscoId} onValueChange={setOrigenKioscoId}>
-              <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+              <SelectTrigger className="bg-popover border-cyan-500/20 text-foreground">
                 <SelectValue placeholder={loading ? "Cargando..." : "Seleccionar local"} />
               </SelectTrigger>
-              <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+              <SelectContent className="bg-popover border-cyan-500/20">
                 {kioscos.map((k) => (
-                  <SelectItem key={k.id} value={k.id} className="text-white hover:bg-white/10">
+                  <SelectItem key={k.id} value={k.id} className="text-foreground hover:bg-accent">
                     {k.name}
                   </SelectItem>
                 ))}
@@ -121,7 +121,7 @@ export function AprobarPedidoInternoModal({ open, onClose, pedido, onSuccess }: 
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
             >
               Cancelar
             </Button>

@@ -554,9 +554,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   if (showCredentials && generatedCredentials) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[550px] bg-[#0a0f1a] border-cyan-500/20">
+        <DialogContent className="sm:max-w-[550px] bg-card border-cyan-500/20">
           <DialogHeader>
-            <DialogTitle className="text-white">Empleado Creado Exitosamente</DialogTitle>
+            <DialogTitle className="text-foreground">Empleado Creado Exitosamente</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -574,8 +574,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label className="text-gray-300">Nombre</Label>
-                <Input value={formData.name} readOnly className="bg-[#0d1424] border-cyan-500/20 text-white" />
+                <Label className="text-muted-foreground">Nombre</Label>
+                <Input value={formData.name} readOnly className="bg-popover border-cyan-500/20 text-foreground" />
               </div>
 
               {/* Login credentials */}
@@ -583,31 +583,31 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 <p className="text-sm font-medium text-cyan-400">Credenciales de Acceso al Sistema</p>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Email</Label>
+                  <Label className="text-muted-foreground">Email</Label>
                   <Input
                     value={generatedCredentials.email}
                     readOnly
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
+                    className="bg-popover border-cyan-500/20 text-foreground font-mono text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Contraseña</Label>
+                  <Label className="text-muted-foreground">Contraseña</Label>
                   <Input
                     value={generatedCredentials.password}
                     readOnly
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-lg tracking-wider"
+                    className="bg-popover border-cyan-500/20 text-foreground font-mono text-lg tracking-wider"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Usuario</Label>
+                  <Label className="text-muted-foreground">Usuario</Label>
                   <Input
                     value={generatedCredentials.username}
                     readOnly
-                    className="bg-[#0d1424] border-cyan-500/20 text-white font-mono text-sm"
+                    className="bg-popover border-cyan-500/20 text-foreground font-mono text-sm"
                   />
                 </div>
               </div>
@@ -661,9 +661,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
   // Main form
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-[#0a0f1a] border-cyan-500/20 max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[600px] bg-card border-cyan-500/20 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-white">{employee ? "Editar Empleado" : "Agregar Nuevo Empleado"}</DialogTitle>
+          <DialogTitle className="text-foreground">{employee ? "Editar Empleado" : "Agregar Nuevo Empleado"}</DialogTitle>
         </DialogHeader>
 
         {/* Tabs */}
@@ -672,7 +672,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             type="button"
             onClick={() => setActiveTab("info")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-              activeTab === "info" ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white hover:bg-white/5"
+              activeTab === "info" ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground hover:bg-accent"
             }`}
           >
             <User className="w-4 h-4" />
@@ -684,7 +684,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
               activeTab === "shifts"
                 ? "bg-cyan-500/20 text-cyan-400"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
             }`}
           >
             <Clock className="w-4 h-4" />
@@ -696,7 +696,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
               activeTab === "permissions"
                 ? "bg-cyan-500/20 text-cyan-400"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
             }`}
           >
             <Shield className="w-4 h-4" />
@@ -711,7 +711,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               {/* Basic Info - Name, Document, Position */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="name" className="text-gray-300">
+                  <Label htmlFor="name" className="text-muted-foreground">
                     Nombre Completo <span className="text-red-400">*</span>
                   </Label>
                   <Input
@@ -719,14 +719,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Juan Pérez"
-                    className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.name ? "border-red-500" : ""}`}
+                    className={`bg-popover border-cyan-500/20 text-foreground ${errors.name ? "border-red-500" : ""}`}
                     required
                   />
                   <FieldError error={errors.name} />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="document_id" className="text-gray-300">
+                  <Label htmlFor="document_id" className="text-muted-foreground">
                     DNI / Documento
                   </Label>
                   <Input
@@ -734,12 +734,12 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     value={formData.document_id}
                     onChange={(e) => setFormData({ ...formData, document_id: e.target.value })}
                     placeholder="12.345.678"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="bg-popover border-cyan-500/20 text-foreground"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="position" className="text-gray-300">
+                  <Label htmlFor="position" className="text-muted-foreground">
                     Puesto
                   </Label>
                   <Input
@@ -747,20 +747,20 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                     placeholder="Cajero"
-                    className="bg-[#0d1424] border-cyan-500/20 text-white"
+                    className="bg-popover border-cyan-500/20 text-foreground"
                   />
                 </div>
               </div>
 
               {/* Contact Info */}
               <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <Phone className="w-4 h-4" />
                   Contacto
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-gray-300">
+                    <Label htmlFor="phone" className="text-muted-foreground">
                       Teléfono
                     </Label>
                     <Input
@@ -772,13 +772,13 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         validateField("phone", formData.phone)
                       }}
                       placeholder="+54 11 1234-5678"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.phone ? "border-red-500" : ""}`}
+                      className={`bg-popover border-cyan-500/20 text-foreground ${errors.phone ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.phone} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">
-                      Email <span className="text-gray-500 text-xs">(opcional)</span>
+                    <Label htmlFor="email" className="text-muted-foreground">
+                      Email <span className="text-muted-foreground text-xs">(opcional)</span>
                     </Label>
                     <Input
                       id="email"
@@ -790,10 +790,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         validateField("email", formData.email)
                       }}
                       placeholder="empleado@email.com"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.email ? "border-red-500" : ""}`}
+                      className={`bg-popover border-cyan-500/20 text-foreground ${errors.email ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.email} />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Se usará para inicio de sesión. Si no se ingresa, se genera automáticamente.
                     </p>
                   </div>
@@ -802,13 +802,13 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
               {/* Dates & Salary */}
               <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Fechas y Salario
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="hire_date" className="text-gray-300">
+                    <Label htmlFor="hire_date" className="text-muted-foreground">
                       Ingreso
                     </Label>
                     <Input
@@ -816,11 +816,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       type="date"
                       value={formData.hire_date}
                       onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-popover border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="birth_date" className="text-gray-300">
+                    <Label htmlFor="birth_date" className="text-muted-foreground">
                       Fecha Nac.
                     </Label>
                     <Input
@@ -828,11 +828,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       type="date"
                       value={formData.birth_date}
                       onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-popover border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salary" className="text-gray-300">
+                    <Label htmlFor="salary" className="text-muted-foreground">
                       Salario $
                     </Label>
                     <Input
@@ -851,7 +851,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                         validateField("salary", formData.salary)
                       }}
                       placeholder="50000"
-                      className={`bg-[#0d1424] border-cyan-500/20 text-white ${errors.salary ? "border-red-500" : ""}`}
+                      className={`bg-popover border-cyan-500/20 text-foreground ${errors.salary ? "border-red-500" : ""}`}
                     />
                     <FieldError error={errors.salary} />
                   </div>
@@ -860,7 +860,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
               {/* Address */}
               <div className="space-y-2">
-                <Label htmlFor="address" className="text-gray-300 flex items-center gap-2">
+                <Label htmlFor="address" className="text-muted-foreground flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
                   Dirección
                 </Label>
@@ -869,16 +869,16 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Av. Corrientes 1234, CABA"
-                  className="bg-[#0d1424] border-cyan-500/20 text-white"
+                  className="bg-popover border-cyan-500/20 text-foreground"
                 />
               </div>
 
               {/* Emergency Contact */}
               <div className="pt-2">
-                <h4 className="text-sm font-medium text-gray-400 mb-3">Contacto de Emergencia</h4>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Contacto de Emergencia</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emergency_contact" className="text-gray-300">
+                    <Label htmlFor="emergency_contact" className="text-muted-foreground">
                       Nombre
                     </Label>
                     <Input
@@ -886,11 +886,11 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.emergency_contact}
                       onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
                       placeholder="María García"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-popover border-cyan-500/20 text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="emergency_phone" className="text-gray-300">
+                    <Label htmlFor="emergency_phone" className="text-muted-foreground">
                       Teléfono
                     </Label>
                     <Input
@@ -898,7 +898,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       value={formData.emergency_phone}
                       onChange={(e) => setFormData({ ...formData, emergency_phone: e.target.value })}
                       placeholder="+54 11 9876-5432"
-                      className="bg-[#0d1424] border-cyan-500/20 text-white"
+                      className="bg-popover border-cyan-500/20 text-foreground"
                     />
                   </div>
                 </div>
@@ -906,7 +906,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-gray-300 flex items-center gap-2">
+                <Label htmlFor="notes" className="text-muted-foreground flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Notas
                 </Label>
@@ -916,7 +916,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Observaciones sobre el empleado..."
                   rows={3}
-                  className="w-full bg-[#0d1424] border border-cyan-500/20 text-white rounded-md p-3 text-sm resize-none focus:border-cyan-500/50 outline-none"
+                  className="w-full bg-popover border border-cyan-500/20 text-foreground rounded-md p-3 text-sm resize-none focus:border-cyan-500/50 outline-none"
                 />
               </div>
             </div>
@@ -925,7 +925,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {/* Tab: Shifts */}
           {activeTab === "shifts" && (
             <div className="space-y-4 py-4">
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Selecciona los días que trabaja el empleado y configura sus horarios.
               </p>
 
@@ -941,7 +941,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         hasShift
                           ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                          : "bg-white/5 text-gray-400 border border-transparent hover:bg-white/10"
+                          : "bg-muted text-muted-foreground border border-transparent hover:bg-accent"
                       }`}
                     >
                       {day.short}
@@ -955,9 +955,9 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 {DAYS.filter((day) => shifts.some((s) => s.day_of_week === day.value)).map((day) => {
                   const shift = shifts.find((s) => s.day_of_week === day.value)!
                   return (
-                    <div key={day.value} className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
+                    <div key={day.value} className="p-4 rounded-lg bg-muted border border-cyan-500/10">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium text-white">{day.label}</span>
+                        <span className="font-medium text-foreground">{day.label}</span>
                         <button
                           type="button"
                           onClick={() => toggleShiftDay(day.value)}
@@ -968,39 +968,39 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="space-y-1">
-                          <Label className="text-xs text-gray-400">Entrada</Label>
+                          <Label className="text-xs text-muted-foreground">Entrada</Label>
                           <Input
                             type="time"
                             value={shift.start_time}
                             onChange={(e) => updateShift(day.value, "start_time", e.target.value)}
-                            className="bg-[#0d1424] border-cyan-500/20 text-white text-sm"
+                            className="bg-popover border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs text-gray-400">Salida</Label>
+                          <Label className="text-xs text-muted-foreground">Salida</Label>
                           <Input
                             type="time"
                             value={shift.end_time}
                             onChange={(e) => updateShift(day.value, "end_time", e.target.value)}
-                            className="bg-[#0d1424] border-cyan-500/20 text-white text-sm"
+                            className="bg-popover border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs text-gray-400">Break inicio</Label>
+                          <Label className="text-xs text-muted-foreground">Break inicio</Label>
                           <Input
                             type="time"
                             value={shift.break_start || ""}
                             onChange={(e) => updateShift(day.value, "break_start", e.target.value)}
-                            className="bg-[#0d1424] border-cyan-500/20 text-white text-sm"
+                            className="bg-popover border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs text-gray-400">Break fin</Label>
+                          <Label className="text-xs text-muted-foreground">Break fin</Label>
                           <Input
                             type="time"
                             value={shift.break_end || ""}
                             onChange={(e) => updateShift(day.value, "break_end", e.target.value)}
-                            className="bg-[#0d1424] border-cyan-500/20 text-white text-sm"
+                            className="bg-popover border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                       </div>
@@ -1009,7 +1009,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                 })}
 
                 {shifts.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p>No hay turnos configurados</p>
                     <p className="text-sm">Selecciona los días de trabajo arriba</p>
@@ -1023,8 +1023,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {activeTab === "permissions" && (
             <div className="space-y-4 py-4">
               <div className="space-y-3">
-                <Label className="text-gray-300">¿Qué puede hacer este empleado?</Label>
-                <p className="text-xs text-gray-500">
+                <Label className="text-muted-foreground">¿Qué puede hacer este empleado?</Label>
+                <p className="text-xs text-muted-foreground">
                   Elegí un rol para autocompletar los permisos. Después podés ajustarlos a mano.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1039,7 +1039,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
                         selectedPreset === key
                           ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
-                          : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                          : "bg-muted border-cyan-500/10 text-muted-foreground hover:bg-accent"
                       }`}
                     >
                       <span className="block text-base mb-1">{preset.emoji}</span>
@@ -1052,7 +1052,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
                       selectedPreset === "personalizado"
                         ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
-                        : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                        : "bg-muted border-cyan-500/10 text-muted-foreground hover:bg-accent"
                     }`}
                   >
                     <span className="block text-base mb-1">🛠️</span>
@@ -1062,10 +1062,10 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               </div>
 
               <div className="space-y-3">
-                <Label className="text-gray-300">Permisos del empleado</Label>
+                <Label className="text-muted-foreground">Permisos del empleado</Label>
 
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_sell"
                       checked={formData.permissions.can_sell}
@@ -1078,14 +1078,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_sell" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_sell" className="text-sm text-foreground cursor-pointer block">
                         Puede realizar ventas
                       </label>
-                      <p className="text-xs text-gray-500">Acceso al punto de venta</p>
+                      <p className="text-xs text-muted-foreground">Acceso al punto de venta</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_open_register"
                       checked={formData.permissions.can_open_register}
@@ -1098,14 +1098,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_open_register" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_open_register" className="text-sm text-foreground cursor-pointer block">
                         💵 Abrir caja
                       </label>
-                      <p className="text-xs text-gray-500">Abrir una caja/turno asignado</p>
+                      <p className="text-xs text-muted-foreground">Abrir una caja/turno asignado</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_close_register"
                       checked={formData.permissions.can_close_register}
@@ -1118,14 +1118,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_close_register" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_close_register" className="text-sm text-foreground cursor-pointer block">
                         💰 Cerrar caja
                       </label>
-                      <p className="text-xs text-gray-500">Realizar el cierre de su caja</p>
+                      <p className="text-xs text-muted-foreground">Realizar el cierre de su caja</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_collect_payments"
                       checked={formData.permissions.can_collect_payments}
@@ -1138,14 +1138,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_collect_payments" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_collect_payments" className="text-sm text-foreground cursor-pointer block">
                         💳 Cobrar
                       </label>
-                      <p className="text-xs text-gray-500">Efectivo, tarjetas, QR, wallets, etc.</p>
+                      <p className="text-xs text-muted-foreground">Efectivo, tarjetas, QR, wallets, etc.</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_process_returns"
                       checked={formData.permissions.can_process_returns}
@@ -1158,14 +1158,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_process_returns" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_process_returns" className="text-sm text-foreground cursor-pointer block">
                         ↩️ Devoluciones
                       </label>
-                      <p className="text-xs text-gray-500">Según límites configurados</p>
+                      <p className="text-xs text-muted-foreground">Según límites configurados</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_view_reports"
                       checked={formData.permissions.can_view_reports}
@@ -1178,14 +1178,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_view_reports" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_view_reports" className="text-sm text-foreground cursor-pointer block">
                         Puede ver reportes
                       </label>
-                      <p className="text-xs text-gray-500">Acceso a estadísticas y ventas</p>
+                      <p className="text-xs text-muted-foreground">Acceso a estadísticas y ventas</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_view_stock"
                       checked={formData.permissions.can_view_stock}
@@ -1198,14 +1198,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_view_stock" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_view_stock" className="text-sm text-foreground cursor-pointer block">
                         📦 Consultar stock
                       </label>
-                      <p className="text-xs text-gray-500">Ver disponibilidad</p>
+                      <p className="text-xs text-muted-foreground">Ver disponibilidad</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_manage_inventory"
                       checked={formData.permissions.can_manage_inventory}
@@ -1218,14 +1218,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_manage_inventory" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_manage_inventory" className="text-sm text-foreground cursor-pointer block">
                         Puede gestionar inventario
                       </label>
-                      <p className="text-xs text-gray-500">Agregar/editar productos y stock</p>
+                      <p className="text-xs text-muted-foreground">Agregar/editar productos y stock</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_receive_merchandise"
                       checked={formData.permissions.can_receive_merchandise}
@@ -1238,14 +1238,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_receive_merchandise" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_receive_merchandise" className="text-sm text-foreground cursor-pointer block">
                         📥 Recibir mercadería
                       </label>
-                      <p className="text-xs text-gray-500">Registrar que llegó mercadería</p>
+                      <p className="text-xs text-muted-foreground">Registrar que llegó mercadería</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_stock_entry"
                       checked={formData.permissions.can_stock_entry}
@@ -1258,14 +1258,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_stock_entry" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_stock_entry" className="text-sm text-foreground cursor-pointer block">
                         📦 Ingresar mercadería a stock
                       </label>
-                      <p className="text-xs text-gray-500">Confirmar recepción y aumentar stock</p>
+                      <p className="text-xs text-muted-foreground">Confirmar recepción y aumentar stock</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_create_internal_order"
                       checked={formData.permissions.can_create_internal_order}
@@ -1278,14 +1278,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_create_internal_order" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_create_internal_order" className="text-sm text-foreground cursor-pointer block">
                         📝 Crear pedido interno
                       </label>
-                      <p className="text-xs text-gray-500">Solicitar productos que faltan</p>
+                      <p className="text-xs text-muted-foreground">Solicitar productos que faltan</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_view_internal_orders"
                       checked={formData.permissions.can_view_internal_orders}
@@ -1298,14 +1298,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_view_internal_orders" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_view_internal_orders" className="text-sm text-foreground cursor-pointer block">
                         🔄 Consultar pedidos internos
                       </label>
-                      <p className="text-xs text-gray-500">Ver estado de sus solicitudes</p>
+                      <p className="text-xs text-muted-foreground">Ver estado de sus solicitudes</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_approve_internal_orders"
                       checked={formData.permissions.can_approve_internal_orders}
@@ -1318,14 +1318,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_approve_internal_orders" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_approve_internal_orders" className="text-sm text-foreground cursor-pointer block">
                         ✅ Aprobar pedidos internos
                       </label>
-                      <p className="text-xs text-gray-500">Decidir de qué local sale la mercadería y moverla</p>
+                      <p className="text-xs text-muted-foreground">Decidir de qué local sale la mercadería y moverla</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_view_products"
                       checked={formData.permissions.can_view_products}
@@ -1338,14 +1338,14 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-cyan-500"
                     />
                     <div>
-                      <label htmlFor="can_view_products" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_view_products" className="text-sm text-foreground cursor-pointer block">
                         🏷️ Consultar productos
                       </label>
-                      <p className="text-xs text-gray-500">Ver catálogo, precios de venta y stock</p>
+                      <p className="text-xs text-muted-foreground">Ver catálogo, precios de venta y stock</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors">
                     <Checkbox
                       id="can_manage_employees"
                       checked={formData.permissions.can_manage_employees}
@@ -1358,24 +1358,24 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className="border-cyan-500/30 data-[state=checked]:bg-green-500"
                     />
                     <div>
-                      <label htmlFor="can_manage_employees" className="text-sm text-white cursor-pointer block">
+                      <label htmlFor="can_manage_employees" className="text-sm text-foreground cursor-pointer block">
                         Puede gestionar empleados
                       </label>
-                      <p className="text-xs text-gray-500">Ver y editar otros empleados</p>
+                      <p className="text-xs text-muted-foreground">Ver y editar otros empleados</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10 space-y-2">
-                <Label className="text-gray-300 text-xs uppercase tracking-wide">Resumen de acceso</Label>
+              <div className="p-4 rounded-lg bg-muted border border-cyan-500/10 space-y-2">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wide">Resumen de acceso</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
                   {PERMISSION_GROUPS.map((group) => {
                     const hasAccess = group.keys.some((key) => formData.permissions[key])
                     return (
                       <div key={group.label} className="flex items-center gap-1.5 text-xs">
                         <span>{hasAccess ? "🟢" : "🔴"}</span>
-                        <span className={hasAccess ? "text-gray-300" : "text-gray-600"}>{group.label}</span>
+                        <span className={hasAccess ? "text-muted-foreground" : "text-muted-foreground"}>{group.label}</span>
                       </div>
                     )
                   })}
@@ -1383,7 +1383,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               </div>
 
               <div className="pt-4 space-y-2">
-                <Label className="text-gray-300">Estado del empleado</Label>
+                <Label className="text-muted-foreground">Estado del empleado</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: "active", label: "Activo", emoji: "🟢" },
@@ -1397,7 +1397,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                       className={`p-2.5 rounded-lg text-xs font-medium border transition-colors text-center ${
                         formData.status === option.value
                           ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
-                          : "bg-white/5 border-cyan-500/10 text-gray-400 hover:bg-white/10"
+                          : "bg-muted border-cyan-500/10 text-muted-foreground hover:bg-accent"
                       }`}
                     >
                       <span className="block text-base mb-1">{option.emoji}</span>
@@ -1405,7 +1405,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Suspendido y Desactivado bloquean el acceso sin borrar su historial. Usá Suspendido para pausas
                   temporales.
                 </p>

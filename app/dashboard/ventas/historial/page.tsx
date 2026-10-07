@@ -350,20 +350,20 @@ export default function HistorialVentasPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/ventas">
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">Historial de Ventas</h1>
-            <p className="text-gray-400 text-sm">Consultá, corregí o anulá las ventas realizadas</p>
+            <h1 className="text-2xl font-bold text-foreground">Historial de Ventas</h1>
+            <p className="text-muted-foreground text-sm">Consultá, corregí o anulá las ventas realizadas</p>
           </div>
         </div>
         <Button
           variant="outline"
           onClick={exportCsv}
           disabled={filteredSales.length === 0}
-          className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2"
+          className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2"
         >
           <Download className="w-4 h-4" />
           Exportar
@@ -379,7 +379,7 @@ export default function HistorialVentasPage() {
               className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                 activeChip === c.label
                   ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
-                  : "border-white/10 text-gray-400 hover:text-white"
+                  : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               {c.label}
@@ -389,38 +389,38 @@ export default function HistorialVentasPage() {
 
         <div className="flex items-end gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[220px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar por número de venta..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+              className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <label className="text-xs text-gray-400 space-y-1">
+          <label className="text-xs text-muted-foreground space-y-1">
             Desde
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="date"
                 value={dateFrom}
                 max={dateTo || undefined}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white w-44"
+                className="pl-10 bg-card border-cyan-500/10 text-foreground w-44"
               />
             </div>
           </label>
-          <label className="text-xs text-gray-400 space-y-1">
+          <label className="text-xs text-muted-foreground space-y-1">
             Hasta
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="date"
                 value={dateTo}
                 min={dateFrom || undefined}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white w-44"
+                className="pl-10 bg-card border-cyan-500/10 text-foreground w-44"
               />
             </div>
           </label>
@@ -428,16 +428,16 @@ export default function HistorialVentasPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Ventas</p>
-          <p className="text-xl font-bold text-white">{summary.count}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Ventas</p>
+          <p className="text-xl font-bold text-foreground">{summary.count}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Total vendido</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Total vendido</p>
           <p className="text-xl font-bold text-green-400">{formatCurrency(summary.total)}</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-          <p className="text-xs text-gray-400">Anuladas</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+          <p className="text-xs text-muted-foreground">Anuladas</p>
           <p className="text-xl font-bold text-red-400">{summary.voided}</p>
         </div>
       </div>
@@ -451,42 +451,42 @@ export default function HistorialVentasPage() {
       {/* Mobile: cards */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-8 text-center text-gray-500">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-8 text-center text-muted-foreground">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
             Cargando ventas...
           </div>
         ) : filteredSales.length === 0 ? (
-          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-8 text-center text-gray-500">
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-8 text-center text-muted-foreground">
             No hay ventas en este período
           </div>
         ) : (
           filteredSales.map((sale) => (
             <div
               key={sale.id}
-              className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 space-y-3"
+              className="rounded-xl border border-cyan-500/10 bg-card p-4 space-y-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span
                     title={sale.sale_number}
-                    className={`font-mono text-sm ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-cyan-400"}`}
+                    className={`font-mono text-sm ${sale.status === "cancelled" ? "text-muted-foreground line-through" : "text-cyan-400"}`}
                   >
                     #{sale.sale_number.slice(-6).toUpperCase()}
                   </span>
-                  <p className="text-xs text-gray-500 mt-0.5">{formatDate(sale.created_at)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(sale.created_at)}</p>
                 </div>
                 <StatusBadge status={sale.status} />
               </div>
 
               <div className="flex items-center justify-between gap-3 text-sm">
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   {getMethodIcon(sale.payment_method)}
                   {getMethodLabel(sale.payment_method)}
                   {typeof sale.items_count === "number" && (
-                    <span className="text-gray-500">· {sale.items_count} productos</span>
+                    <span className="text-muted-foreground">· {sale.items_count} productos</span>
                   )}
                 </div>
-                <span className={`font-medium ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-white"}`}>
+                <span className={`font-medium ${sale.status === "cancelled" ? "text-muted-foreground line-through" : "text-foreground"}`}>
                   {formatCurrency(sale.total_amount)}
                 </span>
               </div>
@@ -495,7 +495,7 @@ export default function HistorialVentasPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => openDetail(sale)}
-                className="w-full touch-target border-cyan-500/20 text-cyan-400 hover:text-white gap-2"
+                className="w-full touch-target border-cyan-500/20 text-cyan-400 hover:text-foreground gap-2"
               >
                 <Eye className="w-4 h-4" />
                 Ver artículos
@@ -506,54 +506,54 @@ export default function HistorialVentasPage() {
       </div>
 
       {/* Desktop: tabla completa */}
-      <div className="hidden md:block rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="hidden md:block rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">ID</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
-              <th className="hidden lg:table-cell text-left text-sm font-medium text-gray-400 p-3 sm:p-4">Items</th>
-              <th className="hidden md:table-cell text-left text-sm font-medium text-gray-400 p-3 sm:p-4">Método</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Total</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
-              <th className="text-right text-sm font-medium text-gray-400 p-4">Ver</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">ID</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Fecha</th>
+              <th className="hidden lg:table-cell text-left text-sm font-medium text-muted-foreground p-3 sm:p-4">Items</th>
+              <th className="hidden md:table-cell text-left text-sm font-medium text-muted-foreground p-3 sm:p-4">Método</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Total</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
+              <th className="text-right text-sm font-medium text-muted-foreground p-4">Ver</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
                   <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Cargando ventas...
                 </td>
               </tr>
             ) : filteredSales.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
                   No hay ventas en este período
                 </td>
               </tr>
             ) : (
               filteredSales.map((sale) => (
-                <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                <tr key={sale.id} className="border-b border-cyan-500/5 hover:bg-accent transition-colors">
                   <td className="p-3 sm:p-4">
                     <span
                       title={sale.sale_number}
-                      className={`font-mono ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-cyan-400"}`}
+                      className={`font-mono ${sale.status === "cancelled" ? "text-muted-foreground line-through" : "text-cyan-400"}`}
                     >
                       #{sale.sale_number.slice(-6).toUpperCase()}
                     </span>
                   </td>
-                  <td className="p-4 text-white whitespace-nowrap">{formatDate(sale.created_at)}</td>
-                  <td className="hidden lg:table-cell p-4 text-gray-400">{sale.items_count} productos</td>
+                  <td className="p-4 text-foreground whitespace-nowrap">{formatDate(sale.created_at)}</td>
+                  <td className="hidden lg:table-cell p-4 text-muted-foreground">{sale.items_count} productos</td>
                   <td className="hidden md:table-cell p-4">
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       {getMethodIcon(sale.payment_method)}
                       {getMethodLabel(sale.payment_method)}
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`font-medium ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-white"}`}>
+                    <span className={`font-medium ${sale.status === "cancelled" ? "text-muted-foreground line-through" : "text-foreground"}`}>
                       {formatCurrency(sale.total_amount)}
                     </span>
                   </td>
@@ -566,7 +566,7 @@ export default function HistorialVentasPage() {
                       size="sm"
                       onClick={() => openDetail(sale)}
                       title="Ver artículos de la venta"
-                      className="text-cyan-400 hover:text-white"
+                      className="text-cyan-400 hover:text-foreground"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -584,61 +584,61 @@ export default function HistorialVentasPage() {
           onClick={closeDetail}
         >
           <div
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-500/20 bg-[#0a0f1a] p-5 space-y-4"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-500/20 bg-card p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-white">Venta {detail.sale_number}</h2>
-                <p className="text-sm text-gray-400">{formatDate(detail.created_at)}</p>
+                <h2 className="text-lg font-bold text-foreground">Venta {detail.sale_number}</h2>
+                <p className="text-sm text-muted-foreground">{formatDate(detail.created_at)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge status={detail.status} />
-                <Button variant="ghost" size="icon" onClick={closeDetail} className="text-gray-400 hover:text-white">
+                <Button variant="ghost" size="icon" onClick={closeDetail} className="text-muted-foreground hover:text-foreground">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/10 divide-y divide-white/5">
+            <div className="rounded-lg border border-border divide-y divide-white/5">
               {detailLoading ? (
-                <div className="p-6 text-center text-gray-500">
+                <div className="p-6 text-center text-muted-foreground">
                   <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
                   Cargando artículos...
                 </div>
               ) : detail.items.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500 text-center">Esta venta no tiene artículos registrados.</p>
+                <p className="p-4 text-sm text-muted-foreground text-center">Esta venta no tiene artículos registrados.</p>
               ) : (
                 detail.items.map((item, idx) => (
                   <div key={`${item.product_id}-${idx}`} className="flex items-center justify-between gap-3 p-3">
                     <div className="min-w-0">
-                      <p className="text-white text-sm truncate">{item.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-foreground text-sm truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {item.quantity} × {formatCurrency(item.unit_price)}
                       </p>
                     </div>
-                    <p className="text-white font-medium text-sm shrink-0">{formatCurrency(item.subtotal)}</p>
+                    <p className="text-foreground font-medium text-sm shrink-0">{formatCurrency(item.subtotal)}</p>
                   </div>
                 ))
               )}
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-gray-400">
+              <span className="flex items-center gap-2 text-muted-foreground">
                 {getMethodIcon(detail.payment_method)}
                 {getMethodLabel(detail.payment_method)}
               </span>
-              <span className="text-xl font-bold text-white">{formatCurrency(detail.total_amount)}</span>
+              <span className="text-xl font-bold text-foreground">{formatCurrency(detail.total_amount)}</span>
             </div>
 
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-gray-400">Vendedor</span>
+              <span className="text-muted-foreground">Vendedor</span>
               {isOwner && !detailLoading && detail.status !== "cancelled" ? (
                 <select
                   value={detail.employee_id ?? ""}
                   disabled={savingSeller}
                   onChange={(e) => changeSeller(e.target.value)}
-                  className="h-9 max-w-[220px] rounded-md border border-cyan-500/20 bg-[#050810] px-2 text-white"
+                  className="h-9 max-w-[220px] rounded-md border border-cyan-500/20 bg-background px-2 text-foreground"
                 >
                   <option value="">Dueño</option>
                   {staff.map((m) => (
@@ -648,7 +648,7 @@ export default function HistorialVentasPage() {
                   ))}
                 </select>
               ) : (
-                <span className="text-white">{detail.seller_name || "Dueño"}</span>
+                <span className="text-foreground">{detail.seller_name || "Dueño"}</span>
               )}
             </div>
 
@@ -657,7 +657,7 @@ export default function HistorialVentasPage() {
             )}
 
             {detail.status === "completed" && !detailLoading && (
-              <div className="border-t border-white/10 pt-4 space-y-3">
+              <div className="border-t border-border pt-4 space-y-3">
                 {voidMode ? (
                   <>
                     <p className="text-sm text-amber-300">
@@ -669,21 +669,21 @@ export default function HistorialVentasPage() {
                       value={voidReason}
                       onChange={(e) => setVoidReason(e.target.value)}
                       placeholder="Motivo (opcional): ej. me equivoqué de producto"
-                      className="bg-[#050810] border-cyan-500/10 text-white"
+                      className="bg-background border-cyan-500/10 text-foreground"
                     />
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         onClick={() => setVoidMode(null)}
                         disabled={voiding}
-                        className="flex-1 border-white/10 text-gray-300 bg-transparent"
+                        className="flex-1 border-border text-muted-foreground bg-transparent"
                       >
                         Volver
                       </Button>
                       <Button
                         onClick={confirmVoid}
                         disabled={voiding}
-                        className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+                        className="flex-1 bg-red-600 hover:bg-red-500 text-foreground"
                       >
                         {voiding ? "Anulando..." : "Confirmar anulación"}
                       </Button>
@@ -693,7 +693,7 @@ export default function HistorialVentasPage() {
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       onClick={() => setVoidMode("redo")}
-                      className="flex-1 min-w-[180px] bg-cyan-600 hover:bg-cyan-500 text-white gap-2"
+                      className="flex-1 min-w-[180px] bg-cyan-600 hover:bg-cyan-500 text-foreground gap-2"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Anular y rehacer

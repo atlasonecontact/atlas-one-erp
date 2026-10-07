@@ -266,7 +266,7 @@ export default function PagoProveedoresPage() {
       case "unpaid":
         return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">No Pagado</Badge>
       default:
-        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">{status}</Badge>
+        return <Badge className="bg-gray-500/20 text-muted-foreground border-gray-500/30">{status}</Badge>
     }
   }
 
@@ -287,7 +287,7 @@ export default function PagoProveedoresPage() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando pagos...</p>
+          <p className="text-muted-foreground">Cargando pagos...</p>
         </div>
       </div>
     )
@@ -305,7 +305,7 @@ export default function PagoProveedoresPage() {
                 </div>
                 <div className="flex-1">
                   <CardTitle className="text-xl text-amber-400 mb-2">Configuración Inicial Requerida</CardTitle>
-                  <p className="text-gray-300 mb-4">
+                  <p className="text-muted-foreground mb-4">
                     Para usar el módulo de Pago a Proveedores, primero debes ejecutar el script SQL de configuración.
                   </p>
                 </div>
@@ -313,13 +313,13 @@ export default function PagoProveedoresPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
-                <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-foreground font-semibold mb-2 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
                     1
                   </span>
                   Ejecutar Script SQL
                 </h3>
-                <p className="text-gray-400 text-sm mb-3 ml-8">
+                <p className="text-muted-foreground text-sm mb-3 ml-8">
                   El script{" "}
                   <code className="bg-gray-800 px-2 py-1 rounded text-cyan-400">
                     scripts/create_supplier_payments.sql
@@ -329,13 +329,13 @@ export default function PagoProveedoresPage() {
               </div>
 
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
-                <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-foreground font-semibold mb-2 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
                     2
                   </span>
                   Qué incluye el script
                 </h3>
-                <ul className="text-gray-400 text-sm space-y-2 ml-8">
+                <ul className="text-muted-foreground text-sm space-y-2 ml-8">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                     <span>
@@ -354,10 +354,10 @@ export default function PagoProveedoresPage() {
               </div>
 
               <div className="flex items-center gap-3 pt-4">
-                <Button onClick={() => loadData()} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+                <Button onClick={() => loadData()} className="bg-cyan-500 hover:bg-cyan-600 text-foreground">
                   Reintentar Conexión
                 </Button>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Después de ejecutar el script, haz click en "Reintentar Conexión"
                 </p>
               </div>
@@ -373,8 +373,8 @@ export default function PagoProveedoresPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Pago a Proveedores</h1>
-            <p className="text-gray-400 text-sm md:text-base">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Pago a Proveedores</h1>
+            <p className="text-muted-foreground text-sm md:text-base">
               Gestiona los pagos de órdenes de compra y mantén tu flujo de caja bajo control
             </p>
           </div>
@@ -384,7 +384,7 @@ export default function PagoProveedoresPage() {
               setPaymentAmount("")
               setShowFreeDialog(true)
             }}
-            className="bg-cyan-500 hover:bg-cyan-600 text-white"
+            className="bg-cyan-500 hover:bg-cyan-600 text-foreground"
           >
             <DollarSign className="w-4 h-4 mr-1" />
             Pagar sin orden de compra
@@ -392,10 +392,10 @@ export default function PagoProveedoresPage() {
         </div>
 
         <Dialog open={showFreeDialog} onOpenChange={(open) => (open ? setShowFreeDialog(true) : resetForm())}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+          <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
             <DialogHeader>
               <DialogTitle>Pago a proveedor</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-muted-foreground">
                 Para pagos que no están asociados a una orden de compra (repartidor, factura suelta, etc.)
               </DialogDescription>
             </DialogHeader>
@@ -406,7 +406,7 @@ export default function PagoProveedoresPage() {
                   id="free-supplier"
                   value={freeSupplier}
                   onChange={(e) => setFreeSupplier(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-gray-800 border-gray-700 text-foreground"
                   placeholder="Ej: Distribuidora Norte"
                 />
               </div>
@@ -418,14 +418,14 @@ export default function PagoProveedoresPage() {
                   step="0.01"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-gray-800 border-gray-700 text-foreground"
                   placeholder="0.00"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Método de pago</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
@@ -439,7 +439,7 @@ export default function PagoProveedoresPage() {
                 </Select>
               </div>
               {paymentMethod === "cash" && (
-                <label className="flex items-center gap-2 text-sm text-gray-300">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={deductFromCash}
@@ -455,7 +455,7 @@ export default function PagoProveedoresPage() {
                   id="free-notes"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-gray-800 border-gray-700 text-foreground"
                   rows={2}
                 />
               </div>
@@ -463,14 +463,14 @@ export default function PagoProveedoresPage() {
                 <Button
                   variant="outline"
                   onClick={resetForm}
-                  className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                  className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleRegisterPayment}
                   disabled={saving}
-                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-foreground"
                 >
                   {saving ? "Guardando..." : "Registrar pago"}
                 </Button>
@@ -483,52 +483,52 @@ export default function PagoProveedoresPage() {
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-400">Monto Pendiente</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Monto Pendiente</CardTitle>
                 <Wallet className="w-5 h-5 text-red-400" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-400">${totalPendingAmount.toFixed(2)}</div>
-              <p className="text-xs text-gray-500 mt-1">{unpaidCount + partialCount} OC pendientes</p>
+              <p className="text-xs text-muted-foreground mt-1">{unpaidCount + partialCount} OC pendientes</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-400">Total Pagado</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Pagado</CardTitle>
                 <CheckCircle2 className="w-5 h-5 text-green-400" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-400">${totalPaidAmount.toFixed(2)}</div>
-              <p className="text-xs text-gray-500 mt-1">{payments.length} pagos registrados</p>
+              <p className="text-xs text-muted-foreground mt-1">{payments.length} pagos registrados</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-400">OC No Pagadas</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">OC No Pagadas</CardTitle>
                 <FileText className="w-5 h-5 text-red-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{unpaidCount}</div>
-              <p className="text-xs text-gray-500 mt-1">Órdenes sin pagar</p>
+              <div className="text-2xl font-bold text-foreground">{unpaidCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Órdenes sin pagar</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-400">Pagos Parciales</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Pagos Parciales</CardTitle>
                 <TrendingUp className="w-5 h-5 text-amber-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{partialCount}</div>
-              <p className="text-xs text-gray-500 mt-1">Con pago parcial</p>
+              <div className="text-2xl font-bold text-foreground">{partialCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Con pago parcial</p>
             </CardContent>
           </Card>
         </div>
@@ -542,12 +542,12 @@ export default function PagoProveedoresPage() {
           <TabsContent value="pending" className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por número OC o proveedor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+                  className="pl-10 bg-gray-800/50 border-gray-700 text-foreground"
                 />
               </div>
             </div>
@@ -557,7 +557,7 @@ export default function PagoProveedoresPage() {
                 {/* Mobile */}
                 <div className="md:hidden divide-y divide-gray-800/50">
                   {filteredPurchases.filter((p) => p.payment_status !== "paid").length === 0 ? (
-                    <p className="p-8 text-center text-gray-500">No hay órdenes de compra pendientes de pago</p>
+                    <p className="p-8 text-center text-muted-foreground">No hay órdenes de compra pendientes de pago</p>
                   ) : (
                     filteredPurchases
                       .filter((p) => p.payment_status !== "paid")
@@ -569,26 +569,26 @@ export default function PagoProveedoresPage() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <Receipt className="w-4 h-4 text-cyan-400 shrink-0" />
-                                  <span className="text-white font-medium">{purchase.purchase_number}</span>
+                                  <span className="text-foreground font-medium">{purchase.purchase_number}</span>
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
-                                  <span className="text-gray-300 text-sm truncate">{purchase.supplier_name}</span>
+                                  <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                                  <span className="text-muted-foreground text-sm truncate">{purchase.supplier_name}</span>
                                 </div>
                               </div>
                               {getPaymentStatusBadge(purchase.payment_status)}
                             </div>
                             <div className="grid grid-cols-3 gap-2 text-sm">
                               <div>
-                                <p className="text-xs text-gray-500">Total</p>
-                                <p className="text-white font-semibold">${purchase.total_amount.toFixed(2)}</p>
+                                <p className="text-xs text-muted-foreground">Total</p>
+                                <p className="text-foreground font-semibold">${purchase.total_amount.toFixed(2)}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500">Pagado</p>
+                                <p className="text-xs text-muted-foreground">Pagado</p>
                                 <p className="text-green-400 font-medium">${(purchase.total_paid || 0).toFixed(2)}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500">Pendiente</p>
+                                <p className="text-xs text-muted-foreground">Pendiente</p>
                                 <p className="text-red-400 font-medium">${pending.toFixed(2)}</p>
                               </div>
                             </div>
@@ -606,35 +606,35 @@ export default function PagoProveedoresPage() {
                                     setSelectedPurchase(purchase)
                                     setPaymentAmount(pending.toFixed(2))
                                   }}
-                                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
+                                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-foreground"
                                 >
                                   <DollarSign className="w-4 h-4 mr-1" />
                                   Registrar Pago
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+                              <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>Registrar Pago</DialogTitle>
-                                  <DialogDescription className="text-gray-400">
+                                  <DialogDescription className="text-muted-foreground">
                                     OC: {purchase.purchase_number} - {purchase.supplier_name}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                   <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
                                     <div className="flex justify-between text-sm mb-2">
-                                      <span className="text-gray-400">Monto Total:</span>
-                                      <span className="text-white font-semibold">
+                                      <span className="text-muted-foreground">Monto Total:</span>
+                                      <span className="text-foreground font-semibold">
                                         ${purchase.total_amount.toFixed(2)}
                                       </span>
                                     </div>
                                     <div className="flex justify-between text-sm mb-2">
-                                      <span className="text-gray-400">Pagado:</span>
+                                      <span className="text-muted-foreground">Pagado:</span>
                                       <span className="text-green-400 font-medium">
                                         ${(purchase.total_paid || 0).toFixed(2)}
                                       </span>
                                     </div>
                                     <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50">
-                                      <span className="text-gray-400">Pendiente:</span>
+                                      <span className="text-muted-foreground">Pendiente:</span>
                                       <span className="text-red-400 font-bold">${pending.toFixed(2)}</span>
                                     </div>
                                   </div>
@@ -647,7 +647,7 @@ export default function PagoProveedoresPage() {
                                       step="0.01"
                                       value={paymentAmount}
                                       onChange={(e) => setPaymentAmount(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-white"
+                                      className="bg-gray-800 border-gray-700 text-foreground"
                                       placeholder="0.00"
                                     />
                                   </div>
@@ -655,7 +655,7 @@ export default function PagoProveedoresPage() {
                                   <div className="space-y-2">
                                     <Label htmlFor="method-mobile">Método de Pago</Label>
                                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                      <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent className="bg-gray-800 border-gray-700">
@@ -670,7 +670,7 @@ export default function PagoProveedoresPage() {
                                   </div>
 
                                   {paymentMethod === "cash" && (
-                                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <input
                                         type="checkbox"
                                         checked={deductFromCash}
@@ -687,7 +687,7 @@ export default function PagoProveedoresPage() {
                                       id="reference-mobile"
                                       value={referenceNumber}
                                       onChange={(e) => setReferenceNumber(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-white"
+                                      className="bg-gray-800 border-gray-700 text-foreground"
                                       placeholder="Ej: Comprobante #123456"
                                     />
                                   </div>
@@ -698,7 +698,7 @@ export default function PagoProveedoresPage() {
                                       id="notes-mobile"
                                       value={paymentNotes}
                                       onChange={(e) => setPaymentNotes(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-white"
+                                      className="bg-gray-800 border-gray-700 text-foreground"
                                       placeholder="Información adicional..."
                                       rows={3}
                                     />
@@ -708,14 +708,14 @@ export default function PagoProveedoresPage() {
                                     <Button
                                       variant="outline"
                                       onClick={() => setIsDialogOpen(false)}
-                                      className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                                      className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
                                     >
                                       Cancelar
                                     </Button>
                                     <Button
                                       onClick={handleRegisterPayment}
                                       disabled={saving}
-                                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-foreground"
                                     >
                                       {saving ? "Guardando..." : "Registrar Pago"}
                                     </Button>
@@ -734,20 +734,20 @@ export default function PagoProveedoresPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-700/50">
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Número OC</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Proveedor</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Fecha</th>
-                        <th className="text-right p-4 text-sm font-semibold text-gray-400">Monto Total</th>
-                        <th className="text-right p-4 text-sm font-semibold text-gray-400">Pagado</th>
-                        <th className="text-right p-4 text-sm font-semibold text-gray-400">Pendiente</th>
-                        <th className="text-center p-4 text-sm font-semibold text-gray-400">Estado</th>
-                        <th className="text-center p-4 text-sm font-semibold text-gray-400">Acciones</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Número OC</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Proveedor</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Fecha</th>
+                        <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Monto Total</th>
+                        <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Pagado</th>
+                        <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Pendiente</th>
+                        <th className="text-center p-4 text-sm font-semibold text-muted-foreground">Estado</th>
+                        <th className="text-center p-4 text-sm font-semibold text-muted-foreground">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPurchases.filter((p) => p.payment_status !== "paid").length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-gray-500">
+                          <td colSpan={8} className="p-8 text-center text-muted-foreground">
                             No hay órdenes de compra pendientes de pago
                           </td>
                         </tr>
@@ -764,19 +764,19 @@ export default function PagoProveedoresPage() {
                                 <td className="p-4">
                                   <div className="flex items-center gap-2">
                                     <Receipt className="w-4 h-4 text-cyan-400" />
-                                    <span className="text-white font-medium">{purchase.purchase_number}</span>
+                                    <span className="text-foreground font-medium">{purchase.purchase_number}</span>
                                   </div>
                                 </td>
                                 <td className="p-4">
                                   <div className="flex items-center gap-2">
-                                    <Building2 className="w-4 h-4 text-gray-400" />
-                                    <span className="text-gray-300">{purchase.supplier_name}</span>
+                                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">{purchase.supplier_name}</span>
                                   </div>
                                 </td>
-                                <td className="p-4 text-gray-400">
+                                <td className="p-4 text-muted-foreground">
                                   {format(new Date(purchase.created_at), "dd MMM yyyy", { locale: es })}
                                 </td>
-                                <td className="p-4 text-right text-white font-semibold">
+                                <td className="p-4 text-right text-foreground font-semibold">
                                   ${purchase.total_amount.toFixed(2)}
                                 </td>
                                 <td className="p-4 text-right text-green-400 font-medium">
@@ -799,35 +799,35 @@ export default function PagoProveedoresPage() {
                                           setSelectedPurchase(purchase)
                                           setPaymentAmount(pending.toFixed(2))
                                         }}
-                                        className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                                        className="bg-cyan-500 hover:bg-cyan-600 text-foreground"
                                       >
                                         <DollarSign className="w-4 h-4 mr-1" />
                                         Registrar Pago
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+                                    <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
                                       <DialogHeader>
                                         <DialogTitle>Registrar Pago</DialogTitle>
-                                        <DialogDescription className="text-gray-400">
+                                        <DialogDescription className="text-muted-foreground">
                                           OC: {purchase.purchase_number} - {purchase.supplier_name}
                                         </DialogDescription>
                                       </DialogHeader>
                                       <div className="space-y-4">
                                         <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
                                           <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-gray-400">Monto Total:</span>
-                                            <span className="text-white font-semibold">
+                                            <span className="text-muted-foreground">Monto Total:</span>
+                                            <span className="text-foreground font-semibold">
                                               ${purchase.total_amount.toFixed(2)}
                                             </span>
                                           </div>
                                           <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-gray-400">Pagado:</span>
+                                            <span className="text-muted-foreground">Pagado:</span>
                                             <span className="text-green-400 font-medium">
                                               ${(purchase.total_paid || 0).toFixed(2)}
                                             </span>
                                           </div>
                                           <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50">
-                                            <span className="text-gray-400">Pendiente:</span>
+                                            <span className="text-muted-foreground">Pendiente:</span>
                                             <span className="text-red-400 font-bold">${pending.toFixed(2)}</span>
                                           </div>
                                         </div>
@@ -840,7 +840,7 @@ export default function PagoProveedoresPage() {
                                             step="0.01"
                                             value={paymentAmount}
                                             onChange={(e) => setPaymentAmount(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-white"
+                                            className="bg-gray-800 border-gray-700 text-foreground"
                                             placeholder="0.00"
                                           />
                                         </div>
@@ -848,7 +848,7 @@ export default function PagoProveedoresPage() {
                                         <div className="space-y-2">
                                           <Label htmlFor="method">Método de Pago</Label>
                                           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                            <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
                                               <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="bg-gray-800 border-gray-700">
@@ -863,7 +863,7 @@ export default function PagoProveedoresPage() {
                                         </div>
 
                                         {paymentMethod === "cash" && (
-                                          <label className="flex items-center gap-2 text-sm text-gray-300">
+                                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <input
                                               type="checkbox"
                                               checked={deductFromCash}
@@ -880,7 +880,7 @@ export default function PagoProveedoresPage() {
                                             id="reference"
                                             value={referenceNumber}
                                             onChange={(e) => setReferenceNumber(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-white"
+                                            className="bg-gray-800 border-gray-700 text-foreground"
                                             placeholder="Ej: Comprobante #123456"
                                           />
                                         </div>
@@ -891,7 +891,7 @@ export default function PagoProveedoresPage() {
                                             id="notes"
                                             value={paymentNotes}
                                             onChange={(e) => setPaymentNotes(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-white"
+                                            className="bg-gray-800 border-gray-700 text-foreground"
                                             placeholder="Información adicional..."
                                             rows={3}
                                           />
@@ -901,14 +901,14 @@ export default function PagoProveedoresPage() {
                                           <Button
                                             variant="outline"
                                             onClick={() => setIsDialogOpen(false)}
-                                            className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                                            className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
                                           >
                                             Cancelar
                                           </Button>
                                           <Button
                                             onClick={handleRegisterPayment}
                                             disabled={saving}
-                                            className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                                            className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-foreground"
                                           >
                                             {saving ? "Guardando..." : "Registrar Pago"}
                                           </Button>
@@ -934,7 +934,7 @@ export default function PagoProveedoresPage() {
                 {/* Mobile */}
                 <div className="md:hidden divide-y divide-gray-800/50">
                   {payments.length === 0 ? (
-                    <p className="p-8 text-center text-gray-500">No hay pagos registrados</p>
+                    <p className="p-8 text-center text-muted-foreground">No hay pagos registrados</p>
                   ) : (
                     payments.map((payment) => (
                       <div key={payment.id} className="p-4 space-y-2">
@@ -942,11 +942,11 @@ export default function PagoProveedoresPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <Receipt className="w-4 h-4 text-cyan-400 shrink-0" />
-                              <span className="text-white font-medium">{payment.payment_number}</span>
+                              <span className="text-foreground font-medium">{payment.payment_number}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
-                              <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
-                              <span className="text-gray-300 text-sm truncate">
+                              <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground text-sm truncate">
                                 {payment.purchases?.supplier_name ||
                                   payment.notes?.match(/^Proveedor: (.*?)(?: — |$)/)?.[1] ||
                                   "-"}
@@ -955,7 +955,7 @@ export default function PagoProveedoresPage() {
                           </div>
                           <span className="text-green-400 font-semibold shrink-0">${payment.amount.toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-400">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{payment.purchases?.purchase_number || "Sin OC"}</span>
                           <span>{format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}</span>
                         </div>
@@ -964,7 +964,7 @@ export default function PagoProveedoresPage() {
                             {getPaymentMethodLabel(payment.payment_method)}
                           </Badge>
                           {payment.reference_number && (
-                            <span className="text-xs text-gray-500">{payment.reference_number}</span>
+                            <span className="text-xs text-muted-foreground">{payment.reference_number}</span>
                           )}
                         </div>
                       </div>
@@ -977,19 +977,19 @@ export default function PagoProveedoresPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-700/50">
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Número Pago</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">OC</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Proveedor</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Fecha</th>
-                        <th className="text-right p-4 text-sm font-semibold text-gray-400">Monto</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Método</th>
-                        <th className="text-left p-4 text-sm font-semibold text-gray-400">Referencia</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Número Pago</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">OC</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Proveedor</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Fecha</th>
+                        <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Monto</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Método</th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Referencia</th>
                       </tr>
                     </thead>
                     <tbody>
                       {payments.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-gray-500">
+                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
                             No hay pagos registrados
                           </td>
                         </tr>
@@ -1002,21 +1002,21 @@ export default function PagoProveedoresPage() {
                             <td className="p-4">
                               <div className="flex items-center gap-2">
                                 <Receipt className="w-4 h-4 text-cyan-400" />
-                                <span className="text-white font-medium">{payment.payment_number}</span>
+                                <span className="text-foreground font-medium">{payment.payment_number}</span>
                               </div>
                             </td>
-                            <td className="p-4 text-gray-300">{payment.purchases?.purchase_number || "Sin OC"}</td>
+                            <td className="p-4 text-muted-foreground">{payment.purchases?.purchase_number || "Sin OC"}</td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
-                                <Building2 className="w-4 h-4 text-gray-400" />
-                                <span className="text-gray-300">
+                                <Building2 className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">
                                   {payment.purchases?.supplier_name ||
                                     payment.notes?.match(/^Proveedor: (.*?)(?: — |$)/)?.[1] ||
                                     "-"}
                                 </span>
                               </div>
                             </td>
-                            <td className="p-4 text-gray-400">
+                            <td className="p-4 text-muted-foreground">
                               {format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}
                             </td>
                             <td className="p-4 text-right text-green-400 font-semibold">
@@ -1027,7 +1027,7 @@ export default function PagoProveedoresPage() {
                                 {getPaymentMethodLabel(payment.payment_method)}
                               </Badge>
                             </td>
-                            <td className="p-4 text-gray-400">{payment.reference_number || "-"}</td>
+                            <td className="p-4 text-muted-foreground">{payment.reference_number || "-"}</td>
                           </tr>
                         ))
                       )}

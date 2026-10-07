@@ -108,7 +108,7 @@ export default function CajaFuertePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Caja fuerte</h1>
+        <h1 className="text-2xl font-bold text-foreground">Caja fuerte</h1>
         <Link href="/dashboard/caja" className="text-sm text-cyan-400 hover:text-cyan-300">
           ← Volver a Caja
         </Link>
@@ -120,9 +120,9 @@ export default function CajaFuertePage() {
             <PiggyBank className="w-7 h-7 text-amber-400" />
           </div>
           <div>
-            <p className="text-sm text-gray-300">Total en la caja fuerte</p>
+            <p className="text-sm text-muted-foreground">Total en la caja fuerte</p>
             <p className="text-4xl font-bold text-amber-400">{formatCurrency(safe)}</p>
-            <p className="text-xs text-gray-400 mt-1">Lo que se guardó al cerrar cada caja</p>
+            <p className="text-xs text-muted-foreground mt-1">Lo que se guardó al cerrar cada caja</p>
           </div>
         </div>
 
@@ -131,10 +131,10 @@ export default function CajaFuertePage() {
             <TrendingUp className="w-7 h-7 text-green-400" />
           </div>
           <div>
-            <p className="text-sm text-gray-300">Ganado en {currentLabel} (hasta hoy)</p>
+            <p className="text-sm text-muted-foreground">Ganado en {currentLabel} (hasta hoy)</p>
             <p className="text-4xl font-bold text-green-400">{formatCurrency(month)}</p>
-            <p className="text-sm text-gray-300 mt-1">
-              Hoy: <span className="font-semibold text-white">{formatCurrency(today)}</span>
+            <p className="text-sm text-muted-foreground mt-1">
+              Hoy: <span className="font-semibold text-foreground">{formatCurrency(today)}</span>
             </p>
           </div>
         </div>
@@ -146,29 +146,29 @@ export default function CajaFuertePage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-cyan-400" />
           Mes por mes
         </h3>
 
         {months.length === 0 ? (
-          <p className="text-sm text-gray-500 py-8 text-center">Todavía no hay ventas registradas.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">Todavía no hay ventas registradas.</p>
         ) : (
           <div className="space-y-3">
             {months.map((m) => (
               <div
                 key={m.month}
                 className={`p-4 rounded-lg border flex items-center justify-between gap-3 flex-wrap ${
-                  m.month === thisMonth ? "border-cyan-500/30 bg-cyan-500/5" : "border-white/5 bg-white/5"
+                  m.month === thisMonth ? "border-cyan-500/30 bg-cyan-500/5" : "border-border bg-muted"
                 }`}
               >
                 <div>
-                  <p className="text-white font-semibold">
+                  <p className="text-foreground font-semibold">
                     {monthLabel(m.month)}
                     {m.month === thisMonth && <span className="ml-2 text-xs text-cyan-400">(en curso)</span>}
                   </p>
-                  <p className="text-xs text-gray-500">{m.sales_count} ventas</p>
+                  <p className="text-xs text-muted-foreground">{m.sales_count} ventas</p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-green-400">{formatCurrency(m.sales)}</p>
