@@ -220,21 +220,29 @@ export default function IntegracionesPage() {
 
       <Tabs defaultValue="arca" className="w-full">
         <TabsList className="bg-[#0a0f1a] border border-cyan-500/10 grid grid-cols-4 w-full">
-          <TabsTrigger value="arca" className="data-[state=active]:bg-cyan-500/20 gap-2">
-            <FileText className="w-4 h-4" />
-            ARCA
+          <TabsTrigger value="arca" title="ARCA" className="data-[state=active]:bg-cyan-500/20 gap-2 touch-target">
+            <FileText className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">ARCA</span>
           </TabsTrigger>
-          <TabsTrigger value="mercadopago" className="data-[state=active]:bg-cyan-500/20 gap-2">
-            <CreditCard className="w-4 h-4" />
-            Mercado Pago
+          <TabsTrigger
+            value="mercadopago"
+            title="Mercado Pago"
+            className="data-[state=active]:bg-cyan-500/20 gap-2 touch-target"
+          >
+            <CreditCard className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Mercado Pago</span>
           </TabsTrigger>
-          <TabsTrigger value="pedidosya" className="data-[state=active]:bg-cyan-500/20 gap-2">
-            <Bike className="w-4 h-4" />
-            Pedidos Ya
+          <TabsTrigger
+            value="pedidosya"
+            title="Pedidos Ya"
+            className="data-[state=active]:bg-cyan-500/20 gap-2 touch-target"
+          >
+            <Bike className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Pedidos Ya</span>
           </TabsTrigger>
-          <TabsTrigger value="rappi" className="data-[state=active]:bg-cyan-500/20 gap-2">
-            <ShoppingBag className="w-4 h-4" />
-            Rappi
+          <TabsTrigger value="rappi" title="Rappi" className="data-[state=active]:bg-cyan-500/20 gap-2 touch-target">
+            <ShoppingBag className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Rappi</span>
           </TabsTrigger>
         </TabsList>
 
@@ -590,7 +598,7 @@ export default function IntegracionesPage() {
                 {/* Features */}
                 <div className="space-y-3">
                   <p className="text-sm text-gray-400 font-medium">Funcionalidades:</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
                       <CheckCircle className="w-4 h-4 text-green-400" />
                       <span className="text-sm text-white">Sincronizar menú</span>
@@ -689,7 +697,7 @@ export default function IntegracionesPage() {
                 {/* Features */}
                 <div className="space-y-3">
                   <p className="text-sm text-gray-400 font-medium">Funcionalidades:</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-white/5">
                       <CheckCircle className="w-4 h-4 text-green-400" />
                       <span className="text-sm text-white">Catálogo sincronizado</span>

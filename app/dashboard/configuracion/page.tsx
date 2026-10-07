@@ -795,7 +795,7 @@ export default function ConfiguracionPage() {
 
                 <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                   <p className="text-sm font-medium text-cyan-400 mb-3">🤖 ¿Qué podés hacer desde Telegram?</p>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="p-2 rounded bg-cyan-500/10">
                       <span className="font-mono text-cyan-300">/ventas</span>
                       <p className="text-gray-400 text-xs mt-1">Ver ventas de hoy</p>

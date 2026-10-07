@@ -90,7 +90,57 @@ export default function AdminCuentasPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a]">
+      {/* Mobile: cards */}
+      <div className="space-y-3 md:hidden">
+        {isLoading ? (
+          <p className="px-4 py-8 text-center text-sm text-gray-500">Cargando...</p>
+        ) : accounts.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-gray-500">No hay cuentas todavía.</p>
+        ) : (
+          accounts.map((a) => {
+            const suspended = a.access_status === "suspended"
+            return (
+              <div key={a.kiosko_id} className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{a.kiosko_name}</p>
+                    <p className="truncate text-xs text-gray-500">{a.business_name || "—"}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
+                      suspended ? "bg-red-500/15 text-red-400" : "bg-green-500/15 text-green-400",
+                    )}
+                  >
+                    {suspended ? "Suspendida" : "Activa"}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-400">
+                  <p className="truncate">{a.owner_name || "—"}</p>
+                  <p className="truncate text-gray-500">{a.owner_email || "—"}</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={updatingId === a.owner_id || !a.owner_id}
+                  onClick={() => setStatus(a, suspended ? "approved" : "suspended")}
+                  className={cn(
+                    "touch-target inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors disabled:opacity-50",
+                    suspended
+                      ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                      : "bg-red-500/15 text-red-400 hover:bg-red-500/25",
+                  )}
+                >
+                  {suspended ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                  {suspended ? "Reactivar" : "Suspender"}
+                </button>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Desktop: tabla */}
+      <div className="hidden overflow-hidden rounded-xl border border-cyan-500/10 bg-[#0a0f1a] md:block">
         <table className="w-full table-fixed">
           <thead>
             <tr className="border-b border-cyan-500/10 bg-white/[0.03] text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
