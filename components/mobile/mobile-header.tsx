@@ -9,6 +9,7 @@ import { Menu, Search, User, X } from "lucide-react"
 import { useTheme } from "@/lib/theme-context"
 import { KioskoSelector } from "@/components/kiosko-selector"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { ThemeModeToggle } from "@/components/theme-mode-toggle"
 
 interface MobileHeaderProps {
   userName?: string
@@ -24,7 +25,7 @@ export function MobileHeader({ userName, showSearch = true, onMenuClick }: Mobil
 
   return (
     <header
-      className="sticky top-0 z-40 bg-[#030712]/95 backdrop-blur-xl border-b safe-area-top lg:hidden"
+      className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b safe-area-top lg:hidden"
       style={{ borderColor: config.border }}
     >
       <div className="flex items-center justify-between px-4 py-3">
@@ -32,13 +33,13 @@ export function MobileHeader({ userName, showSearch = true, onMenuClick }: Mobil
         {isSearchOpen ? (
           <div className="flex-1 flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Buscar productos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 h-10 bg-[#0a0f1a] text-white placeholder:text-gray-500 text-base"
+                className="w-full pl-10 h-10 bg-card text-foreground placeholder:text-muted-foreground text-base"
                 style={{ borderColor: config.border }}
                 autoFocus
               />
@@ -62,7 +63,7 @@ export function MobileHeader({ userName, showSearch = true, onMenuClick }: Mobil
               variant="ghost"
               size="icon"
               onClick={onMenuClick}
-              className="shrink-0 text-gray-400 hover:text-white touch-target"
+              className="shrink-0 text-muted-foreground hover:text-foreground touch-target"
               aria-label="Abrir menú"
             >
               <Menu className="w-5 h-5" />
@@ -83,17 +84,18 @@ export function MobileHeader({ userName, showSearch = true, onMenuClick }: Mobil
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSearchOpen(true)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <Search className="w-5 h-5" />
                 </Button>
               )}
+              <ThemeModeToggle />
               <NotificationsDropdown />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => router.push("/dashboard/configuracion")}
-                className="text-gray-400 hover:text-white touch-target"
+                className="text-muted-foreground hover:text-foreground touch-target"
                 aria-label="Perfil"
               >
                 <User className="w-5 h-5" />

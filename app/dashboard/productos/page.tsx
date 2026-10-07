@@ -916,7 +916,7 @@ export default function ProductosPage() {
                       {product.barcode && <p className="text-xs text-muted-foreground font-mono">{product.barcode}</p>}
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         {product.is_active === false && (
-                          <span className="rounded-full border border-gray-500/30 bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400">
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                             Desactivado
                           </span>
                         )}
@@ -1042,7 +1042,7 @@ export default function ProductosPage() {
                             <p className="font-semibold text-foreground break-words leading-snug">{product.name}</p>
                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                               {product.is_active === false && (
-                                <span className="rounded-full border border-gray-500/30 bg-gray-500/10 px-2 py-0.5 text-xs text-gray-400">
+                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                                   Desactivado
                                 </span>
                               )}

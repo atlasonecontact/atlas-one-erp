@@ -66,11 +66,15 @@ export const themeConfigs: Record<ThemeColor, ThemeConfig> = {
   },
 }
 
+export type ThemeMode = "dark" | "light"
+
 interface ThemeContextType {
   theme: ThemeColor
   config: ThemeConfig
   setTheme: (theme: ThemeColor) => void
   isOnline: boolean
+  mode: ThemeMode
+  toggleMode: () => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -78,12 +82,19 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeColor>("cyan")
   const [isOnline, setIsOnline] = useState(true)
+  const [mode, setModeState] = useState<ThemeMode>("dark")
 
   // Load theme from localStorage/database on mount
   useEffect(() => {
     const saved = localStorage.getItem("atlasone_theme") as ThemeColor
     if (saved && themeConfigs[saved]) {
       setThemeState(saved)
+    }
+
+    const savedMode = localStorage.getItem("atlasone_mode") as ThemeMode
+    if (savedMode === "light" || savedMode === "dark") {
+      setModeState(savedMode)
+      document.documentElement.classList.toggle("light-mode", savedMode === "light")
     }
   }, [])
 
@@ -129,8 +140,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const toggleMode = useCallback(() => {
+    setModeState((prev) => {
+      const next: ThemeMode = prev === "dark" ? "light" : "dark"
+      document.documentElement.classList.toggle("light-mode", next === "light")
+      localStorage.setItem("atlasone_mode", next)
+      return next
+    })
+  }, [])
+
   return (
-    <ThemeContext.Provider value={{ theme, config: themeConfigs[theme], setTheme, isOnline }}>
+    <ThemeContext.Provider value={{ theme, config: themeConfigs[theme], setTheme, isOnline, mode, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   )

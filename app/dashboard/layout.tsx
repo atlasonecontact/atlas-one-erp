@@ -61,6 +61,7 @@ import { Badge } from "@/components/ui/badge"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { BottomNavigation } from "@/components/mobile/bottom-navigation"
+import { ThemeModeToggle } from "@/components/theme-mode-toggle"
 
 function DashboardSidebar({
   mobileOpen,
@@ -266,17 +267,17 @@ function DashboardSidebar({
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col w-64 h-screen bg-gradient-to-br from-[#0a0f1a] to-[#0d1420] border-r shadow-2xl transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 flex flex-col w-64 h-screen bg-sidebar border-r shadow-2xl transition-transform duration-300 ease-in-out",
           "lg:sticky lg:top-0 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
       {/* Logo */}
-      <div className="p-6 border-b border-white/10 backdrop-blur-sm flex items-center justify-between">
+      <div className="p-6 border-b border-sidebar-border backdrop-blur-sm flex items-center justify-between">
         <AtlasLogo variant="horizontal" className="h-8" />
         <button
           onClick={onMobileClose}
-          className="lg:hidden text-gray-400 hover:text-white transition-colors"
+          className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Cerrar menú"
         >
           <X className="w-5 h-5" />
@@ -300,8 +301,8 @@ function DashboardSidebar({
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 w-full group relative overflow-hidden",
                     hasActiveChild || isOpen
-                      ? "bg-gradient-to-r from-white/10 to-transparent text-white shadow-lg"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white",
+                      ? "bg-gradient-to-r from-accent to-transparent text-foreground shadow-lg"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                   style={
                     hasActiveChild
@@ -335,7 +336,7 @@ function DashboardSidebar({
                     isOpen ? "max-h-[600px] opacity-100 mt-2" : "max-h-0 opacity-0",
                   )}
                 >
-                  <div className="ml-4 pl-4 border-l-2 border-white/10 space-y-2 py-2">
+                  <div className="ml-4 pl-4 border-l-2 border-sidebar-border space-y-2 py-2">
                     {item.subModules.map((subModule) => {
                       const hasActiveSubChild = subModule.items?.some((subItem) => pathname === subItem.href)
                       const isSubOpen = openSubMenu === subModule.label
@@ -348,8 +349,8 @@ function DashboardSidebar({
                               className={cn(
                                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full group relative overflow-hidden",
                                 hasActiveSubChild || isSubOpen
-                                  ? "bg-gradient-to-r text-white shadow-md"
-                                  : "text-gray-400 hover:bg-white/5 hover:text-white",
+                                  ? "bg-gradient-to-r text-foreground shadow-md"
+                                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
                               )}
                               style={
                                 hasActiveSubChild
@@ -379,7 +380,7 @@ function DashboardSidebar({
                                 isSubOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0",
                               )}
                             >
-                              <div className="ml-4 pl-3 border-l border-white/5 space-y-1 py-1">
+                              <div className="ml-4 pl-3 border-l border-sidebar-border space-y-1 py-1">
                                 {subModule.items.map((subItem) => {
                                   const isActive = pathname === subItem.href
                                   return (
@@ -389,8 +390,8 @@ function DashboardSidebar({
                                       className={cn(
                                         "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 group relative overflow-hidden text-sm",
                                         isActive
-                                          ? "bg-gradient-to-r text-white shadow-sm"
-                                          : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                                          ? "bg-gradient-to-r text-foreground shadow-sm"
+                                          : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1",
                                       )}
                                       style={
                                         isActive
@@ -430,8 +431,8 @@ function DashboardSidebar({
                             className={cn(
                               "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
                               isActive
-                                ? "bg-gradient-to-r text-white shadow-md"
-                                : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                                ? "bg-gradient-to-r text-foreground shadow-md"
+                                : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1",
                             )}
                             style={
                               isActive
@@ -473,8 +474,8 @@ function DashboardSidebar({
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 w-full group relative overflow-hidden",
                     hasActiveChild || isOpen
-                      ? "bg-gradient-to-r from-white/10 to-transparent text-white shadow-lg"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white",
+                      ? "bg-gradient-to-r from-accent to-transparent text-foreground shadow-lg"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                   style={
                     hasActiveChild
@@ -507,7 +508,7 @@ function DashboardSidebar({
                     isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0",
                   )}
                 >
-                  <div className="ml-4 pl-4 border-l-2 border-white/10 space-y-1 py-2">
+                  <div className="ml-4 pl-4 border-l-2 border-sidebar-border space-y-1 py-2">
                     {item.items.map((subItem) => {
                       const isActive = pathname === subItem.href
                       return (
@@ -517,8 +518,8 @@ function DashboardSidebar({
                           className={cn(
                             "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
                             isActive
-                              ? "bg-gradient-to-r text-white shadow-md"
-                              : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                              ? "bg-gradient-to-r text-foreground shadow-md"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1",
                           )}
                           style={
                             isActive
@@ -556,8 +557,8 @@ function DashboardSidebar({
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative overflow-hidden mb-2",
                 isActive
-                  ? "bg-gradient-to-r text-white shadow-lg"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                  ? "bg-gradient-to-r text-foreground shadow-lg"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1",
               )}
               style={
                 isActive
@@ -584,9 +585,9 @@ function DashboardSidebar({
         })}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-slate-800/50">
+      <div className="mt-auto pt-6 border-t border-sidebar-border">
         <div className="px-3 mb-3">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gestión</h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gestión</h3>
         </div>
         <nav className="space-y-1 px-2">
           {gestionItems.map((item) => {
@@ -600,7 +601,7 @@ function DashboardSidebar({
                   "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   isActive
                     ? "bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-400 border border-cyan-500/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent",
                 )}
               >
                 <Icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
@@ -698,8 +699,8 @@ function DashboardHeader() {
 
   if (loading) {
     return (
-      <header className="hidden lg:flex h-16 border-b bg-[#0a0f1a] border-white/10 items-center justify-end px-6">
-        <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+      <header className="hidden lg:flex h-16 border-b bg-card border-border items-center justify-end px-6">
+        <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
       </header>
     )
   }
@@ -715,12 +716,12 @@ function DashboardHeader() {
 
   return (
     <header
-      className="hidden lg:flex h-16 border-b bg-gradient-to-r from-[#0a0f1a] to-[#0d1420] border-white/10 items-center justify-between px-6 shadow-lg"
+      className="hidden lg:flex h-16 border-b bg-card border-border items-center justify-between px-6 shadow-lg"
       style={{ borderColor: config.border }}
     >
       {/* Left side - Breadcrumb or title could go here */}
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+        <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
         <Badge
           variant={isOnline ? "default" : "secondary"}
           className={cn(
@@ -737,6 +738,7 @@ function DashboardHeader() {
 
       {/* Right side - User menu and notifications */}
       <div className="flex items-center gap-3">
+        <ThemeModeToggle />
         <NotificationsDropdown />
 
         {/* User Menu */}
@@ -744,11 +746,11 @@ function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex items-center gap-3 hover:bg-white/5 px-3 py-2 h-auto transition-all duration-200"
+              className="flex items-center gap-3 hover:bg-accent px-3 py-2 h-auto transition-all duration-200"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">{userName}</p>
-                <p className="text-xs text-gray-400">{userEmail}</p>
+                <p className="text-sm font-medium text-foreground">{userName}</p>
+                <p className="text-xs text-muted-foreground">{userEmail}</p>
               </div>
               <Avatar className="w-10 h-10 ring-2 ring-[var(--primary)] transition-all duration-200">
                 <AvatarFallback
@@ -763,22 +765,22 @@ function DashboardHeader() {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-[#0d1420] border-white/10">
-            <DropdownMenuLabel className="text-white">Mi Cuenta</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem asChild className="text-gray-300 hover:bg-white/5 hover:text-white cursor-pointer">
+          <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
+            <DropdownMenuLabel className="text-foreground">Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-foreground cursor-pointer">
               <Link href="/dashboard/configuracion" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Perfil
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="text-gray-300 hover:bg-white/5 hover:text-white cursor-pointer">
+            <DropdownMenuItem asChild className="text-foreground hover:bg-accent hover:text-foreground cursor-pointer">
               <Link href="/dashboard/configuracion" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Configuración
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               onClick={handleLogout}
               className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer flex items-center gap-2"
@@ -813,7 +815,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Header */}
           <DashboardHeader />
           <MobileHeader onMenuClick={() => setMobileNavOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8 bg-gradient-to-br from-[#0a0f1a] to-[#0d1420]">
+          <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8 bg-background">
             {children}
           </main>
           <BottomNavigation

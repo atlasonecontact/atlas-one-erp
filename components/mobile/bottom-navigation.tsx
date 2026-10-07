@@ -32,7 +32,7 @@ export function BottomNavigation({ onMenuClick, onScanClick }: BottomNavigationP
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0f1a]/95 bottom-nav border-t safe-area-bottom lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 bottom-nav border-t safe-area-bottom lg:hidden"
       style={{ borderColor: config.border }}
     >
       <div className="flex items-center justify-around px-2 py-1">
@@ -45,7 +45,7 @@ export function BottomNavigation({ onMenuClick, onScanClick }: BottomNavigationP
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all touch-target haptic-tap",
-                isActive ? "text-white" : "text-gray-500",
+                isActive ? "text-foreground" : "text-muted-foreground",
               )}
             >
               <div
@@ -94,7 +94,7 @@ export function BottomNavigation({ onMenuClick, onScanClick }: BottomNavigationP
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all touch-target haptic-tap",
-                isActive ? "text-white" : "text-gray-500",
+                isActive ? "text-foreground" : "text-muted-foreground",
               )}
             >
               <div
@@ -123,7 +123,7 @@ export function BottomNavigation({ onMenuClick, onScanClick }: BottomNavigationP
         {/* Menu button */}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all touch-target haptic-tap text-gray-500"
+          className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all touch-target haptic-tap text-muted-foreground"
         >
           <div className="p-2 rounded-xl">
             <Menu className="w-5 h-5" />

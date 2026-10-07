@@ -321,29 +321,29 @@ export default function CatalogoVisualPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Catálogo Visual</h1>
-        <p className="text-gray-400 text-sm">Explorá tus productos de forma visual</p>
+        <h1 className="text-2xl font-bold text-foreground">Catálogo Visual</h1>
+        <p className="text-muted-foreground text-sm">Explorá tus productos de forma visual</p>
       </div>
 
       {/* Stats + enriquecimiento */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
-              <p className="text-gray-500">productos</p>
+              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+              <p className="text-muted-foreground">productos</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-green-400">{stats.conImagen}</p>
-              <p className="text-gray-500">con imagen</p>
+              <p className="text-muted-foreground">con imagen</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-400">{stats.sinImagen}</p>
-              <p className="text-gray-500">sin imagen</p>
+              <p className="text-2xl font-bold text-muted-foreground">{stats.sinImagen}</p>
+              <p className="text-muted-foreground">sin imagen</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-yellow-400">{stats.pendientes}</p>
-              <p className="text-gray-500">a revisar</p>
+              <p className="text-muted-foreground">a revisar</p>
             </div>
           </div>
 
@@ -361,13 +361,13 @@ export default function CatalogoVisualPage() {
 
         {enriching && (
           <div className="mt-4 space-y-2">
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full bg-cyan-500 transition-all"
                 style={{ width: `${(enrichProgress.processed / Math.max(enrichProgress.total, 1)) * 100}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Procesando... {enrichProgress.processed}/{enrichProgress.total} — {enrichProgress.approved} con imagen,{" "}
               {enrichProgress.pending} a revisar, {enrichProgress.noMatch} sin resultado
             </p>
@@ -381,7 +381,7 @@ export default function CatalogoVisualPage() {
           onClick={() => setTab("catalogo")}
           className={cn(
             "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-            tab === "catalogo" ? "border-cyan-500 text-cyan-400" : "border-transparent text-gray-400 hover:text-white",
+            tab === "catalogo" ? "border-cyan-500 text-cyan-400" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           Catálogo
@@ -390,7 +390,7 @@ export default function CatalogoVisualPage() {
           onClick={() => setTab("revision")}
           className={cn(
             "px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2",
-            tab === "revision" ? "border-cyan-500 text-cyan-400" : "border-transparent text-gray-400 hover:text-white",
+            tab === "revision" ? "border-cyan-500 text-cyan-400" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           Revisión de imágenes
@@ -407,12 +407,12 @@ export default function CatalogoVisualPage() {
           {/* Filtros */}
           <div className="space-y-3">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar producto, SKU, código de barras, marca..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+                className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -427,7 +427,7 @@ export default function CatalogoVisualPage() {
               <FilterSelect label="Variante" value={variantFilter} onChange={setVariantFilter} options={options.variants} />
               <FilterSelect label="Formato" value={formato} onChange={setFormato} options={options.formatos} />
               <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-                <SelectTrigger className="w-[150px] bg-[#0a0f1a] border-cyan-500/10 text-white">
+                <SelectTrigger className="w-[150px] bg-card border-cyan-500/10 text-foreground">
                   <SelectValue placeholder="Stock" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0d1424] border-cyan-500/20">
@@ -438,7 +438,7 @@ export default function CatalogoVisualPage() {
                 </SelectContent>
               </Select>
               <Select value={estadoFilter} onValueChange={(v) => setEstadoFilter(v as EstadoFilter)}>
-                <SelectTrigger className="w-[140px] bg-[#0a0f1a] border-cyan-500/10 text-white">
+                <SelectTrigger className="w-[140px] bg-card border-cyan-500/10 text-foreground">
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0d1424] border-cyan-500/20">
@@ -450,7 +450,7 @@ export default function CatalogoVisualPage() {
             </div>
           </div>
 
-          <p className="text-sm text-gray-500">{filtered.length} productos</p>
+          <p className="text-sm text-muted-foreground">{filtered.length} productos</p>
 
           {/* Grid */}
           {loading ? (
@@ -458,7 +458,7 @@ export default function CatalogoVisualPage() {
               <RefreshCw className="w-6 h-6 text-cyan-500 animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Package className="mb-4 h-12 w-12 opacity-50" />
               <p>No se encontraron productos</p>
             </div>
@@ -467,11 +467,11 @@ export default function CatalogoVisualPage() {
               {filtered.map((p) => (
                 <div
                   key={p.id}
-                  className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden flex flex-col"
+                  className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden flex flex-col"
                 >
                   <label
                     className={cn(
-                      "group relative aspect-square bg-white/5 flex items-center justify-center overflow-hidden",
+                      "group relative aspect-square bg-muted flex items-center justify-center overflow-hidden",
                       permissions.can_manage_inventory && "cursor-pointer",
                     )}
                   >
@@ -479,12 +479,12 @@ export default function CatalogoVisualPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.image_url} alt={p.name} className="w-full h-full object-contain" />
                     ) : (
-                      <ImageIcon className="w-10 h-10 text-gray-600" />
+                      <ImageIcon className="w-10 h-10 text-muted-foreground" />
                     )}
                     {permissions.can_manage_inventory && (
                       <>
                         <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-xs text-white">{p.image_url ? "Cambiar imagen" : "Subir imagen"}</span>
+                          <span className="text-xs text-foreground">{p.image_url ? "Cambiar imagen" : "Subir imagen"}</span>
                         </div>
                         <input
                           type="file"
@@ -500,12 +500,12 @@ export default function CatalogoVisualPage() {
                     )}
                   </label>
                   <div className="p-3 space-y-1 flex-1">
-                    <p className="text-sm font-medium text-white truncate">{p.name}</p>
-                    {formatoDe(p) && <p className="text-xs text-gray-500">{formatoDe(p)}</p>}
-                    {p.brand && <p className="text-xs text-gray-500 truncate">{p.brand}</p>}
+                    <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                    {formatoDe(p) && <p className="text-xs text-muted-foreground">{formatoDe(p)}</p>}
+                    {p.brand && <p className="text-xs text-muted-foreground truncate">{p.brand}</p>}
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-sm font-bold text-cyan-400">{formatCurrency(p.price)}</span>
-                      <span className={cn("text-xs", p.stock_quantity <= 0 ? "text-red-400" : "text-gray-500")}>
+                      <span className={cn("text-xs", p.stock_quantity <= 0 ? "text-red-400" : "text-muted-foreground")}>
                         Stock {p.stock_quantity}
                       </span>
                     </div>
@@ -518,7 +518,7 @@ export default function CatalogoVisualPage() {
       ) : (
         <div className="space-y-3">
           {pendingImages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Check className="mb-4 h-12 w-12 opacity-50" />
               <p>No hay imágenes pendientes de revisión</p>
             </div>
@@ -526,15 +526,15 @@ export default function CatalogoVisualPage() {
             pendingImages.map((pi) => (
               <div
                 key={pi.id}
-                className="flex items-center gap-4 rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4"
+                className="flex items-center gap-4 rounded-xl border border-cyan-500/10 bg-card p-4"
               >
-                <div className="w-16 h-16 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={pi.image_url} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{pi.product?.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-medium text-foreground truncate">{pi.product?.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {pi.match_method} — confianza {pi.confidence_score}%
                   </p>
                 </div>
@@ -580,7 +580,7 @@ function FilterSelect({
   if (options.length === 0) return null
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[150px] bg-[#0a0f1a] border-cyan-500/10 text-white">
+      <SelectTrigger className="w-[150px] bg-card border-cyan-500/10 text-foreground">
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent className="bg-[#0d1424] border-cyan-500/20">
