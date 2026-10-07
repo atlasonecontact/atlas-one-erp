@@ -369,12 +369,12 @@ export default function PagoProveedoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Pago a Proveedores</h1>
-            <p className="text-gray-400">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Pago a Proveedores</h1>
+            <p className="text-gray-400 text-sm md:text-base">
               Gestiona los pagos de órdenes de compra y mantén tu flujo de caja bajo control
             </p>
           </div>
@@ -479,7 +479,7 @@ export default function PagoProveedoresPage() {
           </DialogContent>
         </Dialog>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
           <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -554,7 +554,183 @@ export default function PagoProveedoresPage() {
 
             <Card className="bg-gray-900/50 border-gray-700/50">
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                {/* Mobile */}
+                <div className="md:hidden divide-y divide-gray-800/50">
+                  {filteredPurchases.filter((p) => p.payment_status !== "paid").length === 0 ? (
+                    <p className="p-8 text-center text-gray-500">No hay órdenes de compra pendientes de pago</p>
+                  ) : (
+                    filteredPurchases
+                      .filter((p) => p.payment_status !== "paid")
+                      .map((purchase) => {
+                        const pending = purchase.total_amount - (purchase.total_paid || 0)
+                        return (
+                          <div key={purchase.id} className="p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Receipt className="w-4 h-4 text-cyan-400 shrink-0" />
+                                  <span className="text-white font-medium">{purchase.purchase_number}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+                                  <span className="text-gray-300 text-sm truncate">{purchase.supplier_name}</span>
+                                </div>
+                              </div>
+                              {getPaymentStatusBadge(purchase.payment_status)}
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <p className="text-xs text-gray-500">Total</p>
+                                <p className="text-white font-semibold">${purchase.total_amount.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Pagado</p>
+                                <p className="text-green-400 font-medium">${(purchase.total_paid || 0).toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Pendiente</p>
+                                <p className="text-red-400 font-medium">${pending.toFixed(2)}</p>
+                              </div>
+                            </div>
+                            <Dialog
+                              open={isDialogOpen && selectedPurchase?.id === purchase.id}
+                              onOpenChange={(open) => {
+                                setIsDialogOpen(open)
+                                if (!open) setSelectedPurchase(null)
+                              }}
+                            >
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPurchase(purchase)
+                                    setPaymentAmount(pending.toFixed(2))
+                                  }}
+                                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-white"
+                                >
+                                  <DollarSign className="w-4 h-4 mr-1" />
+                                  Registrar Pago
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Registrar Pago</DialogTitle>
+                                  <DialogDescription className="text-gray-400">
+                                    OC: {purchase.purchase_number} - {purchase.supplier_name}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                                    <div className="flex justify-between text-sm mb-2">
+                                      <span className="text-gray-400">Monto Total:</span>
+                                      <span className="text-white font-semibold">
+                                        ${purchase.total_amount.toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm mb-2">
+                                      <span className="text-gray-400">Pagado:</span>
+                                      <span className="text-green-400 font-medium">
+                                        ${(purchase.total_paid || 0).toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50">
+                                      <span className="text-gray-400">Pendiente:</span>
+                                      <span className="text-red-400 font-bold">${pending.toFixed(2)}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="amount-mobile">Monto a Pagar</Label>
+                                    <Input
+                                      id="amount-mobile"
+                                      type="number"
+                                      step="0.01"
+                                      value={paymentAmount}
+                                      onChange={(e) => setPaymentAmount(e.target.value)}
+                                      className="bg-gray-800 border-gray-700 text-white"
+                                      placeholder="0.00"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="method-mobile">Método de Pago</Label>
+                                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-gray-800 border-gray-700">
+                                        <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
+                                        <SelectItem value="cash">Efectivo</SelectItem>
+                                        <SelectItem value="check">Cheque</SelectItem>
+                                        <SelectItem value="debit_card">Tarjeta de Débito</SelectItem>
+                                        <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+                                        <SelectItem value="mercadopago">Mercado Pago</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {paymentMethod === "cash" && (
+                                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                                      <input
+                                        type="checkbox"
+                                        checked={deductFromCash}
+                                        onChange={(e) => setDeductFromCash(e.target.checked)}
+                                      />
+                                      Descontar de la caja del turno
+                                      {!openRegisterId && <span className="text-amber-400">(no hay caja abierta)</span>}
+                                    </label>
+                                  )}
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="reference-mobile">Número de Referencia (Opcional)</Label>
+                                    <Input
+                                      id="reference-mobile"
+                                      value={referenceNumber}
+                                      onChange={(e) => setReferenceNumber(e.target.value)}
+                                      className="bg-gray-800 border-gray-700 text-white"
+                                      placeholder="Ej: Comprobante #123456"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="notes-mobile">Notas (Opcional)</Label>
+                                    <Textarea
+                                      id="notes-mobile"
+                                      value={paymentNotes}
+                                      onChange={(e) => setPaymentNotes(e.target.value)}
+                                      className="bg-gray-800 border-gray-700 text-white"
+                                      placeholder="Información adicional..."
+                                      rows={3}
+                                    />
+                                  </div>
+
+                                  <div className="flex gap-3 pt-4">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setIsDialogOpen(false)}
+                                      className="flex-1 border-gray-700 text-white hover:bg-gray-800"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                    <Button
+                                      onClick={handleRegisterPayment}
+                                      disabled={saving}
+                                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
+                                    >
+                                      {saving ? "Guardando..." : "Registrar Pago"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )
+                      })
+                  )}
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-700/50">
@@ -755,7 +931,49 @@ export default function PagoProveedoresPage() {
           <TabsContent value="history" className="space-y-4">
             <Card className="bg-gray-900/50 border-gray-700/50">
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                {/* Mobile */}
+                <div className="md:hidden divide-y divide-gray-800/50">
+                  {payments.length === 0 ? (
+                    <p className="p-8 text-center text-gray-500">No hay pagos registrados</p>
+                  ) : (
+                    payments.map((payment) => (
+                      <div key={payment.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Receipt className="w-4 h-4 text-cyan-400 shrink-0" />
+                              <span className="text-white font-medium">{payment.payment_number}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Building2 className="w-4 h-4 text-gray-400 shrink-0" />
+                              <span className="text-gray-300 text-sm truncate">
+                                {payment.purchases?.supplier_name ||
+                                  payment.notes?.match(/^Proveedor: (.*?)(?: — |$)/)?.[1] ||
+                                  "-"}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-green-400 font-semibold shrink-0">${payment.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <span>{payment.purchases?.purchase_number || "Sin OC"}</span>
+                          <span>{format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                            {getPaymentMethodLabel(payment.payment_method)}
+                          </Badge>
+                          {payment.reference_number && (
+                            <span className="text-xs text-gray-500">{payment.reference_number}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-700/50">

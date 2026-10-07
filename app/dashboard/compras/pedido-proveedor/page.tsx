@@ -160,7 +160,7 @@ export default function PedidoProveedorPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Pedido a Proveedor OC</h1>
           <p className="text-gray-400 text-sm">Gestiona las órdenes de compra y su estado de pago</p>
@@ -185,7 +185,7 @@ export default function PedidoProveedorPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
@@ -249,9 +249,54 @@ export default function PedidoProveedorPage() {
         />
       </div>
 
-      {/* Orders Table */}
+      {/* Orders: cards en mobile, tabla en desktop */}
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-cyan-500/10">
+          {loading ? (
+            <p className="p-8 text-center text-gray-500">Cargando órdenes de compra...</p>
+          ) : filteredPurchases.length === 0 ? (
+            <p className="p-8 text-center text-gray-500">No hay órdenes de compra registradas</p>
+          ) : (
+            filteredPurchases.map((purchase) => (
+              <div key={purchase.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-cyan-400 font-mono font-semibold text-sm">{purchase.purchase_number}</span>
+                    <p className="text-white font-medium truncate">{purchase.supplier_name}</p>
+                    <p className="text-xs text-gray-500">{formatDate(purchase.created_at)}</p>
+                  </div>
+                  <span
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPaymentStatusStyle(purchase.payment_status)}`}
+                  >
+                    {getPaymentStatusIcon(purchase.payment_status)}
+                    {getPaymentStatusText(purchase.payment_status)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-sm font-bold border border-purple-500/30">
+                    <Package className="w-4 h-4" />
+                    {purchase.total_units?.toLocaleString() || 0} un.
+                  </span>
+                  <span className="text-white font-semibold text-lg">
+                    ${Number(purchase.total_amount).toLocaleString()}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-cyan-500/20 text-gray-300 hover:text-cyan-400 hover:bg-cyan-500/10 gap-1.5"
+                >
+                  <Eye className="w-4 h-4" />
+                  Ver orden
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-cyan-500/10 bg-[#0a0f1a]">

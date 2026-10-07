@@ -309,7 +309,7 @@ export default function PedidosInternosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Pedidos Internos</h1>
           <p className="text-gray-400 text-sm">Gestiona pedidos de mercadería entre sucursales y stock central</p>
@@ -374,9 +374,136 @@ export default function PedidosInternosPage() {
         />
       </div>
 
-      {/* Pedidos table */}
+      {/* Pedidos: cards en mobile, tabla en desktop */}
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
-        <table className="w-full">
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-cyan-500/10">
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Cargando pedidos...
+            </div>
+          ) : filteredPedidos.length === 0 ? (
+            <p className="p-8 text-center text-gray-500">No hay pedidos internos registrados</p>
+          ) : (
+            filteredPedidos.map((pedido) => (
+              <div key={pedido.id} className="p-4 space-y-3">
+                <button className="w-full text-left" onClick={() => handleVerDetalle(pedido.id)}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-cyan-400 font-mono text-sm">{pedido.numero_pedido}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
+                        <span className="text-white text-sm truncate">{pedido.solicitante_nombre}</span>
+                      </div>
+                      {pedido.origen_nombre && (
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                          <Warehouse className="w-3 h-3" /> desde {pedido.origen_nombre}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(pedido.estado)}`}
+                    >
+                      {getStatusIcon(pedido.estado)}
+                      {getEstadoLabel(pedido.estado)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
+                    <span>
+                      {pedido.items_count} items ({pedido.items_total} unidades)
+                    </span>
+                    <span>{formatDate(pedido.fecha_solicitud)}</span>
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {pedido.estado === "pendiente" && canApprove && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setApprovingPedido(pedido)}
+                        className="flex-1 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 gap-1.5"
+                      >
+                        <Check className="w-4 h-4" />
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRechazar(pedido.id)}
+                        className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5"
+                      >
+                        <X className="w-4 h-4" />
+                        Rechazar
+                      </Button>
+                    </>
+                  )}
+                  {pedido.estado === "aprobado" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMarcarRecibido(pedido.id)}
+                      className="flex-1 border-green-500/30 text-green-400 hover:bg-green-500/10 gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      Recibido
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleVerDetalle(pedido.id)}
+                    className="text-gray-400 hover:text-white gap-1.5"
+                  >
+                    Ver detalle
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${selectedPedido === pedido.id ? "rotate-90" : ""}`}
+                    />
+                  </Button>
+                </div>
+
+                {selectedPedido === pedido.id && (
+                  <div className="rounded-lg bg-white/5 p-3 space-y-3">
+                    {pedido.observaciones && (
+                      <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                        <p className="text-sm text-gray-300">
+                          <span className="font-medium text-cyan-400">Observaciones:</span> {pedido.observaciones}
+                        </p>
+                      </div>
+                    )}
+                    {pedido.motivo_rechazo && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <p className="text-sm text-gray-300">
+                          <span className="font-medium text-red-400">Motivo del rechazo:</span>{" "}
+                          {pedido.motivo_rechazo}
+                        </p>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {pedidoItems.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between text-sm border-b border-cyan-500/5 pb-2">
+                          <div className="min-w-0">
+                            <p className="text-white truncate">{item.producto?.name || "N/A"}</p>
+                            <p className="text-xs text-gray-500">{item.producto?.category || "N/A"}</p>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-white">{item.cantidad} ped.</p>
+                            <p className="text-xs text-cyan-400">{item.cantidad_recibida} recib.</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop */}
+        <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className="text-left text-sm font-medium text-gray-400 p-4">Número</th>
