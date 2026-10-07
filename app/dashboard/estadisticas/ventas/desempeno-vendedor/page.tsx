@@ -232,7 +232,47 @@ export default function DesempenoVendedorPage() {
 
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
         <h3 className="text-lg font-semibold text-white mb-6">Ranking de Vendedores</h3>
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="space-y-2 md:hidden">
+          {stats.sellers.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-500">Sin ventas para mostrar.</p>
+          ) : (
+            stats.sellers.map((s, i) => (
+              <div key={s.seller + i} className="rounded-lg border border-gray-800 bg-white/[0.02] p-3">
+                <div className="flex items-center gap-3">
+                  {i === 0 ? (
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-xs font-bold text-yellow-400">
+                      1
+                    </span>
+                  ) : i === 1 ? (
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-400/20 text-xs font-bold text-gray-300">
+                      2
+                    </span>
+                  ) : i === 2 ? (
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-700/20 text-xs font-bold text-orange-400">
+                      3
+                    </span>
+                  ) : (
+                    <span className="w-6 shrink-0 pl-1.5 text-xs text-gray-500">{i + 1}</span>
+                  )}
+                  <p className="flex-1 truncate font-medium text-white">{s.seller}</p>
+                  <span className="font-semibold text-cyan-400">{formatMoney(s.total)}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-xs text-gray-400">
+                  {s.byShift.map((b) => (
+                    <span key={b.shift}>
+                      {b.shift}: {formatMoney(b.sales)}
+                    </span>
+                  ))}
+                  <span className="text-gray-500">{s.tickets} tickets</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: tabla */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-400 border-b border-gray-800">

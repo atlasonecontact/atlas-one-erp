@@ -229,7 +229,48 @@ export default function IngresosWalletsPage() {
             {stats.recent.length}
           </span>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="space-y-2 md:hidden">
+          {stats.recent.map((t) => (
+            <div key={t.id} className="rounded-lg border border-gray-800 bg-white/[0.02] p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium text-white">{t.branch}</p>
+                  <p className="text-xs text-gray-400">{t.seller}</p>
+                </div>
+                <span className="text-sm font-semibold text-white">{formatCurrency(t.total)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span
+                  className={`rounded-full px-2 py-0.5 ${
+                    (t.payment || "").toLowerCase() === "qr"
+                      ? "bg-violet-500/15 text-violet-300"
+                      : "bg-sky-500/15 text-sky-300"
+                  }`}
+                >
+                  {(t.payment || "").toLowerCase() === "qr" ? "QR" : "Transferencia"}
+                </span>
+                <span className="text-gray-500">
+                  {new Date(t.createdAt).toLocaleString("es-AR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <p className="mt-1 font-mono text-xs text-gray-500" title={t.number}>
+                #{t.number.slice(-8)}
+              </p>
+            </div>
+          ))}
+          {stats.recent.length === 0 && (
+            <p className="py-8 text-center text-sm text-gray-500">Sin ventas por wallet en este período.</p>
+          )}
+        </div>
+
+        {/* Desktop: tabla */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-left text-gray-400">

@@ -209,7 +209,37 @@ export default function ProductividadLocalPage() {
 
       <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-6">
         <h3 className="mb-4 text-lg font-semibold text-white">Detalle por Sucursal</h3>
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="space-y-2 md:hidden">
+          {stats.branches.map((b, i) => (
+            <div key={b.name + i} className="rounded-lg border border-gray-800 bg-white/[0.02] p-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-white">{b.name}</p>
+                <span className="text-cyan-400">{b.share.toFixed(1)}%</span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-gray-400">
+                <div>
+                  <p className="text-gray-500">Ventas</p>
+                  <p className="text-gray-200">{formatCurrency(b.revenue)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Tickets</p>
+                  <p className="text-gray-200">{b.tickets}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Promedio</p>
+                  <p className="text-gray-200">{formatCurrency(b.avgTicket)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {stats.branches.length === 0 && (
+            <p className="py-8 text-center text-sm text-gray-500">Sin ventas en este período.</p>
+          )}
+        </div>
+
+        {/* Desktop: tabla */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-left text-gray-400">

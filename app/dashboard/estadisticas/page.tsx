@@ -373,7 +373,27 @@ export default function EstadisticasPage() {
             <div className="p-6 border-b" style={{ borderColor: config.border }}>
               <h3 className="text-lg font-semibold text-white">Rendimiento de Productos</h3>
             </div>
-            <div className="overflow-x-auto">
+            {/* Mobile: cards */}
+            <div className="divide-y md:hidden" style={{ borderColor: config.border }}>
+              {data.topProducts.map((product, i) => (
+                <div key={product.name} className="flex items-center gap-3 p-4">
+                  <div
+                    className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold"
+                    style={{ backgroundColor: config.primaryMuted, color: config.primary }}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white truncate">{product.name}</p>
+                    <p className="text-xs text-gray-400">{product.percentage.toFixed(1)}% del total</p>
+                  </div>
+                  <span className="text-white font-medium">${product.sales.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: tabla */}
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full">
                 <thead className="border-b" style={{ borderColor: config.border }}>
                   <tr>

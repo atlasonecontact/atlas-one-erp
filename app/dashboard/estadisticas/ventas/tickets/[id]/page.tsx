@@ -328,7 +328,37 @@ export default function TicketDetailPage() {
 
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-4">Productos</h2>
-          <div className="overflow-x-auto">
+          {/* Mobile: cards */}
+          <div className="space-y-2 md:hidden">
+            {ticket.lines.length === 0 ? (
+              <p className="p-6 text-center text-gray-500">Esta venta no tiene productos registrados.</p>
+            ) : (
+              ticket.lines.map((line, i) => {
+                const margin = line.cost > 0 && line.subtotal > 0 ? ((line.subtotal - line.cost) / line.subtotal) * 100 : null
+                return (
+                  <div key={i} className="rounded-lg border border-gray-800 bg-gray-800/30 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-white">{line.name}</p>
+                        <p className="text-xs text-gray-400">{line.category}</p>
+                      </div>
+                      <p className="font-semibold text-white">{formatCurrency(line.subtotal)}</p>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+                      <Badge className="bg-gray-800 text-gray-300 border-gray-700">{line.quantity} unid.</Badge>
+                      <span>{formatCurrency(line.unitPrice)} c/u</span>
+                      {margin !== null && (
+                        <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(1)}% margen</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Desktop: tabla */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[560px]">
               <thead className="bg-gray-800/80 border-b border-gray-700">
                 <tr>

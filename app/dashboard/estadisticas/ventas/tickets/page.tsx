@@ -176,7 +176,70 @@ export default function TicketsTablePage() {
       )}
 
       <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="divide-y divide-gray-800 md:hidden">
+          {loading ? (
+            <div className="p-10 text-center text-gray-500">
+              <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
+              Cargando tickets...
+            </div>
+          ) : paginatedTickets.length === 0 ? (
+            <div className="p-10 text-center text-gray-500">No hay tickets con estos filtros</div>
+          ) : (
+            paginatedTickets.map((ticket) => {
+              const margin = marginOf(ticket.total, ticket.cost)
+              return (
+                <div
+                  key={ticket.id}
+                  onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
+                  className="cursor-pointer p-4 transition-colors hover:bg-gray-800/50 active:bg-gray-800/50"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-white" title={ticket.number}>
+                        {shortId(ticket.number)}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {dateFmt.format(new Date(ticket.createdAt))} · {timeFmt.format(new Date(ticket.createdAt))}
+                      </p>
+                    </div>
+                    <span className="font-semibold text-white">{formatCurrency(ticket.total)}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge className="bg-gray-800 text-gray-300 border-gray-700">{ticket.units} unid.</Badge>
+                    <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-gray-300 border-gray-700"}>
+                      {paymentLabel(ticket.payment)}
+                    </Badge>
+                    {ticket.invoice ? (
+                      <Badge
+                        className={
+                          ticket.invoice.status === "emitida"
+                            ? "bg-green-500/20 text-green-400 border-green-500/30"
+                            : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                        }
+                      >
+                        {ticket.invoice.type} {ticket.invoice.number}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-500">Sin factura</span>
+                    )}
+                    {margin !== null && (
+                      <span className={`text-xs ${margin >= 30 ? "text-green-400" : "text-yellow-400"}`}>
+                        {margin.toFixed(1)}% margen
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {ticket.branch} · {SHIFT_LABEL[ticket.shift]} · {ticket.seller}
+                  </p>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Desktop: tabla */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-800/80 border-b border-gray-700">
               <tr>
