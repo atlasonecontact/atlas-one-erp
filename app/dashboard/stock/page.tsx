@@ -457,7 +457,38 @@ export default function StockPage() {
             />
           </div>
         </div>
-        <table className="w-full">
+        {/* Celulares: tarjetas */}
+        <div className="md:hidden divide-y divide-cyan-500/5">
+          {filteredMovements.length === 0 ? (
+            <p className="p-8 text-center text-gray-500">
+              {loading ? "Cargando movimientos..." : "No hay movimientos de inventario"}
+            </p>
+          ) : (
+            filteredMovements.map((movement) => {
+              const isIn = movement.movement_type === "in" || movement.movement_type === "purchase"
+              return (
+                <div key={movement.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-white font-medium break-words">{movement.product_name}</p>
+                    <span className={`flex items-center gap-1 shrink-0 font-semibold ${isIn ? "text-green-400" : "text-red-400"}`}>
+                      {isIn ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                      {isIn ? "+" : "-"}
+                      {movement.quantity}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span className={isIn ? "text-green-400" : "text-red-400"}>{isIn ? "Entrada" : "Salida"}</span>
+                    <span>{formatDate(movement.created_at)}</span>
+                  </div>
+                  {movement.reason && <p className="text-xs text-gray-400">{movement.reason}</p>}
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Tablet y computadora: tabla */}
+        <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
@@ -534,99 +565,154 @@ export default function StockPage() {
             />
           </div>
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Categoría</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Ubicación</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Stock</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Nivel Mín.</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  Cargando inventario...
-                </td>
-              </tr>
-            ) : products.filter(
-                (p) =>
-                  p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  (p.category || "").toLowerCase().includes(searchQuery.toLowerCase()),
-              ).length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
-                  No se encontraron productos
-                </td>
-              </tr>
+        {(() => {
+          const filteredInventory = products.filter(
+            (p) =>
+              p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (p.category || "").toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          const EstadoBadge = ({ isCritical, isLowStock }: { isCritical: boolean; isLowStock: boolean }) =>
+            isCritical ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
+                <AlertTriangle className="w-3 h-3" />
+                Crítico
+              </span>
+            ) : isLowStock ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                <AlertTriangle className="w-3 h-3" />
+                Bajo
+              </span>
             ) : (
-              products
-                .filter(
-                  (p) =>
-                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (p.category || "").toLowerCase().includes(searchQuery.toLowerCase()),
-                )
-                .slice(0, 50)
-                .map((product) => {
-                  const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
-                  const isCritical = product.stock_quantity <= 5
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                <Check className="w-3 h-3" />
+                Normal
+              </span>
+            )
 
-                  return (
-                    <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-white font-medium">{product.name}</td>
-                      <td className="p-4 text-gray-400">{product.category || "-"}</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {product.stock_location === "Stock Central" ? (
-                            <Warehouse className="w-4 h-4 text-cyan-400" />
-                          ) : (
-                            <Building2 className="w-4 h-4 text-purple-400" />
-                          )}
-                          <span className="text-gray-300 text-sm">{product.kiosko_name}</span>
+          return (
+            <>
+              {/* Celulares: tarjetas */}
+              <div className="md:hidden divide-y divide-cyan-500/5">
+                {loading ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    Cargando inventario...
+                  </div>
+                ) : filteredInventory.length === 0 ? (
+                  <p className="p-8 text-center text-gray-500">No se encontraron productos</p>
+                ) : (
+                  filteredInventory.slice(0, 50).map((product) => {
+                    const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
+                    const isCritical = product.stock_quantity <= 5
+                    return (
+                      <div key={product.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-white font-medium break-words">{product.name}</p>
+                          <EstadoBadge isCritical={isCritical} isLowStock={isLowStock} />
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={
-                            isCritical
-                              ? "text-red-400 font-semibold"
-                              : isLowStock
-                                ? "text-yellow-400 font-semibold"
-                                : "text-white"
-                          }
-                        >
-                          {product.stock_quantity}
-                        </span>
-                      </td>
-                      <td className="p-4 text-gray-400">{product.min_stock_level || 10}</td>
-                      <td className="p-4">
-                        {isCritical ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-                            <AlertTriangle className="w-3 h-3" />
-                            Crítico
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          {product.stock_location === "Stock Central" ? (
+                            <Warehouse className="w-3.5 h-3.5 text-cyan-400" />
+                          ) : (
+                            <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                          )}
+                          <span>{product.kiosko_name}</span>
+                          {product.category && <span>· {product.category}</span>}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span>
+                            Stock:{" "}
+                            <span
+                              className={
+                                isCritical
+                                  ? "text-red-400 font-semibold"
+                                  : isLowStock
+                                    ? "text-yellow-400 font-semibold"
+                                    : "text-white"
+                              }
+                            >
+                              {product.stock_quantity}
+                            </span>
                           </span>
-                        ) : isLowStock ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
-                            <AlertTriangle className="w-3 h-3" />
-                            Bajo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-                            <Check className="w-3 h-3" />
-                            Normal
-                          </span>
-                        )}
+                          <span className="text-gray-500">Mín: {product.min_stock_level || 10}</span>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+
+              {/* Tablet y computadora: tabla */}
+              <table className="hidden md:table w-full">
+                <thead>
+                  <tr className="border-b border-cyan-500/10">
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Categoría</th>
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Ubicación</th>
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Stock</th>
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Nivel Mín.</th>
+                    <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                        Cargando inventario...
                       </td>
                     </tr>
-                  )
-                })
-            )}
-          </tbody>
-        </table>
+                  ) : filteredInventory.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                        No se encontraron productos
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInventory.slice(0, 50).map((product) => {
+                      const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
+                      const isCritical = product.stock_quantity <= 5
+
+                      return (
+                        <tr key={product.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                          <td className="p-4 text-white font-medium">{product.name}</td>
+                          <td className="p-4 text-gray-400">{product.category || "-"}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              {product.stock_location === "Stock Central" ? (
+                                <Warehouse className="w-4 h-4 text-cyan-400" />
+                              ) : (
+                                <Building2 className="w-4 h-4 text-purple-400" />
+                              )}
+                              <span className="text-gray-300 text-sm">{product.kiosko_name}</span>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={
+                                isCritical
+                                  ? "text-red-400 font-semibold"
+                                  : isLowStock
+                                    ? "text-yellow-400 font-semibold"
+                                    : "text-white"
+                              }
+                            >
+                              {product.stock_quantity}
+                            </span>
+                          </td>
+                          <td className="p-4 text-gray-400">{product.min_stock_level || 10}</td>
+                          <td className="p-4">
+                            <EstadoBadge isCritical={isCritical} isLowStock={isLowStock} />
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </>
+          )
+        })()}
       </div>
 
       {/* Stock Movement Modal */}

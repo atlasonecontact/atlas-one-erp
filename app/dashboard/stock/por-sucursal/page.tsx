@@ -234,7 +234,66 @@ export default function StockPorSucursalPage() {
             />
           </div>
         </div>
-        <table className="w-full">
+        {/* Celulares: tarjetas */}
+        <div className="md:hidden divide-y divide-cyan-500/5">
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Cargando inventario...
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <p className="p-8 text-center text-gray-500">No se encontraron productos en esta sucursal</p>
+          ) : (
+            filteredProducts.map((product) => {
+              const isLowStock = product.stock_quantity <= (product.min_stock_level || 10)
+              const isCritical = product.stock_quantity <= 5
+              return (
+                <div key={product.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-white font-medium break-words">{product.name}</p>
+                    {isCritical ? (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
+                        <AlertTriangle className="w-3 h-3" />
+                        Crítico
+                      </span>
+                    ) : isLowStock ? (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                        <AlertTriangle className="w-3 h-3" />
+                        Bajo
+                      </span>
+                    ) : (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                        <Check className="w-3 h-3" />
+                        Normal
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">{product.category || "Sin categoría"}</p>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span>
+                      Stock:{" "}
+                      <span
+                        className={
+                          isCritical
+                            ? "text-red-400 font-semibold"
+                            : isLowStock
+                              ? "text-yellow-400 font-semibold"
+                              : "text-white"
+                        }
+                      >
+                        {product.stock_quantity}
+                      </span>
+                    </span>
+                    <span className="text-gray-500">Mín: {product.min_stock_level || 10}</span>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Tablet y computadora: tabla */}
+        <table className="hidden md:table w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
               <th className="text-left text-sm font-medium text-gray-400 p-4">Producto</th>

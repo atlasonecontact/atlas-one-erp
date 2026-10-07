@@ -592,7 +592,7 @@ export default function RecepcionMercaderiaPage() {
 
   if (!permsLoading && !(permissions.can_receive_merchandise && permissions.can_stock_entry)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 lg:p-8">
         <div className="max-w-3xl mx-auto">
           <AccessDenied
             title="No tenés permiso para recibir mercadería"
@@ -604,30 +604,33 @@ export default function RecepcionMercaderiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Recepción de Mercadería</h1>
-            <p className="text-slate-400 mt-1">Registra el ingreso de productos con trazabilidad completa</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Recepción de Mercadería</h1>
+            <p className="text-slate-400 mt-1 text-sm lg:text-base">
+              Registra el ingreso de productos con trazabilidad completa
+            </p>
           </div>
           {/* Toggle for enabling/disabling scanner */}
-          <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700">
-            <label className="text-sm text-slate-300 flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 self-start">
+            <label className="text-sm text-slate-300 flex items-center gap-2 cursor-pointer touch-target">
               <input
                 type="checkbox"
                 checked={scannerMode}
                 onChange={(e) => setScannerMode(e.target.checked)}
                 className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
               />
-              Scanner de Código de Barras {scannerMode ? "Activado" : "Desactivado"}
+              <span className="hidden sm:inline">Scanner de Código de Barras </span>
+              {scannerMode ? "Activado" : "Desactivado"}
             </label>
           </div>
         </div>
 
         {/* New Receipt Form */}
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-6">
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-4 lg:p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {editingDraftId && (
               <div className="p-3 bg-amber-950/30 border border-amber-900/50 rounded-lg text-sm text-amber-300">
@@ -766,7 +769,7 @@ export default function RecepcionMercaderiaPage() {
                   <ScanLine className="w-4 h-4 text-cyan-400" />
                   Buscar por código de barras
                 </Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Input
                     data-barcode-input="true"
                     value={barcodeInput}
@@ -781,10 +784,20 @@ export default function RecepcionMercaderiaPage() {
                         }
                       }
                     }}
-                    placeholder="Escaneá o escribí el código y apretá Enter"
+                    placeholder="Escaneá o escribí el código"
                     inputMode="numeric"
-                    className="bg-slate-800/50 border-slate-700 text-white"
+                    className="flex-1 min-w-[140px] h-11 bg-slate-800/50 border-slate-700 text-white"
                   />
+                  {/* Botón de cámara primero y bien visible: es el camino principal en mobile */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCameraScanner(true)}
+                    className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 shrink-0 h-11 touch-target"
+                  >
+                    <Camera className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Cámara</span>
+                  </Button>
                   <Button
                     type="button"
                     onClick={() => {
@@ -795,19 +808,10 @@ export default function RecepcionMercaderiaPage() {
                       }
                     }}
                     disabled={barcodeInput.trim().length < 4}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white shrink-0"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white shrink-0 h-11 touch-target"
                   >
-                    <Search className="w-4 h-4 mr-2" />
-                    Buscar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCameraScanner(true)}
-                    className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 shrink-0"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Cámara
+                    <Search className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Buscar</span>
                   </Button>
                 </div>
               </div>
@@ -850,9 +854,10 @@ export default function RecepcionMercaderiaPage() {
                   <Input
                     type="number"
                     min="1"
+                    inputMode="numeric"
                     value={quantity}
                     onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                    className="bg-slate-800/50 border-slate-700 text-white"
+                    className="h-11 bg-slate-800/50 border-slate-700 text-white"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -872,9 +877,10 @@ export default function RecepcionMercaderiaPage() {
                     type="number"
                     step="0.01"
                     min="0"
+                    inputMode="decimal"
                     value={unitCost}
                     onChange={(e) => setUnitCost(Number.parseFloat(e.target.value) || 0)}
-                    className="bg-slate-800/50 border-slate-700 text-white"
+                    className="h-11 bg-slate-800/50 border-slate-700 text-white"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -889,7 +895,7 @@ export default function RecepcionMercaderiaPage() {
                 type="button"
                 onClick={addItem}
                 disabled={!selectedProduct || quantity <= 0}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                className="w-full sm:w-auto h-11 bg-cyan-600 hover:bg-cyan-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Producto
@@ -898,37 +904,70 @@ export default function RecepcionMercaderiaPage() {
               {/* Items List */}
               {items.length > 0 && (
                 <div className="mt-6 space-y-2">
-                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-400 px-4 py-2">
-                    <div className="col-span-5">Producto</div>
-                    <div className="col-span-2 text-right">Cantidad</div>
-                    <div className="col-span-2 text-right">Costo Unit.</div>
-                    <div className="col-span-2 text-right">Subtotal</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  {items.map((item, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-12 gap-4 items-center bg-slate-800/30 rounded-lg px-4 py-3 border border-slate-800"
-                    >
-                      <div className="col-span-5 text-white font-medium">{item.product_name}</div>
-                      <div className="col-span-2 text-right text-slate-300">{item.quantity} un.</div>
-                      <div className="col-span-2 text-right text-slate-300">${item.unit_cost.toFixed(2)}</div>
-                      <div className="col-span-2 text-right text-cyan-400 font-semibold">
-                        ${item.subtotal.toFixed(2)}
-                      </div>
-                      <div className="col-span-1 flex justify-end">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeItem(index)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                  {/* Desktop: tabla completa */}
+                  <div className="hidden md:block space-y-2">
+                    <div className="grid grid-cols-12 gap-4 text-sm font-medium text-slate-400 px-4 py-2">
+                      <div className="col-span-5">Producto</div>
+                      <div className="col-span-2 text-right">Cantidad</div>
+                      <div className="col-span-2 text-right">Costo Unit.</div>
+                      <div className="col-span-2 text-right">Subtotal</div>
+                      <div className="col-span-1"></div>
                     </div>
-                  ))}
+                    {items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-12 gap-4 items-center bg-slate-800/30 rounded-lg px-4 py-3 border border-slate-800"
+                      >
+                        <div className="col-span-5 text-white font-medium">{item.product_name}</div>
+                        <div className="col-span-2 text-right text-slate-300">{item.quantity} un.</div>
+                        <div className="col-span-2 text-right text-slate-300">${item.unit_cost.toFixed(2)}</div>
+                        <div className="col-span-2 text-right text-cyan-400 font-semibold">
+                          ${item.subtotal.toFixed(2)}
+                        </div>
+                        <div className="col-span-1 flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeItem(index)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mobile: cards, una por producto agregado */}
+                  <div className="md:hidden space-y-2">
+                    {items.map((item, index) => (
+                      <div
+                        key={index}
+                        className="bg-slate-800/30 rounded-lg px-4 py-3 border border-slate-800"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-white font-medium">{item.product_name}</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeItem(index)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-950/20 touch-target shrink-0 -mt-1 -mr-1"
+                            aria-label={`Quitar ${item.product_name}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="text-slate-400">
+                            {item.quantity} un. × ${item.unit_cost.toFixed(2)}
+                          </span>
+                          <span className="text-cyan-400 font-semibold">${item.subtotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Total */}
                   <div className="flex justify-end pt-4 border-t border-slate-800">
@@ -955,7 +994,38 @@ export default function RecepcionMercaderiaPage() {
 
             {/* Submit Button */}
             <div className="space-y-2 pt-4">
-              <div className="flex justify-end gap-3">
+              {/* Mobile: apiladas, la acción principal primero y bien visible */}
+              <div className="flex flex-col gap-2 sm:hidden">
+                <Button
+                  type="submit"
+                  disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
+                  className="w-full h-12 text-base bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Confirmar y sumar al stock
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveDraft}
+                  disabled={saving || confirming || !receiptNumber || !supplierName || items.length === 0}
+                  className="w-full h-11 border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Guardando..." : "Guardar borrador (no suma stock)"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={resetForm}
+                  className="w-full h-11 text-slate-300 hover:bg-slate-800"
+                >
+                  {editingDraftId ? "Cancelar edición" : "Limpiar"}
+                </Button>
+              </div>
+
+              {/* Desktop: en fila, como antes */}
+              <div className="hidden sm:flex justify-end gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -983,7 +1053,7 @@ export default function RecepcionMercaderiaPage() {
                   Confirmar y sumar al stock
                 </Button>
               </div>
-              <p className="text-right text-xs text-amber-400/80">
+              <p className="text-center sm:text-right text-xs text-amber-400/80">
                 "Guardar borrador" no mueve stock todavía. Para que los productos aparezcan en el punto de venta, tenés
                 que usar <span className="font-semibold">"Confirmar y sumar al stock"</span>.
               </p>
@@ -992,10 +1062,10 @@ export default function RecepcionMercaderiaPage() {
         </Card>
 
         {/* Receipts History */}
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-6">
-          <div className="flex items-center justify-between mb-6">
+        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-xl p-4 lg:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
             <h2 className="text-xl font-bold text-white">Historial de Recepciones</h2>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 value={searchQuery}
@@ -1010,18 +1080,18 @@ export default function RecepcionMercaderiaPage() {
             {filteredReceipts.map((receipt) => (
               <div
                 key={receipt.id}
-                className="flex items-center justify-between bg-slate-800/30 rounded-lg p-4 border border-slate-800 hover:border-slate-700 transition-colors"
+                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-800/30 rounded-lg p-4 border border-slate-800 hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   {receipt.status === "draft" ? (
-                    <FileText className="w-5 h-5 text-amber-400" />
+                    <FileText className="w-5 h-5 text-amber-400 shrink-0" />
                   ) : receipt.status === "cancelled" ? (
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
                   ) : (
-                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                    <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
                   )}
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-white font-semibold ${receipt.status === "cancelled" ? "line-through opacity-60" : ""}`}
                       >
@@ -1049,55 +1119,57 @@ export default function RecepcionMercaderiaPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
+                <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6 flex-wrap">
+                  <div className="text-left sm:text-right">
                     <div className="text-sm text-slate-400">Recibido por</div>
                     <div className="text-white">{receipt.received_by_name}</div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <div className="text-sm text-slate-400">Total</div>
                     <div className="text-lg font-bold text-cyan-400">${receipt.total_amount.toFixed(2)}</div>
                   </div>
-                  {receipt.receipt_photo_url && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(receipt.receipt_photo_url!, "_blank")}
-                      className="border-slate-700 text-slate-300"
-                    >
-                      <Camera className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {receipt.status === "draft" && (
-                    <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {receipt.receipt_photo_url && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => continueDraft(receipt)}
-                        className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40"
+                        onClick={() => window.open(receipt.receipt_photo_url!, "_blank")}
+                        className="border-slate-700 text-slate-300 touch-target"
                       >
-                        Continuar
+                        <Camera className="w-4 h-4" />
                       </Button>
+                    )}
+                    {receipt.status === "draft" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => continueDraft(receipt)}
+                          className="border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 touch-target"
+                        >
+                          Continuar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setCancelTarget(receipt)}
+                          className="border-slate-700 text-slate-300 touch-target"
+                        >
+                          Descartar
+                        </Button>
+                      </>
+                    )}
+                    {receipt.status === "confirmed" && isOwner && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setCancelTarget(receipt)}
-                        className="border-slate-700 text-slate-300"
+                        className="border-red-800 text-red-300 hover:bg-red-950/30 touch-target"
                       >
-                        Descartar
+                        Anular
                       </Button>
-                    </>
-                  )}
-                  {receipt.status === "confirmed" && isOwner && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setCancelTarget(receipt)}
-                      className="border-red-800 text-red-300 hover:bg-red-950/30"
-                    >
-                      Anular
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
