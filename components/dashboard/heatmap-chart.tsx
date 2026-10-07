@@ -13,8 +13,8 @@ export function HeatmapChart() {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-sm font-medium text-white mb-4">Mapa de calor horario</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-sm font-medium text-foreground mb-4">Mapa de calor horario</h3>
 
       <div className="space-y-2">
         {data.map((row, rowIndex) => (
@@ -32,7 +32,7 @@ export function HeatmapChart() {
         ))}
         <div className="flex gap-2 mt-2">
           {hours.map((hour) => (
-            <div key={hour} className="flex-1 text-center text-xs text-gray-500">
+            <div key={hour} className="flex-1 text-center text-xs text-muted-foreground">
               {hour}h
             </div>
           ))}

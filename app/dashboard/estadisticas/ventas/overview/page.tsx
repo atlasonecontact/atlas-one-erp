@@ -174,7 +174,7 @@ export default function VentasOverviewPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6 hover:border-cyan-500/30 transition-all">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-cyan-400" />
@@ -191,7 +191,7 @@ export default function VentasOverviewPage() {
           {cmp !== undefined && <p className="text-xs text-muted-foreground mt-1">vs {days} días anteriores</p>}
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
             <Calendar className="w-6 h-6 text-blue-400" />
           </div>
@@ -199,7 +199,7 @@ export default function VentasOverviewPage() {
           <p className="text-sm text-muted-foreground">Promedio Diario</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-green-400" />
           </div>
@@ -207,7 +207,7 @@ export default function VentasOverviewPage() {
           <p className="text-sm text-muted-foreground">Promedio Semanal</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <ShoppingCart className="w-6 h-6 text-yellow-400" />
           </div>
@@ -215,7 +215,7 @@ export default function VentasOverviewPage() {
           <p className="text-sm text-muted-foreground">Ticket Promedio ({stats.tickets} tickets)</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6 hover:border-cyan-500/30 transition-all">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6 hover:border-cyan-500/30 transition-all">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Package className="w-6 h-6 text-purple-400" />
           </div>

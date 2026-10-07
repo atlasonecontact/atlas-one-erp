@@ -622,14 +622,14 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card border border-cyan-500/20 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/10 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white">Importar Productos desde CSV</h2>
-            <p className="text-sm text-gray-400 mt-1">Sin límite de productos • Formato Excel compatible</p>
+            <h2 className="text-xl font-bold text-foreground">Importar Productos desde CSV</h2>
+            <p className="text-sm text-muted-foreground mt-1">Sin límite de productos • Formato Excel compatible</p>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -641,8 +641,8 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
             <div className="flex items-center gap-3">
               <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
               <div>
-                <span className="text-sm text-gray-300 block">Descarga la plantilla de ejemplo</span>
-                <span className="text-xs text-gray-500">
+                <span className="text-sm text-muted-foreground block">Descarga la plantilla de ejemplo</span>
+                <span className="text-xs text-muted-foreground">
                   Columnas: sku, nombre, marca, categoría, precio, costo, stock...
                 </span>
               </div>
@@ -659,7 +659,7 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
           </div>
 
           {/* Column info */}
-          <div className="text-xs text-gray-500 px-2">
+          <div className="text-xs text-muted-foreground px-2">
             <strong>Columnas soportadas:</strong> SKU, Nombre, Marca, Línea/Variante, Presentación, Categoría,
             Subcategoría, Contenido Neto, Unidad, EAN, Costo sin IVA, Costo con IVA, Precio, Stock
           </div>
@@ -683,27 +683,27 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
             {parsing ? (
               <div className="space-y-3">
                 <Loader2 className="w-12 h-12 text-cyan-500 mx-auto animate-spin" />
-                <p className="text-white font-medium">Procesando archivo...</p>
+                <p className="text-foreground font-medium">Procesando archivo...</p>
                 <div className="w-64 mx-auto bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className="text-gray-500 text-sm">{progress}% completado</p>
+                <p className="text-muted-foreground text-sm">{progress}% completado</p>
               </div>
             ) : file ? (
               <div className="flex items-center justify-center gap-2 text-cyan-400">
                 <FileText className="w-5 h-5" />
                 <span>{file.name}</span>
-                <span className="text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+                <span className="text-muted-foreground">({(file.size / 1024).toFixed(1)} KB)</span>
               </div>
             ) : (
               <>
                 <Upload className="w-12 h-12 text-cyan-500/50 mx-auto mb-4" />
-                <p className="text-white font-medium mb-1">Arrastra un archivo CSV aquí</p>
-                <p className="text-gray-500 text-sm">o haz clic para seleccionar</p>
-                <p className="text-gray-600 text-xs mt-2">Para Excel: guardar como &quot;CSV UTF-8&quot;</p>
+                <p className="text-foreground font-medium mb-1">Arrastra un archivo CSV aquí</p>
+                <p className="text-muted-foreground text-sm">o haz clic para seleccionar</p>
+                <p className="text-muted-foreground text-xs mt-2">Para Excel: guardar como &quot;CSV UTF-8&quot;</p>
               </>
             )}
           </div>
@@ -763,39 +763,39 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">{totalRows.toLocaleString()} productos listos</span>
                 </div>
-                <span className="text-xs text-gray-500">Mostrando {Math.min(preview.length, 10)}</span>
+                <span className="text-xs text-muted-foreground">Mostrando {Math.min(preview.length, 10)}</span>
               </div>
               <div className="rounded-lg border border-cyan-500/10 overflow-x-auto">
                 <table className="w-full text-sm min-w-[700px]">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="text-left p-3 text-gray-400 font-medium">SKU</th>
-                      <th className="text-left p-3 text-gray-400 font-medium">Nombre</th>
-                      <th className="text-left p-3 text-gray-400 font-medium">Categoría</th>
-                      <th className="text-right p-3 text-gray-400 font-medium">Costo</th>
-                      <th className="text-right p-3 text-gray-400 font-medium">Precio</th>
-                      <th className="text-right p-3 text-gray-400 font-medium">Stock</th>
+                    <tr className="bg-muted">
+                      <th className="text-left p-3 text-muted-foreground font-medium">SKU</th>
+                      <th className="text-left p-3 text-muted-foreground font-medium">Nombre</th>
+                      <th className="text-left p-3 text-muted-foreground font-medium">Categoría</th>
+                      <th className="text-right p-3 text-muted-foreground font-medium">Costo</th>
+                      <th className="text-right p-3 text-muted-foreground font-medium">Precio</th>
+                      <th className="text-right p-3 text-muted-foreground font-medium">Stock</th>
                     </tr>
                   </thead>
                   <tbody>
                     {preview.slice(0, 10).map((product, i) => (
                       <tr key={i} className="border-t border-cyan-500/5">
-                        <td className="p-3 text-gray-500 font-mono text-xs">{product.sku?.substring(0, 15)}</td>
-                        <td className="p-3 text-white">{product.name?.substring(0, 25)}</td>
-                        <td className="p-3 text-gray-400">{product.category}</td>
-                        <td className="p-3 text-gray-400 text-right">
+                        <td className="p-3 text-muted-foreground font-mono text-xs">{product.sku?.substring(0, 15)}</td>
+                        <td className="p-3 text-foreground">{product.name?.substring(0, 25)}</td>
+                        <td className="p-3 text-muted-foreground">{product.category}</td>
+                        <td className="p-3 text-muted-foreground text-right">
                           ${product.cost_inc_vat?.toLocaleString() || "-"}
                         </td>
                         <td className="p-3 text-cyan-400 text-right font-medium">
                           ${product.sale_price?.toLocaleString()}
                         </td>
-                        <td className="p-3 text-white text-right">{product.stock || 0}</td>
+                        <td className="p-3 text-foreground text-right">{product.stock || 0}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {totalRows > 10 && (
-                  <div className="p-3 text-center text-gray-500 text-sm bg-white/5">
+                  <div className="p-3 text-center text-muted-foreground text-sm bg-muted">
                     ... y {(totalRows - 10).toLocaleString()} más
                   </div>
                 )}
@@ -806,11 +806,11 @@ SNK-LAY-CLA-150G,"Lays Clásicas 150g",Lays,Clásicas,"150g Bolsa",Snacks,Papas,
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-cyan-500/10 shrink-0">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             {file && `Separador: ${separator === "," ? "coma" : "punto y coma"}`}
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} className="border-cyan-500/30 text-gray-300 bg-transparent">
+            <Button variant="outline" onClick={handleClose} className="border-cyan-500/30 text-muted-foreground bg-transparent">
               Cancelar
             </Button>
             <Button

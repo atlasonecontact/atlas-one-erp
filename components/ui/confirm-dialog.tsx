@@ -80,7 +80,7 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] bg-[#0a0f1a] border-cyan-500/20 p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[400px] bg-card border-cyan-500/20 p-0 overflow-hidden">
         <div className="p-6">
           {/* Icon */}
           <div className="flex justify-center mb-4">
@@ -92,11 +92,11 @@ export function ConfirmDialog({
           {/* Content */}
           <div className="text-center mb-6">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-white mb-2">
+              <DialogTitle className="text-xl font-semibold text-foreground mb-2">
                 {title}
               </DialogTitle>
             </DialogHeader>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {description}
             </p>
           </div>
@@ -108,7 +108,7 @@ export function ConfirmDialog({
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+              className="flex-1 border-border text-muted-foreground hover:bg-muted bg-transparent"
             >
               {cancelText}
             </Button>

@@ -118,7 +118,7 @@ export default function ProductividadLocalPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20">
             <DollarSign className="h-6 w-6 text-cyan-400" />
           </div>
@@ -132,7 +132,7 @@ export default function ProductividadLocalPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/20">
             <ShoppingCart className="h-6 w-6 text-yellow-400" />
           </div>
@@ -140,7 +140,7 @@ export default function ProductividadLocalPage() {
           <p className="text-sm text-muted-foreground">Tickets</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
             <TrendingUp className="h-6 w-6 text-green-400" />
           </div>
@@ -148,7 +148,7 @@ export default function ProductividadLocalPage() {
           <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
             <Building2 className="h-6 w-6 text-purple-400" />
           </div>
@@ -220,15 +220,15 @@ export default function ProductividadLocalPage() {
               <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                 <div>
                   <p className="text-muted-foreground">Ventas</p>
-                  <p className="text-gray-200">{formatCurrency(b.revenue)}</p>
+                  <p className="text-foreground">{formatCurrency(b.revenue)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Tickets</p>
-                  <p className="text-gray-200">{b.tickets}</p>
+                  <p className="text-foreground">{b.tickets}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Promedio</p>
-                  <p className="text-gray-200">{formatCurrency(b.avgTicket)}</p>
+                  <p className="text-foreground">{formatCurrency(b.avgTicket)}</p>
                 </div>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function ProductividadLocalPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-left text-muted-foreground">
+              <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="py-2 pr-4 font-medium">Sucursal</th>
                 <th className="py-2 pr-4 text-right font-medium">Ventas</th>
                 <th className="py-2 pr-4 text-right font-medium">Tickets</th>
@@ -254,7 +254,7 @@ export default function ProductividadLocalPage() {
               {stats.branches.map((b, i) => (
                 <tr key={b.name + i} className="border-b border-border hover:bg-accent/50">
                   <td className="py-2.5 pr-4 font-medium text-foreground">{b.name}</td>
-                  <td className="py-2.5 pr-4 text-right text-gray-200">{formatCurrency(b.revenue)}</td>
+                  <td className="py-2.5 pr-4 text-right text-foreground">{formatCurrency(b.revenue)}</td>
                   <td className="py-2.5 pr-4 text-right text-muted-foreground">{b.tickets}</td>
                   <td className="py-2.5 pr-4 text-right text-muted-foreground">{formatCurrency(b.avgTicket)}</td>
                   <td className="py-2.5 pl-4 text-right text-cyan-400">{b.share.toFixed(1)}%</td>

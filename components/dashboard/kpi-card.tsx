@@ -38,17 +38,17 @@ export function KPICard({
       onClick={onClick}
       className={cn(
         "rounded-xl border p-5 transition-all duration-300 hover:border-cyan-500/30 hover:shadow-2xl hover:shadow-cyan-500/10",
-        isHighlight ? "border-cyan-500/30 bg-cyan-500/5" : "border-cyan-500/10 bg-[#0a0f1a]",
+        isHighlight ? "border-cyan-500/30 bg-cyan-500/5" : "border-cyan-500/10 bg-card",
         onClick && "cursor-pointer hover:scale-[1.02] active:scale-[0.98]",
       )}
     >
       <div className="flex items-start justify-between mb-3">
-        <span className="text-sm text-gray-400 font-medium">{title}</span>
+        <span className="text-sm text-muted-foreground font-medium">{title}</span>
         {Icon && (
           <div
             className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center transition-transform duration-300",
-              isHighlight ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-400",
+              isHighlight ? "bg-cyan-500/20 text-cyan-400" : "bg-muted text-muted-foreground",
               onClick && "group-hover:scale-110",
             )}
           >
@@ -58,7 +58,7 @@ export function KPICard({
       </div>
 
       <div className="space-y-2">
-        <p className={cn("text-3xl font-bold tracking-tight", isHighlight ? "text-cyan-400" : "text-white")}>{value}</p>
+        <p className={cn("text-3xl font-bold tracking-tight", isHighlight ? "text-cyan-400" : "text-foreground")}>{value}</p>
 
         {change !== undefined && (
           <div className="flex items-center gap-1.5">
@@ -71,11 +71,11 @@ export function KPICard({
               {isPositive ? "+" : ""}
               {change}%
             </span>
-            {changeLabel && <span className="text-xs text-gray-500">{changeLabel}</span>}
+            {changeLabel && <span className="text-xs text-muted-foreground">{changeLabel}</span>}
           </div>
         )}
 
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3 h-12 -mx-1">

@@ -56,24 +56,24 @@ export function ProductDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-md overflow-hidden flex flex-col">
+      <div className="bg-card border border-cyan-500/20 rounded-2xl w-full max-w-md overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/10 shrink-0">
-          <h2 className="text-lg font-bold text-white">Producto encontrado</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <h2 className="text-lg font-bold text-foreground">Producto encontrado</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto">
           <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20 space-y-1">
-            <p className="text-white font-semibold text-lg">{product.name}</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-foreground font-semibold text-lg">{product.name}</p>
+            <p className="text-sm text-muted-foreground">
               {product.category}
               {product.subcategory ? ` · ${product.subcategory}` : ""}
               {product.brand ? ` · ${product.brand}` : ""}
             </p>
             {product.barcode && (
-              <p className="flex items-center gap-1.5 text-xs text-gray-500 pt-1">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
                 <Barcode className="w-3.5 h-3.5" />
                 {product.barcode}
               </p>
@@ -81,24 +81,24 @@ export function ProductDetailModal({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <div className="p-3 rounded-lg bg-white/5 border border-cyan-500/10">
-              <p className="text-gray-500">Stock</p>
-              <p className={`font-semibold ${product.stock <= 10 ? "text-yellow-400" : "text-white"}`}>
+            <div className="p-3 rounded-lg bg-muted border border-cyan-500/10">
+              <p className="text-muted-foreground">Stock</p>
+              <p className={`font-semibold ${product.stock <= 10 ? "text-yellow-400" : "text-foreground"}`}>
                 {product.stock} un.
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 border border-cyan-500/10">
-              <p className="text-gray-500">Costo</p>
-              <p className="text-white font-semibold">${product.cost.toLocaleString("es-AR")}</p>
+            <div className="p-3 rounded-lg bg-muted border border-cyan-500/10">
+              <p className="text-muted-foreground">Costo</p>
+              <p className="text-foreground font-semibold">${product.cost.toLocaleString("es-AR")}</p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 border border-cyan-500/10">
-              <p className="text-gray-500">Precio</p>
+            <div className="p-3 rounded-lg bg-muted border border-cyan-500/10">
+              <p className="text-muted-foreground">Precio</p>
               <p className="text-cyan-400 font-semibold">${product.price.toLocaleString("es-AR")}</p>
             </div>
           </div>
 
           <div className="flex items-center justify-between text-sm px-1">
-            <span className="text-gray-500">Margen</span>
+            <span className="text-muted-foreground">Margen</span>
             <span className={margin >= 30 ? "text-emerald-400" : margin >= 10 ? "text-amber-400" : "text-red-400"}>
               {margin.toFixed(1)}%
             </span>
@@ -106,27 +106,27 @@ export function ProductDetailModal({
 
           {product.supplier && (
             <div className="flex items-center justify-between text-sm px-1">
-              <span className="text-gray-500">Proveedor</span>
-              <span className="text-gray-300">{product.supplier}</span>
+              <span className="text-muted-foreground">Proveedor</span>
+              <span className="text-muted-foreground">{product.supplier}</span>
             </div>
           )}
 
           {product.expiration_date && (
-            <div className="flex items-center gap-1.5 text-sm px-1 text-gray-400">
+            <div className="flex items-center gap-1.5 text-sm px-1 text-muted-foreground">
               <CalendarClock className="w-3.5 h-3.5" />
               Vence: {new Date(product.expiration_date).toLocaleDateString("es-AR")}
             </div>
           )}
 
           <div className="space-y-2">
-            <label className="text-sm text-gray-300">Agregar stock rápido</label>
+            <label className="text-sm text-muted-foreground">Agregar stock rápido</label>
             <div className="flex gap-2">
               <Input
                 type="number"
                 value={quickStockQty}
                 onChange={(e) => setQuickStockQty(e.target.value)}
                 placeholder="Cantidad"
-                className="bg-[#0d1424] border-cyan-500/20 text-white"
+                className="bg-background border-cyan-500/20 text-foreground"
               />
               <Button
                 type="button"
@@ -160,7 +160,7 @@ export function ProductDetailModal({
                 onEdit(product)
                 onClose()
               }}
-              className="flex-1 border-cyan-500/20 text-gray-300 hover:bg-white/10 bg-transparent gap-2"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:bg-muted bg-transparent gap-2"
             >
               <Pencil className="w-4 h-4" />
               Editar ficha

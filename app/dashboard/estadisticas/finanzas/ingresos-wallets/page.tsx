@@ -117,7 +117,7 @@ export default function IngresosWalletsPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20">
               <Wallet className="h-6 w-6 text-cyan-400" />
@@ -134,7 +134,7 @@ export default function IngresosWalletsPage() {
           {cmp !== undefined && <p className="mt-1 text-xs text-muted-foreground">vs {days} días anteriores</p>}
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
             <Receipt className="h-6 w-6 text-blue-400" />
           </div>
@@ -142,7 +142,7 @@ export default function IngresosWalletsPage() {
           <p className="text-sm text-muted-foreground">Transacciones</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
             <TrendingUp className="h-6 w-6 text-green-400" />
           </div>
@@ -150,7 +150,7 @@ export default function IngresosWalletsPage() {
           <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
             <Percent className="h-6 w-6 text-purple-400" />
           </div>
@@ -273,7 +273,7 @@ export default function IngresosWalletsPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-left text-muted-foreground">
+              <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="py-2 pr-4 font-medium">Fecha</th>
                 <th className="py-2 pr-4 font-medium">Método</th>
                 <th className="py-2 pr-4 font-medium">Sucursal</th>

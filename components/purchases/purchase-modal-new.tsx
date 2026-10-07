@@ -190,7 +190,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-cyan-400" />
@@ -202,14 +202,14 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
           <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {/* Supplier */}
             <div className="space-y-2">
-              <Label className="text-gray-300">Proveedor</Label>
+              <Label className="text-muted-foreground">Proveedor</Label>
               <Select value={supplier} onValueChange={setSupplier}>
-                <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+                <SelectTrigger className="bg-background border-cyan-500/20 text-foreground">
                   <SelectValue placeholder="Seleccionar proveedor..." />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+                <SelectContent className="bg-background border-cyan-500/20">
                   {defaultSuppliers.map((s) => (
-                    <SelectItem key={s} value={s} className="text-white hover:bg-white/10">
+                    <SelectItem key={s} value={s} className="text-foreground hover:bg-muted">
                       {s}
                     </SelectItem>
                   ))}
@@ -220,26 +220,26 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
                   placeholder="Nombre del proveedor..."
                   value={customSupplier}
                   onChange={(e) => setCustomSupplier(e.target.value)}
-                  className="bg-[#0d1424] border-cyan-500/20 text-white mt-2"
+                  className="bg-background border-cyan-500/20 text-foreground mt-2"
                 />
               )}
             </div>
 
             {/* Product Search */}
             <div className="space-y-2">
-              <Label className="text-gray-300">Agregar productos</Label>
+              <Label className="text-muted-foreground">Agregar productos</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Buscar producto para agregar..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white"
+                  className="pl-10 bg-background border-cyan-500/20 text-foreground"
                 />
               </div>
               {filteredProducts.length > 0 && (
-                <div className="rounded-lg border border-cyan-500/10 bg-[#0d1424] max-h-40 overflow-y-auto">
+                <div className="rounded-lg border border-cyan-500/10 bg-background max-h-40 overflow-y-auto">
                   {filteredProducts.map((product) => (
                     <button
                       key={product.id}
@@ -248,8 +248,8 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
                       className="w-full text-left p-3 hover:bg-cyan-500/10 transition-colors border-b border-cyan-500/5 last:border-0 flex items-center justify-between"
                     >
                       <div>
-                        <p className="text-white text-sm font-medium">{product.name}</p>
-                        <span className="text-xs text-gray-500">{product.category}</span>
+                        <p className="text-foreground text-sm font-medium">{product.name}</p>
+                        <span className="text-xs text-muted-foreground">{product.category}</span>
                       </div>
                       <Plus className="w-4 h-4 text-cyan-400" />
                     </button>
@@ -261,44 +261,44 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
             {/* Items List */}
             {items.length > 0 && (
               <div className="space-y-2">
-                <Label className="text-gray-300">Productos en la compra ({items.length})</Label>
-                <div className="rounded-lg border border-cyan-500/10 bg-[#0d1424] divide-y divide-cyan-500/10">
+                <Label className="text-muted-foreground">Productos en la compra ({items.length})</Label>
+                <div className="rounded-lg border border-cyan-500/10 bg-background divide-y divide-cyan-500/10">
                   {items.map((item) => (
                     <div key={item.product.id} className="p-3 flex items-center gap-3">
                       <div className="w-8 h-8 rounded bg-cyan-500/10 flex items-center justify-center">
                         <Package className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{item.product.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-foreground text-sm font-medium truncate">{item.product.name}</p>
+                        <p className="text-xs text-muted-foreground">
                           Stock actual: {item.product.stock_quantity} → 
                           <span className="text-green-400"> {item.product.stock_quantity + item.quantity}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <p className="text-xs text-gray-500">Cantidad</p>
+                          <p className="text-xs text-muted-foreground">Cantidad</p>
                           <Input
                             type="number"
                             min={1}
                             value={item.quantity}
                             onChange={(e) => updateItemQuantity(item.product.id, Number(e.target.value))}
-                            className="w-16 h-8 text-center bg-[#0a0f1a] border-cyan-500/20 text-white text-sm"
+                            className="w-16 h-8 text-center bg-card border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-gray-500">Costo unit.</p>
+                          <p className="text-xs text-muted-foreground">Costo unit.</p>
                           <Input
                             type="number"
                             min={0}
                             step={0.01}
                             value={item.unitCost}
                             onChange={(e) => updateItemCost(item.product.id, Number(e.target.value))}
-                            className="w-20 h-8 text-right bg-[#0a0f1a] border-cyan-500/20 text-white text-sm"
+                            className="w-20 h-8 text-right bg-card border-cyan-500/20 text-foreground text-sm"
                           />
                         </div>
                         <div className="text-right w-20">
-                          <p className="text-xs text-gray-500">Subtotal</p>
+                          <p className="text-xs text-muted-foreground">Subtotal</p>
                           <p className="text-sm font-medium text-cyan-400">
                             ${(item.quantity * item.unitCost).toLocaleString()}
                           </p>
@@ -308,7 +308,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
                           variant="ghost"
                           size="icon"
                           onClick={() => removeItem(item.product.id)}
-                          className="text-gray-400 hover:text-red-400 h-8 w-8"
+                          className="text-muted-foreground hover:text-red-400 h-8 w-8"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -321,12 +321,12 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label className="text-gray-300">Notas (opcional)</Label>
+              <Label className="text-muted-foreground">Notas (opcional)</Label>
               <Input
                 placeholder="Factura #, observaciones..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="bg-[#0d1424] border-cyan-500/20 text-white"
+                className="bg-background border-cyan-500/20 text-foreground"
               />
             </div>
           </div>
@@ -335,7 +335,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
           <div className="pt-4 mt-4 border-t border-cyan-500/10 space-y-4">
             {/* Total */}
             <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-              <span className="text-gray-300">Total de la compra:</span>
+              <span className="text-muted-foreground">Total de la compra:</span>
               <span className="text-2xl font-bold text-cyan-400">${total.toLocaleString()}</span>
             </div>
 
@@ -352,7 +352,7 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+                className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
               >
                 Cancelar
               </Button>

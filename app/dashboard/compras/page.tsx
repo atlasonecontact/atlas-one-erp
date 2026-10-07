@@ -134,7 +134,7 @@ export default function ComprasPage() {
       case "transit":
         return "bg-cyan-500/20 text-cyan-400"
       default:
-        return "bg-gray-500/20 text-gray-400"
+        return "bg-gray-500/20 text-muted-foreground"
     }
   }
 
@@ -169,8 +169,8 @@ export default function ComprasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Compras</h1>
-          <p className="text-gray-400 text-sm">Gestiona las órdenes de compra a proveedores</p>
+          <h1 className="text-2xl font-bold text-foreground">Compras</h1>
+          <p className="text-muted-foreground text-sm">Gestiona las órdenes de compra a proveedores</p>
         </div>
         <Button
           onClick={() => setShowModal(true)}
@@ -183,71 +183,71 @@ export default function ComprasPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Compras del mes</p>
-          <p className="text-2xl font-bold text-white">${stats.monthTotal.toLocaleString()}</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Compras del mes</p>
+          <p className="text-2xl font-bold text-foreground">${stats.monthTotal.toLocaleString()}</p>
           <p className="text-xs text-green-400 mt-1">{purchases.filter(p => p.status === "completed").length} órdenes completadas</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Pendientes</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Pendientes</p>
           <p className="text-2xl font-bold text-yellow-400">{stats.pendingCount}</p>
-          <p className="text-xs text-gray-500 mt-1">${stats.pendingTotal.toLocaleString()} en espera</p>
+          <p className="text-xs text-muted-foreground mt-1">${stats.pendingTotal.toLocaleString()} en espera</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-          <p className="text-sm text-gray-400 mb-1">Proveedores activos</p>
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+          <p className="text-sm text-muted-foreground mb-1">Proveedores activos</p>
           <p className="text-2xl font-bold text-cyan-400">{stats.supplierCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Este mes</p>
+          <p className="text-xs text-muted-foreground mt-1">Este mes</p>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar por proveedor..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[#0a0f1a] border-cyan-500/10 text-white placeholder:text-gray-500"
+          className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Purchases table */}
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      <div className="rounded-xl border border-cyan-500/10 bg-card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">
-              <th className="text-left text-sm font-medium text-gray-400 p-4">ID</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Proveedor</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Fecha</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Total</th>
-              <th className="text-left text-sm font-medium text-gray-400 p-4">Estado</th>
-              <th className="text-right text-sm font-medium text-gray-400 p-4">Acciones</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">ID</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Proveedor</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Fecha</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Total</th>
+              <th className="text-left text-sm font-medium text-muted-foreground p-4">Estado</th>
+              <th className="text-right text-sm font-medium text-muted-foreground p-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Cargando compras...
                 </td>
               </tr>
             ) : filteredPurchases.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   No hay compras registradas
                 </td>
               </tr>
             ) : (
               filteredPurchases.map((purchase) => (
-                <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-white/5 transition-colors">
+                <tr key={purchase.id} className="border-b border-cyan-500/5 hover:bg-muted transition-colors">
                   <td className="p-4">
                     <span className="text-cyan-400 font-mono">{purchase.purchase_number}</span>
                   </td>
-                  <td className="p-4 text-white font-medium">{purchase.supplier_name}</td>
-                  <td className="p-4 text-gray-400">{formatDate(purchase.created_at)}</td>
-                  <td className="p-4 text-white">${Number(purchase.total_amount).toLocaleString()}</td>
+                  <td className="p-4 text-foreground font-medium">{purchase.supplier_name}</td>
+                  <td className="p-4 text-muted-foreground">{formatDate(purchase.created_at)}</td>
+                  <td className="p-4 text-foreground">${Number(purchase.total_amount).toLocaleString()}</td>
                   <td className="p-4">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(purchase.status)}`}
@@ -261,7 +261,7 @@ export default function ComprasPage() {
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </td>

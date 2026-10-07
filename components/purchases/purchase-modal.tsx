@@ -34,21 +34,21 @@ export function PurchaseModal({ open, onClose, onSave }: PurchaseModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0a0f1a] border-cyan-500/20 text-white max-w-md">
+      <DialogContent className="bg-card border-cyan-500/20 text-foreground max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Nueva Orden de Compra</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="text-gray-300">Proveedor</Label>
+            <Label className="text-muted-foreground">Proveedor</Label>
             <Select value={formData.supplier} onValueChange={(value) => setFormData({ ...formData, supplier: value })}>
-              <SelectTrigger className="bg-[#0d1424] border-cyan-500/20 text-white">
+              <SelectTrigger className="bg-background border-cyan-500/20 text-foreground">
                 <SelectValue placeholder="Seleccionar proveedor" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0d1424] border-cyan-500/20">
+              <SelectContent className="bg-background border-cyan-500/20">
                 {suppliers.map((supplier) => (
-                  <SelectItem key={supplier} value={supplier} className="text-white hover:bg-white/10">
+                  <SelectItem key={supplier} value={supplier} className="text-foreground hover:bg-muted">
                     {supplier}
                   </SelectItem>
                 ))}
@@ -57,13 +57,13 @@ export function PurchaseModal({ open, onClose, onSave }: PurchaseModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-300">Total de la compra</Label>
+            <Label className="text-muted-foreground">Total de la compra</Label>
             <Input
               type="number"
               value={formData.total}
               onChange={(e) => setFormData({ ...formData, total: Number(e.target.value) })}
               placeholder="$0"
-              className="bg-[#0d1424] border-cyan-500/20 text-white"
+              className="bg-background border-cyan-500/20 text-foreground"
             />
           </div>
 
@@ -72,7 +72,7 @@ export function PurchaseModal({ open, onClose, onSave }: PurchaseModalProps) {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-cyan-500/20 text-gray-400 hover:text-white bg-transparent"
+              className="flex-1 border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent"
             >
               Cancelar
             </Button>

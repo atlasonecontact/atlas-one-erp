@@ -136,19 +136,19 @@ export function PriceAdjustmentModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0f1a] border border-cyan-500/20 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card border border-cyan-500/20 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-cyan-500/10 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Percent className="w-5 h-5 text-cyan-400" />
               Ajuste de Precios
             </h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Modifica precios de múltiples productos
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -161,21 +161,21 @@ export function PriceAdjustmentModal({
                 <AlertTriangle className="w-5 h-5" />
                 <span className="font-medium">Confirmar cambios</span>
               </div>
-              <p className="text-sm text-gray-300">
-                Estás a punto de modificar el precio de <strong className="text-white">{summary.count} productos</strong>.
+              <p className="text-sm text-muted-foreground">
+                Estás a punto de modificar el precio de <strong className="text-foreground">{summary.count} productos</strong>.
               </p>
             </div>
 
             {/* Summary */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
-                <div className="text-sm text-gray-400 mb-1">Cambio promedio</div>
+              <div className="p-4 rounded-lg bg-muted border border-cyan-500/10">
+                <div className="text-sm text-muted-foreground mb-1">Cambio promedio</div>
                 <div className={`text-2xl font-bold ${summary.avgDiff >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {summary.avgDiff >= 0 ? '+' : ''}{summary.percentChange.toFixed(1)}%
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
-                <div className="text-sm text-gray-400 mb-1">Diferencia total</div>
+              <div className="p-4 rounded-lg bg-muted border border-cyan-500/10">
+                <div className="text-sm text-muted-foreground mb-1">Diferencia total</div>
                 <div className={`text-2xl font-bold ${summary.avgDiff >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {summary.avgDiff >= 0 ? '+' : ''}${(summary.totalNew - summary.totalOld).toLocaleString()}
                 </div>
@@ -184,17 +184,17 @@ export function PriceAdjustmentModal({
 
             {/* Preview of changes */}
             <div className="rounded-lg border border-cyan-500/10 overflow-hidden">
-              <div className="bg-white/5 p-3 text-sm font-medium text-gray-400">
+              <div className="bg-muted p-3 text-sm font-medium text-muted-foreground">
                 Vista previa de cambios
               </div>
               <div className="max-h-48 overflow-auto">
                 <table className="w-full min-w-[480px] text-sm">
-                  <thead className="bg-white/5 sticky top-0">
+                  <thead className="bg-muted sticky top-0">
                     <tr>
-                      <th className="text-left p-3 text-gray-400">Producto</th>
-                      <th className="text-right p-3 text-gray-400">Anterior</th>
-                      <th className="text-right p-3 text-gray-400">Nuevo</th>
-                      <th className="text-right p-3 text-gray-400">Cambio</th>
+                      <th className="text-left p-3 text-muted-foreground">Producto</th>
+                      <th className="text-right p-3 text-muted-foreground">Anterior</th>
+                      <th className="text-right p-3 text-muted-foreground">Nuevo</th>
+                      <th className="text-right p-3 text-muted-foreground">Cambio</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -202,8 +202,8 @@ export function PriceAdjustmentModal({
                       const change = priceChanges[product.id]
                       return (
                         <tr key={product.id} className="border-t border-cyan-500/5">
-                          <td className="p-3 text-white">{product.name.substring(0, 25)}</td>
-                          <td className="p-3 text-gray-400 text-right">${change.oldPrice.toLocaleString()}</td>
+                          <td className="p-3 text-foreground">{product.name.substring(0, 25)}</td>
+                          <td className="p-3 text-muted-foreground text-right">${change.oldPrice.toLocaleString()}</td>
                           <td className="p-3 text-cyan-400 text-right font-medium">${change.newPrice.toLocaleString()}</td>
                           <td className={`p-3 text-right ${change.diff >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {change.diff >= 0 ? '+' : ''}{((change.diff / change.oldPrice) * 100).toFixed(1)}%
@@ -214,7 +214,7 @@ export function PriceAdjustmentModal({
                   </tbody>
                 </table>
                 {affectedProducts.length > 10 && (
-                  <div className="p-3 text-center text-gray-500 text-sm bg-white/5">
+                  <div className="p-3 text-center text-muted-foreground text-sm bg-muted">
                     ... y {affectedProducts.length - 10} más
                   </div>
                 )}
@@ -226,7 +226,7 @@ export function PriceAdjustmentModal({
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Scope Selection */}
             <div>
-              <Label className="text-gray-300 mb-3 block">Aplicar a</Label>
+              <Label className="text-muted-foreground mb-3 block">Aplicar a</Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setAdjustmentScope('selected')}
@@ -238,10 +238,10 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <CheckSquare className={`w-5 h-5 mb-2 mx-auto ${
-                    adjustmentScope === 'selected' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentScope === 'selected' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`} />
-                  <div className="text-sm text-white">Seleccionados</div>
-                  <div className="text-xs text-gray-500">{selectedProducts.length} productos</div>
+                  <div className="text-sm text-foreground">Seleccionados</div>
+                  <div className="text-xs text-muted-foreground">{selectedProducts.length} productos</div>
                 </button>
                 
                 <button
@@ -253,10 +253,10 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <Layers className={`w-5 h-5 mb-2 mx-auto ${
-                    adjustmentScope === 'category' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentScope === 'category' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`} />
-                  <div className="text-sm text-white">Por Categoría</div>
-                  <div className="text-xs text-gray-500">{categories.length} categorías</div>
+                  <div className="text-sm text-foreground">Por Categoría</div>
+                  <div className="text-xs text-muted-foreground">{categories.length} categorías</div>
                 </button>
                 
                 <button
@@ -268,10 +268,10 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <Package className={`w-5 h-5 mb-2 mx-auto ${
-                    adjustmentScope === 'all' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentScope === 'all' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`} />
-                  <div className="text-sm text-white">Todos</div>
-                  <div className="text-xs text-gray-500">{products.length} productos</div>
+                  <div className="text-sm text-foreground">Todos</div>
+                  <div className="text-xs text-muted-foreground">{products.length} productos</div>
                 </button>
               </div>
             </div>
@@ -279,14 +279,14 @@ export function PriceAdjustmentModal({
             {/* Category selector (if scope is category) */}
             {adjustmentScope === 'category' && (
               <div>
-                <Label className="text-gray-300 mb-2 block">Categoría</Label>
+                <Label className="text-muted-foreground mb-2 block">Categoría</Label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white focus:border-cyan-500/50 outline-none"
+                  className="w-full p-3 rounded-lg bg-muted border border-cyan-500/20 text-foreground focus:border-cyan-500/50 outline-none"
                 >
                   {categories.map(cat => (
-                    <option key={cat} value={cat} className="bg-[#0a0f1a]">{cat}</option>
+                    <option key={cat} value={cat} className="bg-card">{cat}</option>
                   ))}
                 </select>
               </div>
@@ -294,7 +294,7 @@ export function PriceAdjustmentModal({
 
             {/* Adjustment Type */}
             <div>
-              <Label className="text-gray-300 mb-3 block">Tipo de ajuste</Label>
+              <Label className="text-muted-foreground mb-3 block">Tipo de ajuste</Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setAdjustmentType('percentage')}
@@ -305,9 +305,9 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <Percent className={`w-4 h-4 mb-1 mx-auto ${
-                    adjustmentType === 'percentage' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentType === 'percentage' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`} />
-                  <div className="text-sm text-white">Porcentaje</div>
+                  <div className="text-sm text-foreground">Porcentaje</div>
                 </button>
                 
                 <button
@@ -319,9 +319,9 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <span className={`text-lg mb-1 block ${
-                    adjustmentType === 'fixed' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentType === 'fixed' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`}>$</span>
-                  <div className="text-sm text-white">Monto Fijo</div>
+                  <div className="text-sm text-foreground">Monto Fijo</div>
                 </button>
                 
                 <button
@@ -333,9 +333,9 @@ export function PriceAdjustmentModal({
                   }`}
                 >
                   <TrendingUp className={`w-4 h-4 mb-1 mx-auto ${
-                    adjustmentType === 'margin' ? 'text-cyan-400' : 'text-gray-500'
+                    adjustmentType === 'margin' ? 'text-cyan-400' : 'text-muted-foreground'
                   }`} />
-                  <div className="text-sm text-white">Margen s/Costo</div>
+                  <div className="text-sm text-foreground">Margen s/Costo</div>
                 </button>
               </div>
             </div>
@@ -350,7 +350,7 @@ export function PriceAdjustmentModal({
                       className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${
                         isIncrease
                           ? 'border-green-500 bg-green-500/10 text-green-400'
-                          : 'border-cyan-500/20 text-gray-400 hover:border-cyan-500/40'
+                          : 'border-cyan-500/20 text-muted-foreground hover:border-cyan-500/40'
                       }`}
                     >
                       <TrendingUp className="w-4 h-4" />
@@ -361,7 +361,7 @@ export function PriceAdjustmentModal({
                       className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${
                         !isIncrease
                           ? 'border-red-500 bg-red-500/10 text-red-400'
-                          : 'border-cyan-500/20 text-gray-400 hover:border-cyan-500/40'
+                          : 'border-cyan-500/20 text-muted-foreground hover:border-cyan-500/40'
                       }`}
                     >
                       <TrendingDown className="w-4 h-4" />
@@ -373,11 +373,11 @@ export function PriceAdjustmentModal({
                       type="number"
                       value={percentage}
                       onChange={(e) => setPercentage(Math.max(0, Math.min(100, Number(e.target.value))))}
-                      className="text-center text-2xl font-bold bg-white/5 border-cyan-500/20"
+                      className="text-center text-2xl font-bold bg-muted border-cyan-500/20"
                       min={0}
                       max={100}
                     />
-                    <span className="text-2xl text-gray-400">%</span>
+                    <span className="text-2xl text-muted-foreground">%</span>
                   </div>
                   {/* Quick buttons */}
                   <div className="flex gap-2 mt-3">
@@ -388,7 +388,7 @@ export function PriceAdjustmentModal({
                         className={`flex-1 py-2 rounded text-sm transition-colors ${
                           percentage === val 
                             ? 'bg-cyan-500 text-black font-semibold' 
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            : 'bg-muted text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         {val}%
@@ -406,7 +406,7 @@ export function PriceAdjustmentModal({
                       className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${
                         isIncrease
                           ? 'border-green-500 bg-green-500/10 text-green-400'
-                          : 'border-cyan-500/20 text-gray-400 hover:border-cyan-500/40'
+                          : 'border-cyan-500/20 text-muted-foreground hover:border-cyan-500/40'
                       }`}
                     >
                       <TrendingUp className="w-4 h-4" />
@@ -417,7 +417,7 @@ export function PriceAdjustmentModal({
                       className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${
                         !isIncrease
                           ? 'border-red-500 bg-red-500/10 text-red-400'
-                          : 'border-cyan-500/20 text-gray-400 hover:border-cyan-500/40'
+                          : 'border-cyan-500/20 text-muted-foreground hover:border-cyan-500/40'
                       }`}
                     >
                       <TrendingDown className="w-4 h-4" />
@@ -425,12 +425,12 @@ export function PriceAdjustmentModal({
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl text-gray-400">$</span>
+                    <span className="text-2xl text-muted-foreground">$</span>
                     <Input
                       type="number"
                       value={fixedAmount}
                       onChange={(e) => setFixedAmount(Math.max(0, Number(e.target.value)))}
-                      className="text-center text-2xl font-bold bg-white/5 border-cyan-500/20"
+                      className="text-center text-2xl font-bold bg-muted border-cyan-500/20"
                       min={0}
                     />
                   </div>
@@ -439,7 +439,7 @@ export function PriceAdjustmentModal({
 
               {adjustmentType === 'margin' && (
                 <>
-                  <Label className="text-gray-400 text-sm mb-2 block">
+                  <Label className="text-muted-foreground text-sm mb-2 block">
                     Precio = Costo × (1 + margen)
                   </Label>
                   <div className="flex items-center gap-2">
@@ -447,10 +447,10 @@ export function PriceAdjustmentModal({
                       type="number"
                       value={marginPercentage}
                       onChange={(e) => setMarginPercentage(Math.max(0, Number(e.target.value)))}
-                      className="text-center text-2xl font-bold bg-white/5 border-cyan-500/20"
+                      className="text-center text-2xl font-bold bg-muted border-cyan-500/20"
                       min={0}
                     />
-                    <span className="text-2xl text-gray-400">%</span>
+                    <span className="text-2xl text-muted-foreground">%</span>
                   </div>
                   {/* Quick buttons */}
                   <div className="flex gap-2 mt-3">
@@ -461,7 +461,7 @@ export function PriceAdjustmentModal({
                         className={`flex-1 py-2 rounded text-sm transition-colors ${
                           marginPercentage === val 
                             ? 'bg-cyan-500 text-black font-semibold' 
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            : 'bg-muted text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         {val}%
@@ -473,13 +473,13 @@ export function PriceAdjustmentModal({
             </div>
 
             {/* Summary Box */}
-            <div className="p-4 rounded-lg bg-white/5 border border-cyan-500/10">
+            <div className="p-4 rounded-lg bg-muted border border-cyan-500/10">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Productos afectados:</span>
-                <span className="text-white font-medium">{affectedProducts.length}</span>
+                <span className="text-muted-foreground">Productos afectados:</span>
+                <span className="text-foreground font-medium">{affectedProducts.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-400">Cambio estimado:</span>
+                <span className="text-muted-foreground">Cambio estimado:</span>
                 <span className={`font-medium ${summary.percentChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {summary.percentChange >= 0 ? '+' : ''}{summary.percentChange.toFixed(1)}% promedio
                 </span>
@@ -490,7 +490,7 @@ export function PriceAdjustmentModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-cyan-500/10 shrink-0">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             {affectedProducts.length > 0 && !showConfirmation && (
               <>Cambio total: {summary.percentChange >= 0 ? '+' : ''}{summary.percentChange.toFixed(1)}%</>
             )}
@@ -501,7 +501,7 @@ export function PriceAdjustmentModal({
                 <Button 
                   variant="outline" 
                   onClick={() => setShowConfirmation(false)}
-                  className="border-cyan-500/30 text-gray-300 bg-transparent"
+                  className="border-cyan-500/30 text-muted-foreground bg-transparent"
                 >
                   Volver
                 </Button>
@@ -525,7 +525,7 @@ export function PriceAdjustmentModal({
                 <Button 
                   variant="outline" 
                   onClick={onClose}
-                  className="border-cyan-500/30 text-gray-300 bg-transparent"
+                  className="border-cyan-500/30 text-muted-foreground bg-transparent"
                 >
                   Cancelar
                 </Button>

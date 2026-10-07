@@ -192,7 +192,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-[#0a0f1a] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
+          "fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
@@ -200,7 +200,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: config.border }}>
             <AtlasLogo variant="horizontal" className="h-8" />
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground hover:text-foreground">
               <X className="w-6 h-6" />
             </Button>
           </div>
@@ -216,8 +216,8 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
                   {user.full_name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{user.full_name}</p>
-                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  <p className="text-foreground font-medium truncate">{user.full_name}</p>
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                   <p className="text-xs capitalize mt-0.5" style={{ color: config.primary }}>
                     {user.role === "owner" ? "Dueño" : user.role === "employee" ? "Empleado" : user.role}
                   </p>
@@ -230,7 +230,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
           <nav className="flex-1 overflow-y-auto momentum-scroll p-4 space-y-6">
             {filteredSections.map((section) => (
               <div key={section.title}>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
                   {section.title}
                 </h3>
                 <div className="space-y-1">
@@ -249,7 +249,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
                                   onClick={onClose}
                                   className={cn(
                                     "flex items-center gap-3 px-3 py-3 rounded-xl transition-all touch-target haptic-tap",
-                                    subIsActive ? "bg-gradient-to-r text-white" : "text-gray-400 active:bg-white/5",
+                                    subIsActive ? "bg-gradient-to-r text-foreground" : "text-muted-foreground active:bg-muted",
                                   )}
                                   style={
                                     subIsActive
@@ -281,7 +281,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
                             onClick={onClose}
                             className={cn(
                               "flex items-center gap-3 px-3 py-3 rounded-xl transition-all touch-target haptic-tap",
-                              isActive ? "bg-gradient-to-r text-white" : "text-gray-400 active:bg-white/5",
+                              isActive ? "bg-gradient-to-r text-foreground" : "text-muted-foreground active:bg-muted",
                             )}
                             style={
                               isActive
@@ -309,7 +309,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
           {/* Theme & Logout */}
           <div className="p-4 border-t space-y-3 safe-area-bottom" style={{ borderColor: config.border }}>
             <div className="flex items-center justify-between px-2">
-              <span className="text-sm text-gray-400">Tema de color</span>
+              <span className="text-sm text-muted-foreground">Tema de color</span>
               <ThemeSelector />
             </div>
 

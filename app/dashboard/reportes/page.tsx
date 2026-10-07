@@ -324,13 +324,13 @@ export default function ReportesPage() {
       {/* Header with filters */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard de Ventas & Facturación</h1>
-          <p className="text-gray-400 text-sm">Análisis completo de rendimiento comercial</p>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard de Ventas & Facturación</h1>
+          <p className="text-muted-foreground text-sm">Análisis completo de rendimiento comercial</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {kioscos.length > 1 && (
             <Select value={selectedKiosko} onValueChange={setSelectedKiosko}>
-              <SelectTrigger className="w-[180px] bg-[#0a0f1a] border-cyan-500/10">
+              <SelectTrigger className="w-[180px] bg-card border-cyan-500/10">
                 <SelectValue placeholder="Seleccionar kiosco" />
               </SelectTrigger>
               <SelectContent>
@@ -344,7 +344,7 @@ export default function ReportesPage() {
           )}
 
           <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-            <SelectTrigger className="w-[180px] bg-[#0a0f1a] border-cyan-500/10">
+            <SelectTrigger className="w-[180px] bg-card border-cyan-500/10">
               <SelectValue placeholder="Todos los empleados" />
             </SelectTrigger>
             <SelectContent>
@@ -357,7 +357,7 @@ export default function ReportesPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1 bg-[#0a0f1a] border border-cyan-500/10 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-card border border-cyan-500/10 rounded-lg p-1">
             {["week", "month", "year"].map((p) => (
               <button
                 key={p}
@@ -366,7 +366,7 @@ export default function ReportesPage() {
                   setDateRange({ start: "", end: "" })
                 }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  selectedPeriod === p ? "bg-cyan-500/20 text-cyan-400" : "text-gray-400 hover:text-white"
+                  selectedPeriod === p ? "bg-cyan-500/20 text-cyan-400" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {p === "week" ? "Semana" : p === "month" ? "Mes" : "Año"}
@@ -378,102 +378,102 @@ export default function ReportesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Facturación Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Facturación Total</CardTitle>
             <DollarSign className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${metrics?.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <div className="text-2xl font-bold text-foreground">${metrics?.totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               En {selectedPeriod === "week" ? "7 días" : selectedPeriod === "month" ? "30 días" : "12 meses"}
             </p>
           </CardContent>
         </Card>
 
         {/* Total Sales */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Ventas Realizadas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ventas Realizadas</CardTitle>
             <ShoppingCart className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{metrics?.totalSales}</div>
-            <p className="text-xs text-gray-500 mt-1">{metrics?.totalUnits} unidades vendidas</p>
+            <div className="text-2xl font-bold text-foreground">{metrics?.totalSales}</div>
+            <p className="text-xs text-muted-foreground mt-1">{metrics?.totalUnits} unidades vendidas</p>
           </CardContent>
         </Card>
 
         {/* Average Ticket */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Ticket Promedio</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ticket Promedio</CardTitle>
             <TrendingUp className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${metrics?.averageTicket.toFixed(2)}</div>
-            <p className="text-xs text-gray-500 mt-1">Por transacción</p>
+            <div className="text-2xl font-bold text-foreground">${metrics?.averageTicket.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Por transacción</p>
           </CardContent>
         </Card>
 
         {/* Top Employee */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Mejor Vendedor</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mejor Vendedor</CardTitle>
             <Users className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white truncate">{metrics?.topEmployee}</div>
-            <p className="text-xs text-gray-500 mt-1">{metrics?.topEmployeeSales} ventas</p>
+            <div className="text-2xl font-bold text-foreground truncate">{metrics?.topEmployee}</div>
+            <p className="text-xs text-muted-foreground mt-1">{metrics?.topEmployeeSales} ventas</p>
           </CardContent>
         </Card>
 
         {/* Stock Rotation */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Rotación de Stock</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Rotación de Stock</CardTitle>
             <Package className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{metrics?.stockRotation.toFixed(2)}x</div>
-            <p className="text-xs text-gray-500 mt-1">Veces por período</p>
+            <div className="text-2xl font-bold text-foreground">{metrics?.stockRotation.toFixed(2)}x</div>
+            <p className="text-xs text-muted-foreground mt-1">Veces por período</p>
           </CardContent>
         </Card>
 
         {/* Inventory Value */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Valor de Inventario</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Valor de Inventario</CardTitle>
             <DollarSign className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${metrics?.inventoryValue.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">Costo total del stock</p>
+            <div className="text-2xl font-bold text-foreground">${metrics?.inventoryValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Costo total del stock</p>
           </CardContent>
         </Card>
 
         {/* Low Stock Alerts */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Alertas de Stock</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Alertas de Stock</CardTitle>
             <AlertTriangle className="h-4 w-4 text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{metrics?.lowStockItems}</div>
-            <p className="text-xs text-gray-500 mt-1">{metrics?.outOfStockItems} sin stock</p>
+            <div className="text-2xl font-bold text-foreground">{metrics?.lowStockItems}</div>
+            <p className="text-xs text-muted-foreground mt-1">{metrics?.outOfStockItems} sin stock</p>
           </CardContent>
         </Card>
 
         {/* Units per Sale */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-400">Unidades por Venta</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Unidades por Venta</CardTitle>
             <Clock className="h-4 w-4 text-cyan-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               {metrics?.totalSales ? (metrics.totalUnits / metrics.totalSales).toFixed(1) : 0}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Promedio de items</p>
+            <p className="text-xs text-muted-foreground mt-1">Promedio de items</p>
           </CardContent>
         </Card>
       </div>
@@ -552,9 +552,9 @@ export default function ReportesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products Table */}
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader>
-            <CardTitle className="text-white">Top 10 Productos</CardTitle>
+            <CardTitle className="text-foreground">Top 10 Productos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -563,13 +563,13 @@ export default function ReportesPage() {
                   <span className="text-xl font-bold text-cyan-400 w-8">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2 gap-2">
-                      <span className="text-white font-medium truncate">{product.name}</span>
+                      <span className="text-foreground font-medium truncate">{product.name}</span>
                       <div className="flex items-center gap-3 text-sm whitespace-nowrap">
-                        <span className="text-gray-400">{product.units} uds</span>
+                        <span className="text-muted-foreground">{product.units} uds</span>
                         <span className="text-cyan-400 font-medium">${product.revenue.toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
                         style={{ width: `${product.percentage}%` }}
@@ -582,28 +582,28 @@ export default function ReportesPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0a0f1a] border-cyan-500/10">
+        <Card className="bg-card border-cyan-500/10">
           <CardHeader>
-            <CardTitle className="text-white">Alertas de Inventario</CardTitle>
+            <CardTitle className="text-foreground">Alertas de Inventario</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {lowStockProducts.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No hay alertas de stock</p>
+                <p className="text-muted-foreground text-center py-8">No hay alertas de stock</p>
               ) : (
                 lowStockProducts.map((product, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-cyan-500/10"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted border border-cyan-500/10"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-white truncate">{product.name}</div>
-                      <div className="text-sm text-gray-400">{product.category || "Sin categoría"}</div>
+                      <div className="font-medium text-foreground truncate">{product.name}</div>
+                      <div className="text-sm text-muted-foreground">{product.category || "Sin categoría"}</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <div className="text-sm font-medium text-white">{product.stock_quantity || 0} uds</div>
-                        <div className="text-xs text-gray-500">Mín: {product.min_stock_level || 10}</div>
+                        <div className="text-sm font-medium text-foreground">{product.stock_quantity || 0} uds</div>
+                        <div className="text-xs text-muted-foreground">Mín: {product.min_stock_level || 10}</div>
                       </div>
                       <div
                         className={`px-2 py-1 rounded text-xs font-medium ${
@@ -622,15 +622,15 @@ export default function ReportesPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+        <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
           <FileText className="w-4 h-4" />
           Exportar PDF
         </Button>
-        <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+        <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
           <TableIcon className="w-4 h-4" />
           Exportar Excel
         </Button>
-        <Button variant="outline" className="border-cyan-500/20 text-gray-400 hover:text-white bg-transparent gap-2">
+        <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
           <Download className="w-4 h-4" />
           Descargar Reporte Completo
         </Button>

@@ -20,15 +20,15 @@ export function StockHeatmap() {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-      <h3 className="text-lg font-semibold text-white mb-4">Stock Crítico (7 días)</h3>
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+      <h3 className="text-lg font-semibold text-foreground mb-4">Stock Crítico (7 días)</h3>
 
       <div className="space-y-2">
         {/* Header */}
         <div className="flex">
           <div className="w-24" />
           {days.map((day) => (
-            <div key={day} className="flex-1 text-center text-xs text-gray-500">
+            <div key={day} className="flex-1 text-center text-xs text-muted-foreground">
               {day}
             </div>
           ))}
@@ -37,7 +37,7 @@ export function StockHeatmap() {
         {/* Rows */}
         {heatmapData.map((row, rowIndex) => (
           <div key={rowIndex} className="flex items-center">
-            <div className="w-24 text-xs text-gray-400 truncate pr-2">{categories[rowIndex]}</div>
+            <div className="w-24 text-xs text-muted-foreground truncate pr-2">{categories[rowIndex]}</div>
             {row.map((value, colIndex) => (
               <div key={colIndex} className="flex-1 p-0.5">
                 <div className={`aspect-square rounded ${getColor(value)}`} title={`Nivel: ${value}`} />
@@ -48,13 +48,13 @@ export function StockHeatmap() {
 
         {/* Legend */}
         <div className="flex items-center justify-end gap-2 mt-4">
-          <span className="text-xs text-gray-500">Bajo</span>
+          <span className="text-xs text-muted-foreground">Bajo</span>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((v) => (
               <div key={v} className={`w-4 h-4 rounded ${getColor(v)}`} />
             ))}
           </div>
-          <span className="text-xs text-gray-500">Alto</span>
+          <span className="text-xs text-muted-foreground">Alto</span>
         </div>
       </div>
     </div>

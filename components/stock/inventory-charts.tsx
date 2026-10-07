@@ -34,9 +34,9 @@ const stockBreakdownData = [
 export function InventoryRotationChart({ isLoading }: InventoryChartsProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-6 w-40 bg-white/5 rounded animate-pulse mb-4" />
-        <div className="h-[200px] bg-white/5 rounded animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-6 w-40 bg-muted rounded animate-pulse mb-4" />
+        <div className="h-[200px] bg-muted rounded animate-pulse" />
       </div>
     )
   }
@@ -66,9 +66,9 @@ export function InventoryRotationChart({ isLoading }: InventoryChartsProps) {
 export function StockBreakdownChart({ isLoading }: InventoryChartsProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-6 w-40 bg-white/5 rounded animate-pulse mb-4" />
-        <div className="h-[200px] bg-white/5 rounded animate-pulse" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-6 w-40 bg-muted rounded animate-pulse mb-4" />
+        <div className="h-[200px] bg-muted rounded animate-pulse" />
       </div>
     )
   }
@@ -91,9 +91,9 @@ export function InventoryKPICards({ isLoading }: InventoryChartsProps) {
     return (
       <div className="grid grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
-            <div className="h-4 w-20 bg-white/5 rounded animate-pulse mb-2" />
-            <div className="h-8 w-24 bg-white/5 rounded animate-pulse" />
+          <div key={i} className="rounded-xl border border-cyan-500/10 bg-card p-4">
+            <div className="h-4 w-20 bg-muted rounded animate-pulse mb-2" />
+            <div className="h-8 w-24 bg-muted rounded animate-pulse" />
           </div>
         ))}
       </div>
@@ -136,16 +136,16 @@ export function InventoryKPICards({ isLoading }: InventoryChartsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
       {kpis.map((kpi) => (
-        <div key={kpi.label} className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4">
+        <div key={kpi.label} className="rounded-xl border border-cyan-500/10 bg-card p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">{kpi.label}</span>
+            <span className="text-xs text-muted-foreground">{kpi.label}</span>
             <span className={`text-xs ${kpi.positive ? "text-green-400" : "text-red-400"}`}>
               {kpi.change > 0 ? "+" : ""}{kpi.change}%
             </span>
           </div>
           <div className="flex items-baseline gap-1">
             <span className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</span>
-            {kpi.suffix && <span className="text-sm text-gray-500">{kpi.suffix}</span>}
+            {kpi.suffix && <span className="text-sm text-muted-foreground">{kpi.suffix}</span>}
           </div>
         </div>
       ))}
@@ -156,11 +156,11 @@ export function InventoryKPICards({ isLoading }: InventoryChartsProps) {
 export function OutOfStockList({ isLoading }: InventoryChartsProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
-        <div className="h-6 w-40 bg-white/5 rounded animate-pulse mb-4" />
+      <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
+        <div className="h-6 w-40 bg-muted rounded animate-pulse mb-4" />
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-12 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="h-12 bg-muted rounded animate-pulse" />
           ))}
         </div>
       </div>
@@ -176,11 +176,11 @@ export function OutOfStockList({ isLoading }: InventoryChartsProps) {
   ]
 
   return (
-    <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-5">
+    <div className="rounded-xl border border-cyan-500/10 bg-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium text-white">Productos sin Stock</h3>
-          <p className="text-xs text-gray-500">{outOfStock.length} productos</p>
+          <h3 className="text-sm font-medium text-foreground">Productos sin Stock</h3>
+          <p className="text-xs text-muted-foreground">{outOfStock.length} productos</p>
         </div>
         <span className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400">
           Urgente
@@ -195,16 +195,16 @@ export function OutOfStockList({ isLoading }: InventoryChartsProps) {
                 ? "bg-red-500/10 border-red-500/20"
                 : product.urgency === "medium"
                   ? "bg-yellow-500/10 border-yellow-500/20"
-                  : "bg-white/5 border-white/10"
+                  : "bg-muted border-border"
             }`}
           >
             <div>
-              <p className="text-sm text-white">{product.name}</p>
-              <p className="text-xs text-gray-500">{product.category}</p>
+              <p className="text-sm text-foreground">{product.name}</p>
+              <p className="text-xs text-muted-foreground">{product.category}</p>
             </div>
             <div className="text-right">
               <p className={`text-xs ${
-                product.urgency === "high" ? "text-red-400" : "text-gray-400"
+                product.urgency === "high" ? "text-red-400" : "text-muted-foreground"
               }`}>
                 {product.lastSale}
               </p>

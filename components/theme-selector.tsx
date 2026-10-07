@@ -11,19 +11,19 @@ export function ThemeSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-muted">
           <Palette className="w-5 h-5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 bg-[#0a0f1a] border-[var(--theme-border)] text-white">
-        <div className="px-3 py-2 border-b border-white/10">
+      <DropdownMenuContent align="end" className="w-48 bg-popover border-[var(--theme-border)] text-foreground">
+        <div className="px-3 py-2 border-b border-border">
           <p className="text-sm font-medium">Tema de color</p>
         </div>
         {(Object.keys(themeConfigs) as ThemeColor[]).map((key) => (
           <DropdownMenuItem
             key={key}
             onClick={() => setTheme(key)}
-            className="gap-3 text-gray-400 hover:text-white focus:text-white focus:bg-white/5 cursor-pointer"
+            className="gap-3 text-muted-foreground hover:text-foreground focus:text-foreground focus:bg-muted cursor-pointer"
           >
             <div
               className="w-5 h-5 rounded-full border-2"

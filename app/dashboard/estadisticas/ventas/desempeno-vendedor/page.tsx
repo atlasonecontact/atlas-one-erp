@@ -171,7 +171,7 @@ export default function DesempenoVendedorPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center mb-4">
             <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
@@ -179,7 +179,7 @@ export default function DesempenoVendedorPage() {
           <p className="text-sm text-muted-foreground">Vendedor Top {topSeller ? `(${formatMoney(topSeller.total)})` : ""}</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4">
             <TrendingUp className="w-6 h-6 text-cyan-400" />
           </div>
@@ -187,7 +187,7 @@ export default function DesempenoVendedorPage() {
           <p className="text-sm text-muted-foreground">Ticket Promedio</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
             <Users className="w-6 h-6 text-green-400" />
           </div>
@@ -195,7 +195,7 @@ export default function DesempenoVendedorPage() {
           <p className="text-sm text-muted-foreground">Vendedores Activos</p>
         </div>
 
-        <div className="rounded-xl border border-cyan-500/10 bg-gradient-to-br from-[#0a0f1a] to-[#0d1525] p-6">
+        <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
           <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
             <Clock className="w-6 h-6 text-purple-400" />
           </div>
@@ -275,7 +275,7 @@ export default function DesempenoVendedorPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-muted-foreground border-b border-gray-800">
+              <tr className="text-left text-muted-foreground border-b border-border">
                 <th className="pb-3 pr-4">#</th>
                 <th className="pb-3 pr-4">Vendedor</th>
                 {SHIFTS.map((shift) => (
@@ -296,7 +296,7 @@ export default function DesempenoVendedorPage() {
                 </tr>
               ) : (
                 stats.sellers.map((s, i) => (
-                  <tr key={s.seller + i} className="border-b border-gray-800/50 last:border-0">
+                  <tr key={s.seller + i} className="border-b border-border/50 last:border-0">
                     <td className="py-3 pr-4">
                       {i === 0 ? (
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">

@@ -174,14 +174,14 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-[#0a0f1a] border-cyan-500/20 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] bg-card border-cyan-500/20 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-white">{kiosko ? "Editar Kiosco" : "Agregar Nuevo Kiosco"}</DialogTitle>
+          <DialogTitle className="text-foreground">{kiosko ? "Editar Kiosco" : "Agregar Nuevo Kiosco"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-300">
+            <Label htmlFor="name" className="text-muted-foreground">
               Nombre del Kiosco <span className="text-red-400">*</span>
             </Label>
             <Input
@@ -190,53 +190,53 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
               onChange={(e) => handleFieldChange("name", e.target.value)}
               onBlur={() => handleFieldBlur("name")}
               placeholder="Ej: Kiosco La Esquina"
-              className={`bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("name") ? "border-red-500/50" : ""}`}
+              className={`bg-background border-cyan-500/20 text-foreground ${getFieldError("name") ? "border-red-500/50" : ""}`}
             />
             <FieldError error={getFieldError("name")} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="text-gray-300">
+            <Label htmlFor="location" className="text-muted-foreground">
               Ubicación <span className="text-red-400">*</span>
             </Label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleFieldChange("location", e.target.value)}
                 onBlur={() => handleFieldBlur("location")}
                 placeholder="Dirección completa"
-                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("location") ? "border-red-500/50" : ""}`}
+                className={`pl-10 bg-background border-cyan-500/20 text-foreground ${getFieldError("location") ? "border-red-500/50" : ""}`}
               />
             </div>
             <FieldError error={getFieldError("location")} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cuit" className="text-gray-300">
+            <Label htmlFor="cuit" className="text-muted-foreground">
               CUIT/CUIL <span className="text-red-400">*</span>
             </Label>
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="cuit"
                 value={formData.cuit}
                 onChange={(e) => handleFieldChange("cuit", e.target.value)}
                 onBlur={() => handleFieldBlur("cuit")}
                 placeholder="XX-XXXXXXXX-X"
-                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("cuit") ? "border-red-500/50" : ""}`}
+                className={`pl-10 bg-background border-cyan-500/20 text-foreground ${getFieldError("cuit") ? "border-red-500/50" : ""}`}
               />
             </div>
             <FieldError error={getFieldError("cuit")} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-gray-300">
+            <Label htmlFor="phone" className="text-muted-foreground">
               Teléfono de Contacto <span className="text-red-400">*</span>
             </Label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="phone"
                 value={formData.phone}
@@ -248,18 +248,18 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
                 }}
                 onBlur={() => handleFieldBlur("phone")}
                 placeholder="+54 9 11 1234-5678"
-                className={`pl-10 bg-[#0d1424] border-cyan-500/20 text-white ${getFieldError("phone") ? "border-red-500/50" : ""}`}
+                className={`pl-10 bg-background border-cyan-500/20 text-foreground ${getFieldError("phone") ? "border-red-500/50" : ""}`}
               />
             </div>
             <FieldError error={getFieldError("phone")} />
-            <p className="text-xs text-gray-500">Formato: +5491112345678</p>
+            <p className="text-xs text-muted-foreground">Formato: +5491112345678</p>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-300">Personalización de Colores</Label>
+            <Label className="text-muted-foreground">Personalización de Colores</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bgColor" className="text-gray-400 text-xs">
+                <Label htmlFor="bgColor" className="text-muted-foreground text-xs">
                   Fondo de la App
                 </Label>
                 <div className="flex gap-2">
@@ -268,19 +268,19 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
                     type="color"
                     value={formData.background_color}
                     onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
-                    className="w-12 h-10 p-1 bg-[#0d1424] border-cyan-500/20"
+                    className="w-12 h-10 p-1 bg-background border-cyan-500/20"
                   />
                   <Input
                     type="text"
                     value={formData.background_color}
                     onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
-                    className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-xs"
+                    className="flex-1 bg-background border-cyan-500/20 text-foreground text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accentColor" className="text-gray-400 text-xs">
+                <Label htmlFor="accentColor" className="text-muted-foreground text-xs">
                   Color Principal
                 </Label>
                 <div className="flex gap-2">
@@ -289,18 +289,18 @@ export function KioskoModal({ isOpen, onClose, onSuccess, kiosko }: KioskoModalP
                     type="color"
                     value={formData.accent_color}
                     onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
-                    className="w-12 h-10 p-1 bg-[#0d1424] border-cyan-500/20"
+                    className="w-12 h-10 p-1 bg-background border-cyan-500/20"
                   />
                   <Input
                     type="text"
                     value={formData.accent_color}
                     onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
-                    className="flex-1 bg-[#0d1424] border-cyan-500/20 text-white text-xs"
+                    className="flex-1 bg-background border-cyan-500/20 text-foreground text-xs"
                   />
                 </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500">Los colores se aplicarán a la interfaz del dashboard del kiosco</p>
+            <p className="text-xs text-muted-foreground">Los colores se aplicarán a la interfaz del dashboard del kiosco</p>
           </div>
 
           <div className="flex gap-3 pt-4">
