@@ -343,7 +343,7 @@ export function ProductModal({
                     {matchedProduct.category}
                     {matchedProduct.brand ? ` · ${matchedProduct.brand}` : ""}
                   </p>
-                  <div className="grid grid-cols-3 gap-3 pt-2 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-sm">
                     <div>
                       <p className="text-gray-500">Stock actual</p>
                       <p className="text-white font-medium">{matchedProduct.stock} un.</p>
@@ -488,7 +488,7 @@ export function ProductModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-300">Marca</Label>
                       <Input
@@ -509,7 +509,7 @@ export function ProductModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-300">Categoría</Label>
                       <Select
@@ -559,7 +559,7 @@ export function ProductModal({
                     Precio e IVA
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-300">Costo</Label>
                       <Input
@@ -594,7 +594,7 @@ export function ProductModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-300">IVA (%)</Label>
                       <Input
@@ -623,7 +623,7 @@ export function ProductModal({
                     Stock
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-300">Stock inicial</Label>
                       <Input
@@ -693,7 +693,7 @@ export function ProductModal({
                   {showLots && (
                     <div className="space-y-3 pt-2">
                       {lots.map((lot, i) => (
-                        <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                        <div key={i} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
                           <div className="space-y-1">
                             <Label className="text-xs text-gray-500">Lote</Label>
                             <Input

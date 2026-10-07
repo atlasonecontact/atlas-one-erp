@@ -187,8 +187,8 @@ export function PriceAdjustmentModal({
               <div className="bg-white/5 p-3 text-sm font-medium text-gray-400">
                 Vista previa de cambios
               </div>
-              <div className="max-h-48 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="max-h-48 overflow-auto">
+                <table className="w-full min-w-[480px] text-sm">
                   <thead className="bg-white/5 sticky top-0">
                     <tr>
                       <th className="text-left p-3 text-gray-400">Producto</th>
@@ -227,7 +227,7 @@ export function PriceAdjustmentModal({
             {/* Scope Selection */}
             <div>
               <Label className="text-gray-300 mb-3 block">Aplicar a</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setAdjustmentScope('selected')}
                   disabled={selectedProducts.length === 0}
@@ -295,7 +295,7 @@ export function PriceAdjustmentModal({
             {/* Adjustment Type */}
             <div>
               <Label className="text-gray-300 mb-3 block">Tipo de ajuste</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setAdjustmentType('percentage')}
                   className={`p-3 rounded-lg border transition-all ${

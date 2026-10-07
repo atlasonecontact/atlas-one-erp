@@ -80,7 +80,7 @@ export function ProductDetailModal({
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div className="p-3 rounded-lg bg-white/5 border border-cyan-500/10">
               <p className="text-gray-500">Stock</p>
               <p className={`font-semibold ${product.stock <= 10 ? "text-yellow-400" : "text-white"}`}>

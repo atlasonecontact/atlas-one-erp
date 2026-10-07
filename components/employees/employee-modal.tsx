@@ -709,8 +709,8 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
           {activeTab === "info" && (
             <div className="space-y-4 py-4">
               {/* Basic Info - Name, Document, Position */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="name" className="text-gray-300">
                     Nombre Completo <span className="text-red-400">*</span>
                   </Label>
@@ -758,7 +758,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   <Phone className="w-4 h-4" />
                   Contacto
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-300">
                       Teléfono
@@ -806,7 +806,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                   <Calendar className="w-4 h-4" />
                   Fechas y Salario
                 </h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="hire_date" className="text-gray-300">
                       Ingreso
@@ -876,7 +876,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
               {/* Emergency Contact */}
               <div className="pt-2">
                 <h4 className="text-sm font-medium text-gray-400 mb-3">Contacto de Emergencia</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="emergency_contact" className="text-gray-300">
                       Nombre
@@ -966,7 +966,7 @@ export function EmployeeModal({ open, onClose, employee, onSuccess, kioskoId }: 
                           Quitar
                         </button>
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="space-y-1">
                           <Label className="text-xs text-gray-400">Entrada</Label>
                           <Input

@@ -184,7 +184,7 @@ export function NuevoPedidoInternoModal({ open, onClose, kioskoId, onSuccess }: 
           {/* Destino */}
           <div className="space-y-3">
             <Label className="text-sm text-gray-400">Destino del Pedido</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setTipoDestino("stock_central")}
