@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { AtlasLogo } from "@/components/atlas-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, X } from "lucide-react"
+import { Menu, Search, User, X } from "lucide-react"
 import { useTheme } from "@/lib/theme-context"
 import { KioskoSelector } from "@/components/kiosko-selector"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
@@ -13,9 +13,10 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown"
 interface MobileHeaderProps {
   userName?: string
   showSearch?: boolean
+  onMenuClick?: () => void
 }
 
-export function MobileHeader({ userName, showSearch = true }: MobileHeaderProps) {
+export function MobileHeader({ userName, showSearch = true, onMenuClick }: MobileHeaderProps) {
   const { config } = useTheme()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -56,8 +57,19 @@ export function MobileHeader({ userName, showSearch = true }: MobileHeaderProps)
           </div>
         ) : (
           <>
+            {/* Menú */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMenuClick}
+              className="shrink-0 text-gray-400 hover:text-white touch-target"
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+
             {/* Logo */}
-            <AtlasLogo variant="icon" className="w-8 h-8" />
+            <AtlasLogo variant="icon" className="w-8 h-8 ml-1" />
 
             {/* Center - Kiosko selector */}
             <div className="flex-1 mx-3">
@@ -77,6 +89,15 @@ export function MobileHeader({ userName, showSearch = true }: MobileHeaderProps)
                 </Button>
               )}
               <NotificationsDropdown />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/dashboard/configuracion")}
+                className="text-gray-400 hover:text-white touch-target"
+                aria-label="Perfil"
+              >
+                <User className="w-5 h-5" />
+              </Button>
             </div>
           </>
         )}

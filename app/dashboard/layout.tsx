@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -30,13 +30,11 @@ import {
   FileCheck,
   User,
   LogOut,
-  Bell,
   Wifi,
   WifiOff,
   Clock,
   History,
   Plug,
-  Menu,
   X,
   Gift,
   PiggyBank,
@@ -60,6 +58,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@supabase/ssr"
 import { Badge } from "@/components/ui/badge"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { MobileHeader } from "@/components/mobile/mobile-header"
+import { BottomNavigation } from "@/components/mobile/bottom-navigation"
 
 function DashboardSidebar({
   mobileOpen,
@@ -614,12 +615,11 @@ function DashboardSidebar({
   )
 }
 
-function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
+function DashboardHeader() {
   const { config } = useTheme()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isOnline, setIsOnline] = useState(true)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   useEffect(() => {
     setIsOnline(navigator.onLine)
@@ -698,7 +698,7 @@ function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
   if (loading) {
     return (
-      <header className="h-16 border-b bg-[#0a0f1a] border-white/10 flex items-center justify-end px-6">
+      <header className="hidden lg:flex h-16 border-b bg-[#0a0f1a] border-white/10 items-center justify-end px-6">
         <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
       </header>
     )
@@ -715,19 +715,12 @@ function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <header
-      className="h-16 border-b bg-gradient-to-r from-[#0a0f1a] to-[#0d1420] border-white/10 flex items-center justify-between px-6 shadow-lg"
+      className="hidden lg:flex h-16 border-b bg-gradient-to-r from-[#0a0f1a] to-[#0d1420] border-white/10 items-center justify-between px-6 shadow-lg"
       style={{ borderColor: config.border }}
     >
       {/* Left side - Breadcrumb or title could go here */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden text-gray-400 hover:text-white transition-colors p-1 -ml-1"
-          aria-label="Abrir menú"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-semibold text-white/90 hidden sm:block">Dashboard</h1>
+        <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
         <Badge
           variant={isOnline ? "default" : "secondary"}
           className={cn(
@@ -744,57 +737,7 @@ function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
       {/* Right side - User menu and notifications */}
       <div className="flex items-center gap-3">
-        {/* Notifications */}
-        <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              <span
-                className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500"
-              />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 bg-[#0d1420] border-white/10">
-            <DropdownMenuLabel className="text-white font-semibold text-base">Notificaciones</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <div className="max-h-96 overflow-y-auto">
-              <DropdownMenuItem className="text-gray-300 hover:bg-white/5 cursor-pointer flex-col items-start p-4 gap-1">
-                <div className="flex items-start gap-3 w-full">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Nueva venta registrada</p>
-                    <p className="text-xs text-gray-400 mt-1">Se registró una venta de $15,000 en Sucursal Centro</p>
-                    <p className="text-xs text-gray-500 mt-1">Hace 5 minutos</p>
-                  </div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-gray-300 hover:bg-white/5 cursor-pointer flex-col items-start p-4 gap-1">
-                <div className="flex items-start gap-3 w-full">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500 mt-1.5 shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Stock bajo detectado</p>
-                    <p className="text-xs text-gray-400 mt-1">Producto "Coca Cola 2L" tiene stock crítico</p>
-                    <p className="text-xs text-gray-500 mt-1">Hace 1 hora</p>
-                  </div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-gray-300 hover:bg-white/5 cursor-pointer flex-col items-start p-4 gap-1">
-                <div className="flex items-start gap-3 w-full">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Pedido completado</p>
-                    <p className="text-xs text-gray-400 mt-1">Pedido #1245 fue entregado exitosamente</p>
-                    <p className="text-xs text-gray-500 mt-1">Hace 2 horas</p>
-                  </div>
-                </div>
-              </DropdownMenuItem>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationsDropdown />
 
         {/* User Menu */}
         <DropdownMenu>
@@ -853,6 +796,7 @@ function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   // Cierra el drawer automáticamente al navegar, sin tener que engancharlo
   // a cada Link del menú.
@@ -867,8 +811,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <DashboardSidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <DashboardHeader onMenuClick={() => setMobileNavOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-[#0a0f1a] to-[#0d1420]">{children}</main>
+          <DashboardHeader />
+          <MobileHeader onMenuClick={() => setMobileNavOpen(true)} />
+          <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8 bg-gradient-to-br from-[#0a0f1a] to-[#0d1420]">
+            {children}
+          </main>
+          <BottomNavigation
+            onMenuClick={() => setMobileNavOpen(true)}
+            onScanClick={() => router.push("/dashboard/ventas")}
+          />
         </div>
       </div>
     </ThemeProvider>

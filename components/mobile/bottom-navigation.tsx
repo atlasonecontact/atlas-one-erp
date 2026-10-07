@@ -4,7 +4,7 @@ import type React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ShoppingCart, Package, BarChart3, Menu, Scan } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, Package, Wallet, Menu, Scan } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
 
@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
   { href: "/dashboard/productos", label: "Productos", icon: Package },
-  { href: "/dashboard/estadisticas", label: "Stats", icon: BarChart3 },
+  { href: "/dashboard/caja", label: "Caja", icon: Wallet },
 ]
 
 interface BottomNavigationProps {
