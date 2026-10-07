@@ -448,7 +448,65 @@ export default function HistorialVentasPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-8 text-center text-gray-500">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+            Cargando ventas...
+          </div>
+        ) : filteredSales.length === 0 ? (
+          <div className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-8 text-center text-gray-500">
+            No hay ventas en este período
+          </div>
+        ) : (
+          filteredSales.map((sale) => (
+            <div
+              key={sale.id}
+              className="rounded-xl border border-cyan-500/10 bg-[#0a0f1a] p-4 space-y-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span
+                    title={sale.sale_number}
+                    className={`font-mono text-sm ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-cyan-400"}`}
+                  >
+                    #{sale.sale_number.slice(-6).toUpperCase()}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-0.5">{formatDate(sale.created_at)}</p>
+                </div>
+                <StatusBadge status={sale.status} />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <div className="flex items-center gap-2 text-gray-400">
+                  {getMethodIcon(sale.payment_method)}
+                  {getMethodLabel(sale.payment_method)}
+                  {typeof sale.items_count === "number" && (
+                    <span className="text-gray-500">· {sale.items_count} productos</span>
+                  )}
+                </div>
+                <span className={`font-medium ${sale.status === "cancelled" ? "text-gray-500 line-through" : "text-white"}`}>
+                  {formatCurrency(sale.total_amount)}
+                </span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openDetail(sale)}
+                className="w-full touch-target border-cyan-500/20 text-cyan-400 hover:text-white gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Ver artículos
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: tabla completa */}
+      <div className="hidden md:block rounded-xl border border-cyan-500/10 bg-[#0a0f1a] overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-cyan-500/10">

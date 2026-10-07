@@ -676,7 +676,66 @@ export default function CajaPage() {
         {history.length === 0 ? (
           <p className="text-sm text-gray-500 py-6 text-center">Todavía no hay cierres de caja.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cards */}
+            <div className="md:hidden space-y-3">
+              {history.map((h) => {
+                const diff = Number(h.cash_difference ?? 0)
+                const hasWithdrawal = Number(h.withdrawn_amount ?? 0) > 0
+                return (
+                  <div key={h.id} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-white font-medium">
+                          {h.closed_at
+                            ? new Date(h.closed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+                            : "-"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {h.shift || "-"}
+                          {h.cashier_name ? ` · ${h.cashier_name}` : ""}
+                        </p>
+                      </div>
+                      <span className={`text-sm font-semibold ${diff === 0 ? "text-green-400" : "text-red-400"}`}>
+                        {h.cash_difference == null
+                          ? "-"
+                          : diff === 0
+                            ? "Coincide"
+                            : `${diff > 0 ? "+" : "-"}${formatCurrency(Math.abs(diff))}`}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500">Ganado</p>
+                        <p className="text-green-400 font-semibold">
+                          {h.shift_sales_total != null ? formatCurrency(Number(h.shift_sales_total)) : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Esperado</p>
+                        <p className="text-gray-300">{h.expected_cash != null ? formatCurrency(Number(h.expected_cash)) : "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Contado</p>
+                        <p className="text-gray-300">{h.counted_cash != null ? formatCurrency(Number(h.counted_cash)) : "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Queda</p>
+                        <p className="text-gray-300">{h.left_for_next != null ? formatCurrency(Number(h.left_for_next)) : "-"}</p>
+                      </div>
+                    </div>
+                    {hasWithdrawal && (
+                      <p className="text-xs text-gray-400 pt-2 border-t border-white/5">
+                        Retiro: {formatCurrency(Number(h.withdrawn_amount))} → {DESTINATION_LABEL[h.withdrawn_destination || ""] || ""}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop: tabla completa */}
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-white/10">
@@ -728,7 +787,8 @@ export default function CajaPage() {
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </div>
 
