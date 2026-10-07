@@ -174,6 +174,7 @@ export default function CatalogoVisualPage() {
     setEnriching(true)
     const progress = { processed: 0, total: candidates.length, approved: 0, pending: 0, noMatch: 0 }
     setEnrichProgress({ ...progress })
+    let firstErrorMessage: string | null = null
 
     for (const product of candidates) {
       try {
@@ -186,7 +187,7 @@ export default function CatalogoVisualPage() {
           .maybeSingle()
 
         if (cached?.image_url) {
-          await supabase.rpc("set_product_image_candidate", {
+          const { error } = await supabase.rpc("set_product_image_candidate", {
             p_kiosko: kioskoId,
             p_product: product.id,
             p_barcode: product.barcode,
@@ -196,7 +197,12 @@ export default function CatalogoVisualPage() {
             p_match_method: "código de barras (catálogo compartido Atlas One)",
             p_auto_approve: true,
           })
-          progress.approved++
+          if (error) {
+            firstErrorMessage ??= error.message
+            progress.noMatch++
+          } else {
+            progress.approved++
+          }
         } else {
           const candidate =
             (await lookupOpenFoodFactsImage(product.barcode!).catch(() => null)) ??
@@ -206,7 +212,7 @@ export default function CatalogoVisualPage() {
             progress.noMatch++
           } else {
             const { confidence, autoApprove, matchMethod } = decideConfidence(candidate, product.name)
-            await supabase.rpc("set_product_image_candidate", {
+            const { error } = await supabase.rpc("set_product_image_candidate", {
               p_kiosko: kioskoId,
               p_product: product.id,
               p_barcode: product.barcode,
@@ -217,11 +223,18 @@ export default function CatalogoVisualPage() {
               p_match_method: matchMethod,
               p_auto_approve: autoApprove,
             })
-            if (autoApprove) progress.approved++
-            else progress.pending++
+            if (error) {
+              firstErrorMessage ??= error.message
+              progress.noMatch++
+            } else if (autoApprove) {
+              progress.approved++
+            } else {
+              progress.pending++
+            }
           }
         }
-      } catch {
+      } catch (e) {
+        firstErrorMessage ??= e instanceof Error ? e.message : String(e)
         progress.noMatch++
       }
 
@@ -232,10 +245,14 @@ export default function CatalogoVisualPage() {
     }
 
     setEnriching(false)
-    toast.success(
-      "Enriquecimiento terminado",
-      `${progress.approved} con imagen, ${progress.pending} a revisar, ${progress.noMatch} sin resultado`,
-    )
+    if (firstErrorMessage) {
+      toast.error("Enriquecimiento con errores", firstErrorMessage)
+    } else {
+      toast.success(
+        "Enriquecimiento terminado",
+        `${progress.approved} con imagen, ${progress.pending} a revisar, ${progress.noMatch} sin resultado`,
+      )
+    }
     loadAll(kioskoId)
   }
 
