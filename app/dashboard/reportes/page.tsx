@@ -519,7 +519,7 @@ export default function ReportesPage() {
                   strokeWidth={2.5}
                   fill={areaFill("violet")}
                   dot={false}
-                  activeDot={{ r: 6, fill: PALETTE.violet, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  activeDot={{ r: 6, fill: PALETTE.violet, stroke: "var(--card)", strokeWidth: 3 }}
                   {...ANIMATION}
                 />
               </AreaChart>

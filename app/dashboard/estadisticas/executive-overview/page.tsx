@@ -393,7 +393,7 @@ export default function ExecutiveOverviewPage() {
   const money = (v: any) => formatCurrency(Number(v))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Resumen Ejecutivo</h1>
         <p className="text-muted-foreground">Vista ejecutiva de rendimiento y eficiencia del negocio, con tus ventas reales</p>
@@ -499,7 +499,7 @@ export default function ExecutiveOverviewPage() {
                       strokeWidth={2.5}
                       fill={areaFill("cyan")}
                       dot={false}
-                      activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                      activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "var(--card)", strokeWidth: 3 }}
                       {...ANIMATION}
                     />
                   </AreaChart>

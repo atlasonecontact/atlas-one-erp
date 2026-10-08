@@ -100,7 +100,7 @@ export default function TicketsTablePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Tickets de Venta</h1>
         <p className="text-muted-foreground">Tabla detallada de todas las transacciones reales</p>
@@ -118,7 +118,7 @@ export default function TicketsTablePage() {
         />
       </div>
 
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-6 mb-6">
+      <Card className="bg-card border-cyan-500/20 p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -126,14 +126,14 @@ export default function TicketsTablePage() {
               placeholder="Buscar por número de ticket..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-800/50 border-gray-700 focus:border-cyan-500"
+              className="pl-10 bg-popover border-border focus:border-cyan-500"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
           <select
             value={invoiceFilter}
             onChange={(e) => setInvoiceFilter(e.target.value as "" | "yes" | "no")}
-            className="h-9 rounded-md border border-gray-700 bg-gray-800/50 px-3 text-sm text-foreground"
+            className="h-9 rounded-md border border-border bg-popover px-3 text-sm text-foreground"
           >
             <option value="">Facturación: todos</option>
             <option value="yes">Solo facturados</option>
@@ -144,7 +144,7 @@ export default function TicketsTablePage() {
             size="sm"
             onClick={handleExport}
             disabled={filteredTickets.length === 0}
-            className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+            className="bg-popover border-border hover:bg-accent hover:border-cyan-500/50"
           >
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
@@ -175,9 +175,9 @@ export default function TicketsTablePage() {
         </div>
       )}
 
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 overflow-hidden">
+      <Card className="bg-card border-cyan-500/20 overflow-hidden">
         {/* Mobile: cards */}
-        <div className="divide-y divide-gray-800 md:hidden">
+        <div className="divide-y divide-border md:hidden">
           {loading ? (
             <div className="p-10 text-center text-muted-foreground">
               <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -192,7 +192,7 @@ export default function TicketsTablePage() {
                 <div
                   key={ticket.id}
                   onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
-                  className="cursor-pointer p-4 transition-colors hover:bg-gray-800/50 active:bg-gray-800/50"
+                  className="cursor-pointer p-4 transition-colors hover:bg-accent active:bg-accent"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -206,8 +206,8 @@ export default function TicketsTablePage() {
                     <span className="font-semibold text-foreground">{formatCurrency(ticket.total)}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{ticket.units} unid.</Badge>
-                    <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-muted-foreground border-gray-700"}>
+                    <Badge className="bg-muted text-muted-foreground border-border">{ticket.units} unid.</Badge>
+                    <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-muted text-muted-foreground border-border"}>
                       {paymentLabel(ticket.payment)}
                     </Badge>
                     {ticket.invoice ? (
@@ -241,7 +241,7 @@ export default function TicketsTablePage() {
         {/* Desktop: tabla */}
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1000px]">
-            <thead className="bg-gray-800/80 border-b border-gray-700">
+            <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="text-left p-4 text-cyan-400 font-semibold">ID Ticket</th>
                 <th className="text-left p-4 text-cyan-400 font-semibold">Fecha</th>
@@ -277,7 +277,7 @@ export default function TicketsTablePage() {
                     <tr
                       key={ticket.id}
                       onClick={() => router.push(`/dashboard/estadisticas/ventas/tickets/${ticket.id}`)}
-                      className="border-b border-gray-800/50 hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      className="border-b border-border hover:bg-accent cursor-pointer transition-colors"
                     >
                       <td className="p-4 text-foreground font-mono" title={ticket.number}>
                         {shortId(ticket.number)}
@@ -289,10 +289,10 @@ export default function TicketsTablePage() {
                       <td className="p-4 text-muted-foreground">{ticket.seller}</td>
                       <td className="p-4 text-right text-foreground font-semibold">{formatCurrency(ticket.total)}</td>
                       <td className="p-4 text-center">
-                        <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{ticket.units}</Badge>
+                        <Badge className="bg-muted text-muted-foreground border-border">{ticket.units}</Badge>
                       </td>
                       <td className="p-4">
-                        <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-gray-800 text-muted-foreground border-gray-700"}>
+                        <Badge className={paymentColors[(ticket.payment || "").toLowerCase()] || "bg-muted text-muted-foreground border-border"}>
                           {paymentLabel(ticket.payment)}
                         </Badge>
                       </td>
@@ -327,7 +327,7 @@ export default function TicketsTablePage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between p-4 border-t border-gray-800">
+        <div className="flex items-center justify-between p-4 border-t border-border">
           <div className="text-sm text-muted-foreground">
             {filteredTickets.length === 0
               ? "0 tickets"
@@ -339,7 +339,7 @@ export default function TicketsTablePage() {
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+              className="bg-popover border-border hover:bg-accent hover:border-cyan-500/50"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -351,7 +351,7 @@ export default function TicketsTablePage() {
               size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+              className="bg-popover border-border hover:bg-accent hover:border-cyan-500/50"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>

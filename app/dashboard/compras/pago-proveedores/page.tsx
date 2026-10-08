@@ -295,9 +295,9 @@ export default function PagoProveedoresPage() {
 
   if (tableError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-amber-900/20 to-gray-900 border-amber-500/30">
+          <Card className="bg-gradient-to-br from-amber-500/10 to-card border-amber-500/30">
             <CardHeader>
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-amber-500/20 rounded-lg">
@@ -312,7 +312,7 @@ export default function PagoProveedoresPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
+              <div className="bg-muted p-4 rounded-lg border border-border">
                 <h3 className="text-foreground font-semibold mb-2 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
                     1
@@ -321,14 +321,14 @@ export default function PagoProveedoresPage() {
                 </h3>
                 <p className="text-muted-foreground text-sm mb-3 ml-8">
                   El script{" "}
-                  <code className="bg-gray-800 px-2 py-1 rounded text-cyan-400">
+                  <code className="bg-muted px-2 py-1 rounded text-cyan-400">
                     scripts/create_supplier_payments.sql
                   </code>{" "}
                   creará las tablas necesarias.
                 </p>
               </div>
 
-              <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700/50">
+              <div className="bg-muted p-4 rounded-lg border border-border">
                 <h3 className="text-foreground font-semibold mb-2 flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
                     2
@@ -369,7 +369,7 @@ export default function PagoProveedoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -392,7 +392,7 @@ export default function PagoProveedoresPage() {
         </div>
 
         <Dialog open={showFreeDialog} onOpenChange={(open) => (open ? setShowFreeDialog(true) : resetForm())}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
+          <DialogContent className="bg-card border-border text-foreground max-w-md">
             <DialogHeader>
               <DialogTitle>Pago a proveedor</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -406,7 +406,7 @@ export default function PagoProveedoresPage() {
                   id="free-supplier"
                   value={freeSupplier}
                   onChange={(e) => setFreeSupplier(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-foreground"
+                  className="bg-popover border-border text-foreground"
                   placeholder="Ej: Distribuidora Norte"
                 />
               </div>
@@ -418,17 +418,17 @@ export default function PagoProveedoresPage() {
                   step="0.01"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-foreground"
+                  className="bg-popover border-border text-foreground"
                   placeholder="0.00"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Método de pago</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
+                  <SelectTrigger className="bg-popover border-border text-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="cash">Efectivo</SelectItem>
                     <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
                     <SelectItem value="check">Cheque</SelectItem>
@@ -455,7 +455,7 @@ export default function PagoProveedoresPage() {
                   id="free-notes"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-foreground"
+                  className="bg-popover border-border text-foreground"
                   rows={2}
                 />
               </div>
@@ -463,7 +463,7 @@ export default function PagoProveedoresPage() {
                 <Button
                   variant="outline"
                   onClick={resetForm}
-                  className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
+                  className="flex-1 border-border text-foreground hover:bg-accent"
                 >
                   Cancelar
                 </Button>
@@ -480,7 +480,7 @@ export default function PagoProveedoresPage() {
         </Dialog>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
+          <Card className="bg-card border-border hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Monto Pendiente</CardTitle>
@@ -493,7 +493,7 @@ export default function PagoProveedoresPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
+          <Card className="bg-card border-border hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Pagado</CardTitle>
@@ -506,7 +506,7 @@ export default function PagoProveedoresPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
+          <Card className="bg-card border-border hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">OC No Pagadas</CardTitle>
@@ -519,7 +519,7 @@ export default function PagoProveedoresPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700/50 hover:border-cyan-500/30 transition-all">
+          <Card className="bg-card border-border hover:border-cyan-500/30 transition-all">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pagos Parciales</CardTitle>
@@ -534,7 +534,7 @@ export default function PagoProveedoresPage() {
         </div>
 
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="bg-gray-800/50 border border-gray-700/50">
+          <TabsList className="bg-muted border border-border">
             <TabsTrigger value="pending">Órdenes Pendientes</TabsTrigger>
             <TabsTrigger value="history">Historial de Pagos</TabsTrigger>
           </TabsList>
@@ -547,15 +547,15 @@ export default function PagoProveedoresPage() {
                   placeholder="Buscar por número OC o proveedor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-800/50 border-gray-700 text-foreground"
+                  className="pl-10 bg-popover border-border text-foreground"
                 />
               </div>
             </div>
 
-            <Card className="bg-gray-900/50 border-gray-700/50">
+            <Card className="bg-muted border-border">
               <CardContent className="p-0">
                 {/* Mobile */}
-                <div className="md:hidden divide-y divide-gray-800/50">
+                <div className="md:hidden divide-y divide-border">
                   {filteredPurchases.filter((p) => p.payment_status !== "paid").length === 0 ? (
                     <p className="p-8 text-center text-muted-foreground">No hay órdenes de compra pendientes de pago</p>
                   ) : (
@@ -612,7 +612,7 @@ export default function PagoProveedoresPage() {
                                   Registrar Pago
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
+                              <DialogContent className="bg-card border-border text-foreground max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>Registrar Pago</DialogTitle>
                                   <DialogDescription className="text-muted-foreground">
@@ -620,7 +620,7 @@ export default function PagoProveedoresPage() {
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
-                                  <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                                  <div className="bg-muted p-4 rounded-lg border border-border">
                                     <div className="flex justify-between text-sm mb-2">
                                       <span className="text-muted-foreground">Monto Total:</span>
                                       <span className="text-foreground font-semibold">
@@ -633,7 +633,7 @@ export default function PagoProveedoresPage() {
                                         ${(purchase.total_paid || 0).toFixed(2)}
                                       </span>
                                     </div>
-                                    <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50">
+                                    <div className="flex justify-between text-sm pt-2 border-t border-border">
                                       <span className="text-muted-foreground">Pendiente:</span>
                                       <span className="text-red-400 font-bold">${pending.toFixed(2)}</span>
                                     </div>
@@ -647,7 +647,7 @@ export default function PagoProveedoresPage() {
                                       step="0.01"
                                       value={paymentAmount}
                                       onChange={(e) => setPaymentAmount(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-foreground"
+                                      className="bg-popover border-border text-foreground"
                                       placeholder="0.00"
                                     />
                                   </div>
@@ -655,10 +655,10 @@ export default function PagoProveedoresPage() {
                                   <div className="space-y-2">
                                     <Label htmlFor="method-mobile">Método de Pago</Label>
                                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                      <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
+                                      <SelectTrigger className="bg-popover border-border text-foreground">
                                         <SelectValue />
                                       </SelectTrigger>
-                                      <SelectContent className="bg-gray-800 border-gray-700">
+                                      <SelectContent className="bg-popover border-border">
                                         <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
                                         <SelectItem value="cash">Efectivo</SelectItem>
                                         <SelectItem value="check">Cheque</SelectItem>
@@ -687,7 +687,7 @@ export default function PagoProveedoresPage() {
                                       id="reference-mobile"
                                       value={referenceNumber}
                                       onChange={(e) => setReferenceNumber(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-foreground"
+                                      className="bg-popover border-border text-foreground"
                                       placeholder="Ej: Comprobante #123456"
                                     />
                                   </div>
@@ -698,7 +698,7 @@ export default function PagoProveedoresPage() {
                                       id="notes-mobile"
                                       value={paymentNotes}
                                       onChange={(e) => setPaymentNotes(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 text-foreground"
+                                      className="bg-popover border-border text-foreground"
                                       placeholder="Información adicional..."
                                       rows={3}
                                     />
@@ -708,7 +708,7 @@ export default function PagoProveedoresPage() {
                                     <Button
                                       variant="outline"
                                       onClick={() => setIsDialogOpen(false)}
-                                      className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
+                                      className="flex-1 border-border text-foreground hover:bg-accent"
                                     >
                                       Cancelar
                                     </Button>
@@ -733,7 +733,7 @@ export default function PagoProveedoresPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-700/50">
+                      <tr className="border-b border-border">
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Número OC</th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Proveedor</th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Fecha</th>
@@ -759,7 +759,7 @@ export default function PagoProveedoresPage() {
                             return (
                               <tr
                                 key={purchase.id}
-                                className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                                className="border-b border-border hover:bg-accent transition-colors"
                               >
                                 <td className="p-4">
                                   <div className="flex items-center gap-2">
@@ -805,7 +805,7 @@ export default function PagoProveedoresPage() {
                                         Registrar Pago
                                       </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="bg-gray-900 border-gray-700 text-foreground max-w-md">
+                                    <DialogContent className="bg-card border-border text-foreground max-w-md">
                                       <DialogHeader>
                                         <DialogTitle>Registrar Pago</DialogTitle>
                                         <DialogDescription className="text-muted-foreground">
@@ -813,7 +813,7 @@ export default function PagoProveedoresPage() {
                                         </DialogDescription>
                                       </DialogHeader>
                                       <div className="space-y-4">
-                                        <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                                        <div className="bg-muted p-4 rounded-lg border border-border">
                                           <div className="flex justify-between text-sm mb-2">
                                             <span className="text-muted-foreground">Monto Total:</span>
                                             <span className="text-foreground font-semibold">
@@ -826,7 +826,7 @@ export default function PagoProveedoresPage() {
                                               ${(purchase.total_paid || 0).toFixed(2)}
                                             </span>
                                           </div>
-                                          <div className="flex justify-between text-sm pt-2 border-t border-gray-700/50">
+                                          <div className="flex justify-between text-sm pt-2 border-t border-border">
                                             <span className="text-muted-foreground">Pendiente:</span>
                                             <span className="text-red-400 font-bold">${pending.toFixed(2)}</span>
                                           </div>
@@ -840,7 +840,7 @@ export default function PagoProveedoresPage() {
                                             step="0.01"
                                             value={paymentAmount}
                                             onChange={(e) => setPaymentAmount(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-foreground"
+                                            className="bg-popover border-border text-foreground"
                                             placeholder="0.00"
                                           />
                                         </div>
@@ -848,10 +848,10 @@ export default function PagoProveedoresPage() {
                                         <div className="space-y-2">
                                           <Label htmlFor="method">Método de Pago</Label>
                                           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                            <SelectTrigger className="bg-gray-800 border-gray-700 text-foreground">
+                                            <SelectTrigger className="bg-popover border-border text-foreground">
                                               <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-gray-800 border-gray-700">
+                                            <SelectContent className="bg-popover border-border">
                                               <SelectItem value="bank_transfer">Transferencia Bancaria</SelectItem>
                                               <SelectItem value="cash">Efectivo</SelectItem>
                                               <SelectItem value="check">Cheque</SelectItem>
@@ -880,7 +880,7 @@ export default function PagoProveedoresPage() {
                                             id="reference"
                                             value={referenceNumber}
                                             onChange={(e) => setReferenceNumber(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-foreground"
+                                            className="bg-popover border-border text-foreground"
                                             placeholder="Ej: Comprobante #123456"
                                           />
                                         </div>
@@ -891,7 +891,7 @@ export default function PagoProveedoresPage() {
                                             id="notes"
                                             value={paymentNotes}
                                             onChange={(e) => setPaymentNotes(e.target.value)}
-                                            className="bg-gray-800 border-gray-700 text-foreground"
+                                            className="bg-popover border-border text-foreground"
                                             placeholder="Información adicional..."
                                             rows={3}
                                           />
@@ -901,7 +901,7 @@ export default function PagoProveedoresPage() {
                                           <Button
                                             variant="outline"
                                             onClick={() => setIsDialogOpen(false)}
-                                            className="flex-1 border-gray-700 text-foreground hover:bg-gray-800"
+                                            className="flex-1 border-border text-foreground hover:bg-accent"
                                           >
                                             Cancelar
                                           </Button>
@@ -929,10 +929,10 @@ export default function PagoProveedoresPage() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            <Card className="bg-gray-900/50 border-gray-700/50">
+            <Card className="bg-muted border-border">
               <CardContent className="p-0">
                 {/* Mobile */}
-                <div className="md:hidden divide-y divide-gray-800/50">
+                <div className="md:hidden divide-y divide-border">
                   {payments.length === 0 ? (
                     <p className="p-8 text-center text-muted-foreground">No hay pagos registrados</p>
                   ) : (
@@ -976,7 +976,7 @@ export default function PagoProveedoresPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-700/50">
+                      <tr className="border-b border-border">
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Número Pago</th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">OC</th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Proveedor</th>
@@ -997,7 +997,7 @@ export default function PagoProveedoresPage() {
                         payments.map((payment) => (
                           <tr
                             key={payment.id}
-                            className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                            className="border-b border-border hover:bg-accent transition-colors"
                           >
                             <td className="p-4">
                               <div className="flex items-center gap-2">

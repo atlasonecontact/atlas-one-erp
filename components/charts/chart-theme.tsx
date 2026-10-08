@@ -58,7 +58,7 @@ export const gridProps = {
 } as const
 
 export const axisProps = {
-  tick: { fill: "#8b9bb4", fontSize: 12 },
+  tick: { fill: "var(--muted-foreground)", fontSize: 12 },
   axisLine: false,
   tickLine: false,
 } as const
@@ -66,7 +66,7 @@ export const axisProps = {
 export const legendProps = {
   iconType: "circle" as const,
   iconSize: 8,
-  wrapperStyle: { fontSize: 12, color: "#94a3b8", paddingTop: 10 },
+  wrapperStyle: { fontSize: 12, color: "var(--muted-foreground)", paddingTop: 10 },
 }
 
 export const cursorBar = { fill: "rgba(148,163,184,0.08)", radius: 6 }
@@ -93,8 +93,8 @@ export function ChartTooltip({ active, payload, label, valueFormatter, labelForm
   if (!active || !payload || payload.length === 0) return null
   const title = labelFormatter ? labelFormatter(label) : label ?? payload[0]?.payload?.name
   return (
-    <div className="min-w-[140px] rounded-xl border border-white/10 bg-[#0b1220]/95 px-3.5 py-2.5 text-xs shadow-2xl backdrop-blur">
-      {title !== undefined && title !== "" && <p className="mb-1.5 font-semibold text-slate-200">{String(title)}</p>}
+    <div className="min-w-[140px] rounded-xl border border-border bg-popover/95 px-3.5 py-2.5 text-xs shadow-2xl backdrop-blur">
+      {title !== undefined && title !== "" && <p className="mb-1.5 font-semibold text-foreground">{String(title)}</p>}
       <div className="space-y-1">
         {payload.map((p, i) => {
           const dot = hexFromFill(p.color) || hexFromFill(p.payload?.color) || hexFromFill(p.fill) || colorAt(i)
@@ -102,11 +102,11 @@ export function ChartTooltip({ active, payload, label, valueFormatter, labelForm
           const value = typeof p.value === "number" && valueFormatter ? valueFormatter(p.value, String(name)) : p.value
           return (
             <div key={i} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-2 text-slate-400">
+              <span className="flex items-center gap-2 text-muted-foreground">
                 <span className="h-2 w-2 rounded-full" style={{ background: dot }} />
                 {String(name)}
               </span>
-              <span className="font-semibold text-white">{String(value)}</span>
+              <span className="font-semibold text-foreground">{String(value)}</span>
             </div>
           )
         })}
@@ -132,17 +132,17 @@ export function ChartCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/[0.07] bg-gradient-to-b from-[#0e1526] to-[#0a0f1a] p-5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] sm:p-6",
+        "rounded-2xl border border-border bg-card p-5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] sm:p-6",
         className,
       )}
     >
       <div className="mb-5 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-white">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <span className="h-4 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-indigo-400" />
             <span className="truncate">{title}</span>
           </h3>
-          {subtitle && <p className="mt-1 pl-3 text-xs text-slate-500">{subtitle}</p>}
+          {subtitle && <p className="mt-1 pl-3 text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {action}
       </div>
@@ -152,7 +152,7 @@ export function ChartCard({
 }
 
 export function EmptyChart({ message = "Sin datos para mostrar." }: { message?: string }) {
-  return <p className="py-16 text-center text-sm text-slate-500">{message}</p>
+  return <p className="py-16 text-center text-sm text-muted-foreground">{message}</p>
 }
 
 export interface DonutDatum {
@@ -200,19 +200,19 @@ export function DonutChart({
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-[11px] uppercase tracking-wide text-slate-500">{centerLabel}</span>
-          <span className="text-lg font-bold text-white">{centerValue ?? valueFormatter(total, "Total")}</span>
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{centerLabel}</span>
+          <span className="text-lg font-bold text-foreground">{centerValue ?? valueFormatter(total, "Total")}</span>
         </div>
       </div>
       <ul className="w-full min-w-0 flex-1 space-y-2">
         {data.map((d, i) => (
           <li key={d.name} className="flex items-center justify-between gap-3 text-sm">
-            <span className="flex min-w-0 items-center gap-2 text-slate-300">
+            <span className="flex min-w-0 items-center gap-2 text-foreground">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: colorAt(i) }} />
               <span className="truncate">{d.name}</span>
             </span>
-            <span className="shrink-0 text-slate-400">
-              <span className="font-semibold text-white">{Math.round((d.value / total) * 100)}%</span>
+            <span className="shrink-0 text-muted-foreground">
+              <span className="font-semibold text-foreground">{Math.round((d.value / total) * 100)}%</span>
             </span>
           </li>
         ))}

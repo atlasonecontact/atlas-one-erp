@@ -180,7 +180,7 @@ export default function IngresosTarjetasPage() {
                   strokeWidth={2.5}
                   fill={areaFill("cyan")}
                   dot={false}
-                  activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "#0a0f1a", strokeWidth: 3 }}
+                  activeDot={{ r: 6, fill: PALETTE.cyan, stroke: "var(--card)", strokeWidth: 3 }}
                   {...ANIMATION}
                 />
               </AreaChart>

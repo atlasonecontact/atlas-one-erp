@@ -164,7 +164,7 @@ export default function TicketDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="flex h-64 items-center justify-center">
           <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
         </div>
@@ -174,9 +174,9 @@ export default function TicketDetailPage() {
 
   if (error || !ticket) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="mb-8">{back}</div>
-        <Card className="bg-gray-900/60 border-cyan-500/20 p-8 max-w-xl mx-auto text-center">
+        <Card className="bg-card border-cyan-500/20 p-8 max-w-xl mx-auto text-center">
           <p className="text-foreground font-semibold mb-2">{error ? "No se pudo cargar el ticket" : "Ticket no encontrado"}</p>
           <p className="text-sm text-muted-foreground">{error || "Puede que haya sido eliminado o que no tengas acceso."}</p>
         </Card>
@@ -222,7 +222,7 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="flex items-center justify-between mb-8 print:hidden">
         {back}
         <div className="flex gap-2">
@@ -230,7 +230,7 @@ export default function TicketDetailPage() {
             variant="outline"
             size="sm"
             onClick={() => window.print()}
-            className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+            className="bg-popover border-border hover:bg-accent hover:border-cyan-500/50"
           >
             <Printer className="w-4 h-4 mr-2" />
             Imprimir
@@ -239,7 +239,7 @@ export default function TicketDetailPage() {
             variant="outline"
             size="sm"
             onClick={handleDownload}
-            className="bg-gray-800/50 border-gray-700 hover:bg-gray-800 hover:border-cyan-500/50"
+            className="bg-popover border-border hover:bg-accent hover:border-cyan-500/50"
           >
             <Download className="w-4 h-4 mr-2" />
             Descargar CSV
@@ -247,7 +247,7 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-cyan-500/20 p-4 md:p-8 max-w-4xl mx-auto">
+      <Card className="bg-card border-cyan-500/20 p-4 md:p-8 max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Detalle de Venta</h1>
           <div className="flex flex-wrap items-center gap-2">
@@ -261,28 +261,28 @@ export default function TicketDetailPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Calendar className="w-4 h-4" />
               <span className="text-sm">Fecha</span>
             </div>
             <div className="text-foreground font-semibold">{dateFmt.format(new Date(ticket.createdAt))}</div>
           </div>
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Clock className="w-4 h-4" />
               <span className="text-sm">Hora</span>
             </div>
             <div className="text-foreground font-semibold">{timeFmt.format(new Date(ticket.createdAt))}</div>
           </div>
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Building2 className="w-4 h-4" />
               <span className="text-sm">Sucursal</span>
             </div>
             <div className="text-foreground font-semibold">{ticket.branch}</div>
           </div>
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Clock className="w-4 h-4" />
               <span className="text-sm">Turno</span>
@@ -292,7 +292,7 @@ export default function TicketDetailPage() {
             </div>
             <div className="text-xs text-muted-foreground">{shiftFromLabel(ticket.registerShift) ? "Según la caja" : "Según la hora"}</div>
           </div>
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <User className="w-4 h-4" />
               <span className="text-sm">Vendedor</span>
@@ -302,7 +302,7 @@ export default function TicketDetailPage() {
                 value={ticket.sellerId ?? ""}
                 disabled={savingSeller}
                 onChange={(e) => changeSeller(e.target.value)}
-                className="h-9 w-full rounded-md border border-gray-700 bg-gray-800 px-2 text-sm font-semibold text-foreground"
+                className="h-9 w-full rounded-md border border-border bg-popover px-2 text-sm font-semibold text-foreground"
               >
                 <option value="">{OWNER_LABEL}</option>
                 {staff.map((m) => (
@@ -315,7 +315,7 @@ export default function TicketDetailPage() {
               <div className="text-foreground font-semibold">{ticket.seller}</div>
             )}
           </div>
-          <div className="bg-gray-800/50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <CreditCard className="w-4 h-4" />
               <span className="text-sm">Método de Pago</span>
@@ -324,7 +324,7 @@ export default function TicketDetailPage() {
           </div>
         </div>
 
-        <Separator className="my-8 bg-gray-700" />
+        <Separator className="my-8 bg-border" />
 
         <div className="mb-8">
           <h2 className="text-xl font-bold text-foreground mb-4">Productos</h2>
@@ -336,7 +336,7 @@ export default function TicketDetailPage() {
               ticket.lines.map((line, i) => {
                 const margin = line.cost > 0 && line.subtotal > 0 ? ((line.subtotal - line.cost) / line.subtotal) * 100 : null
                 return (
-                  <div key={i} className="rounded-lg border border-gray-800 bg-gray-800/30 p-3">
+                  <div key={i} className="rounded-lg border border-border bg-muted p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-medium text-foreground">{line.name}</p>
@@ -345,7 +345,7 @@ export default function TicketDetailPage() {
                       <p className="font-semibold text-foreground">{formatCurrency(line.subtotal)}</p>
                     </div>
                     <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                      <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{line.quantity} unid.</Badge>
+                      <Badge className="bg-muted text-muted-foreground border-border">{line.quantity} unid.</Badge>
                       <span>{formatCurrency(line.unitPrice)} c/u</span>
                       {margin !== null && (
                         <span className={margin >= 30 ? "text-green-400" : "text-yellow-400"}>{margin.toFixed(1)}% margen</span>
@@ -360,7 +360,7 @@ export default function TicketDetailPage() {
           {/* Desktop: tabla */}
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[560px]">
-              <thead className="bg-gray-800/80 border-b border-gray-700">
+              <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="text-left p-3 text-cyan-400 font-semibold">Producto</th>
                   <th className="text-left p-3 text-cyan-400 font-semibold">Categoría</th>
@@ -381,11 +381,11 @@ export default function TicketDetailPage() {
                   ticket.lines.map((line, i) => {
                     const margin = line.cost > 0 && line.subtotal > 0 ? ((line.subtotal - line.cost) / line.subtotal) * 100 : null
                     return (
-                      <tr key={i} className="border-b border-gray-800/50">
+                      <tr key={i} className="border-b border-border">
                         <td className="p-3 text-foreground font-medium">{line.name}</td>
                         <td className="p-3 text-muted-foreground">{line.category}</td>
                         <td className="p-3 text-center">
-                          <Badge className="bg-gray-800 text-muted-foreground border-gray-700">{line.quantity}</Badge>
+                          <Badge className="bg-muted text-muted-foreground border-border">{line.quantity}</Badge>
                         </td>
                         <td className="p-3 text-right text-muted-foreground">{formatCurrency(line.unitPrice)}</td>
                         <td className="p-3 text-right text-foreground font-semibold">{formatCurrency(line.subtotal)}</td>
@@ -405,12 +405,12 @@ export default function TicketDetailPage() {
           </div>
         </div>
 
-        <Separator className="my-8 bg-gray-700" />
+        <Separator className="my-8 bg-border" />
 
         <div className="mb-8">
           <h2 className="text-xl font-bold text-foreground mb-4">Facturación</h2>
           {ticket.invoice ? (
-            <div className="bg-gray-800/50 p-4 rounded-lg flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-muted p-4 rounded-lg flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-foreground font-semibold">
                   {ticket.invoice.type} {ticket.invoice.number}
@@ -428,30 +428,30 @@ export default function TicketDetailPage() {
               </Badge>
             </div>
           ) : (
-            <div className="bg-gray-800/50 p-4 rounded-lg text-sm text-muted-foreground">
+            <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground">
               Esta venta no tiene factura electrónica emitida.
             </div>
           )}
         </div>
 
-        <Separator className="my-8 bg-gray-700" />
+        <Separator className="my-8 bg-border" />
 
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-foreground mb-4">Resumen</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gray-800/50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="text-muted-foreground text-sm mb-1">Total Unidades</div>
               <div className="text-2xl font-bold text-foreground">{totalQuantity}</div>
             </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="text-muted-foreground text-sm mb-1">Subtotal</div>
               <div className="text-2xl font-bold text-foreground">{formatCurrency(subtotal)}</div>
             </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="text-muted-foreground text-sm mb-1">Costo Total</div>
               <div className="text-2xl font-bold text-muted-foreground">{hasCost ? formatCurrency(totalCost) : "-"}</div>
             </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="text-muted-foreground text-sm mb-1">Margen Total</div>
               <div className="text-2xl font-bold text-green-400">{totalMargin === null ? "-" : `${totalMargin.toFixed(1)}%`}</div>
             </div>
