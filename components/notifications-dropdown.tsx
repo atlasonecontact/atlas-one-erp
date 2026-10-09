@@ -168,12 +168,15 @@ export function NotificationsDropdown() {
       })
 
       // Get low stock alerts
+      // Ordenado por stock ascendente (no por updated_at): un producto sin
+      // stock que no se vende hace rato no deja de tener prioridad de alerta.
       const { data: lowStockProducts } = await supabase
         .from("products")
         .select("id, kiosko_id, name, stock_quantity, min_stock_level, updated_at")
         .in("kiosko_id", kioskoIds)
-        .order("updated_at", { ascending: false })
-        .limit(20)
+        .lte("stock_quantity", 100)
+        .order("stock_quantity", { ascending: true })
+        .limit(50)
 
       lowStockProducts?.forEach(product => {
         if (product.stock_quantity <= (product.min_stock_level || 10)) {

@@ -820,7 +820,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </main>
           <BottomNavigation
             onMenuClick={() => setMobileNavOpen(true)}
-            onScanClick={() => router.push("/dashboard/ventas")}
+            onScanClick={() => router.push("/dashboard/ventas?scanner=1")}
           />
         </div>
       </div>

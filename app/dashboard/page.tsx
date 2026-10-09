@@ -211,7 +211,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-medium text-foreground">Nueva venta</span>
                 </Link>
                 <Link
-                  href="/dashboard/ventas"
+                  href="/dashboard/ventas?scanner=1"
                   className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/10 bg-card p-4 touch-target haptic-tap"
                 >
                   <Scan className="w-5 h-5 text-cyan-400" />

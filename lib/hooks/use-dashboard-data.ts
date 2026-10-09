@@ -191,13 +191,19 @@ export function useDashboardData(period: string) {
 
       const topProductData = Object.values(productSales).sort((a, b) => b.quantity - a.quantity)[0]
 
-      const { data: lowStock } = await supabase
+      // Prefiltro amplio + orden ascendente por stock real (no por un umbral fijo):
+      // asi un producto con min_stock_level alto no queda afuera de la alerta.
+      const { data: lowStockRaw } = await supabase
         .from("products")
         .select("id, name, stock_quantity, min_stock_level")
         .in("kiosko_id", kioskoIds)
-        .lt("stock_quantity", 15)
+        .lte("stock_quantity", 100)
         .order("stock_quantity", { ascending: true })
-        .limit(5)
+        .limit(50)
+
+      const lowStock = (lowStockRaw || [])
+        .filter((p) => p.stock_quantity <= (p.min_stock_level || 10))
+        .slice(0, 5)
 
       const mappedLowStock =
         lowStock?.map((p) => ({

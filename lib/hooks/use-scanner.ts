@@ -31,7 +31,10 @@ export function useScanner(config: ScannerConfig) {
     onScan,
     minLength = 4,
     maxLength = 50,
-    scanTimeout = 50, // Una pistola manda los caracteres a menos de 50 ms entre si
+    // Una pistola manda los caracteres muy rapido, pero un frame lento del navegador
+    // (render, toast, etc.) puede inflar el gap medido y rechazar un escaneo real.
+    // 120ms sigue siendo mucho mas rapido que un tipeo humano (tipicamente >200ms).
+    scanTimeout = 120,
     preventDefaultKeys = true,
   } = config
 

@@ -11,10 +11,11 @@ import { prorateComponents } from "@/lib/pos/promotion-pricing"
 import { SurchargeModal, isSurchargeActiveNow, DEFAULT_SURCHARGE, type SurchargeConfig } from "@/components/pos/surcharge-modal"
 import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
-import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X, Moon } from "lucide-react"
+import { Search, Barcode, History, Bluetooth, Loader2, WifiOff, Wifi, ShoppingCart, X, Moon, Camera } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useScanner } from "@/lib/hooks/use-scanner"
+import { CameraScanner } from "@/components/mobile/camera-scanner"
 import { useToast } from "@/components/ui/toast-provider"
 import { enqueueSale, flushQueuedSales } from "@/lib/offline/sales-queue"
 import { cn } from "@/lib/utils"
@@ -121,6 +122,8 @@ export default function VentasPage() {
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PAGE_SIZE)
   const [showPayment, setShowPayment] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [showCameraScanner, setShowCameraScanner] = useState(false)
+  const cartRef = useRef<CartItem[]>([])
   const [lastSale, setLastSale] = useState<{
     saleId?: string
     saleNumber?: string
@@ -193,6 +196,19 @@ export default function VentasPage() {
     }
   }, [searchParams, products])
 
+  // El boton "Escanear" del nav inferior (mobile) linkea con ?scanner=1 para
+  // abrir la camara directo, sin un segundo toque dentro de la pantalla.
+  useEffect(() => {
+    if (searchParams.get("scanner") === "1") {
+      setShowCameraScanner(true)
+      window.history.replaceState({}, "", "/dashboard/ventas")
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    cartRef.current = cart
+  }, [cart])
+
   // "Anular y rehacer" desde el historial: la venta anulada deja sus productos
   // en localStorage y el POS los carga en el carrito (una sola vez).
   useEffect(() => {
@@ -254,7 +270,11 @@ export default function VentasPage() {
         if (found.stock <= 0) {
           toast.warning("Agregado sin stock registrado", `"${found.name}" x1 — revisar el conteo de stock`)
         } else {
-          toast.success("Producto agregado", `${found.name} x1`)
+          // Muestra el stock bajando (ej. 15 -> 14) para que quede clara la confirmacion
+          // visual de que el escaneo se registro y va a descontar del conteo real.
+          const alreadyInCart = cartRef.current.find((item) => item.id === found.id)?.quantity || 0
+          const remaining = found.stock - alreadyInCart - 1
+          toast.success("Producto agregado", `${found.name} · Stock: ${found.stock} → ${remaining}`)
         }
       } else {
         toast.warning("Producto no encontrado", `Código: ${barcode}`, {
@@ -1140,6 +1160,15 @@ export default function VentasPage() {
                 className="pl-10 bg-card border-cyan-500/10 text-foreground placeholder:text-muted-foreground h-11 lg:h-10 text-base lg:text-sm"
               />
             </div>
+            {/* Escanear con camara - solo mobile/tablet, donde no hay lector USB/BT */}
+            <Button
+              type="button"
+              onClick={() => setShowCameraScanner(true)}
+              className="h-11 shrink-0 gap-2 bg-cyan-500 text-black hover:bg-cyan-400 lg:hidden"
+            >
+              <Camera className="w-4 h-4" />
+              <span className="hidden sm:inline">Escanear</span>
+            </Button>
             {/* Desktop only buttons */}
             <Button
               variant="outline"
@@ -1416,6 +1445,15 @@ export default function VentasPage() {
           </div>
         </div>
       )}
+
+      <CameraScanner
+        isOpen={showCameraScanner}
+        onClose={() => setShowCameraScanner(false)}
+        onScan={(code: string) => {
+          setShowCameraScanner(false)
+          handleBarcodeScanned(code)
+        }}
+      />
 
       {/* Payment Modal */}
       <ChoiceModal
