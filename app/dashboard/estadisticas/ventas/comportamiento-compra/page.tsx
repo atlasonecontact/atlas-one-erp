@@ -312,7 +312,7 @@ export default function ComportamientoCompraPage() {
             </ChartCard>
           </div>
 
-          <Card className="bg-card border-cyan-500/20 p-6 mt-6">
+          <Card className="bg-card border-cyan-500/10 p-6 mt-6">
             <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <div className="h-6 w-1 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
               Insights y Oportunidades

@@ -10,7 +10,7 @@ import { FinancialKPIs, InventoryKPIs, PerformanceKPIs, ControlKPIs } from "@/co
 import { SalesHistory } from "@/components/dashboard/sales-history"
 import { SmartInsights } from "@/components/dashboard/smart-insights"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
-import { Plus, Calendar, TrendingUp, Receipt, Package, DollarSign, RefreshCw, Filter } from "lucide-react"
+import { Plus, Calendar, TrendingUp, Receipt, Package, DollarSign, RefreshCw, Filter, ShoppingCart, Scan, Truck, Wallet } from "lucide-react"
 import Link from "next/link"
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data"
 import { useTheme } from "@/lib/theme-context"
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState("30d")
   const [view, setView] = useState<"overview" | "notifications" | "history">("overview")
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [userName, setUserName] = useState("")
   const { data, isLoading, refetch } = useDashboardData(period)
   const { config } = useTheme()
 
@@ -29,7 +30,7 @@ export default function DashboardPage() {
     const checkAccess = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       if (!user) {
         router.push("/login")
         return
@@ -37,7 +38,7 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, full_name")
         .eq("id", user.id)
         .single()
 
@@ -47,6 +48,7 @@ export default function DashboardPage() {
         return
       }
 
+      if (profile?.full_name) setUserName(profile.full_name.split(" ")[0])
       setIsAuthorized(true)
     }
 
@@ -160,6 +162,81 @@ export default function DashboardPage() {
       {/* Top KPIs Row - Solo en Overview - responsive grid */}
       {view === "overview" && (
         <>
+          {/* Mobile home - flujo narrativo: saludo -> ventas de hoy -> mini stats -> acciones rapidas */}
+          <div className="lg:hidden space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                {userName ? `¡Buenos días, ${userName}!` : "¡Buenos días!"}
+              </h2>
+              <p className="text-sm text-muted-foreground">Tu negocio en un solo lugar</p>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 via-card to-card p-5">
+              <p className="text-sm text-muted-foreground mb-1">Ventas de hoy</p>
+              {isLoading ? (
+                <div className="h-9 w-32 rounded bg-accent animate-pulse" />
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-foreground">{formatCurrency(data.todaySales)}</p>
+                  <p
+                    className={`text-sm mt-1 flex items-center gap-1 ${data.todaySalesChange >= 0 ? "text-green-400" : "text-red-400"}`}
+                  >
+                    <TrendingUp className={`w-3.5 h-3.5 ${data.todaySalesChange < 0 ? "rotate-180" : ""}`} />
+                    {data.todaySalesChange >= 0 ? "+" : ""}
+                    {data.todaySalesChange}% vs. ayer
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+                <p className="text-xs text-muted-foreground mb-1">Ventas</p>
+                <p className="text-xl font-bold text-foreground">{isLoading ? "–" : data.todaySalesCount}</p>
+              </div>
+              <div className="rounded-xl border border-cyan-500/10 bg-card p-4">
+                <p className="text-xs text-muted-foreground mb-1">Ticket promedio</p>
+                <p className="text-xl font-bold text-foreground">{isLoading ? "–" : formatCurrency(data.avgTicket)}</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Acciones rápidas</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  href="/dashboard/ventas"
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/10 bg-card p-4 touch-target haptic-tap"
+                >
+                  <ShoppingCart className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xs font-medium text-foreground">Nueva venta</span>
+                </Link>
+                <Link
+                  href="/dashboard/ventas"
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/10 bg-card p-4 touch-target haptic-tap"
+                >
+                  <Scan className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xs font-medium text-foreground">Escanear</span>
+                </Link>
+                <Link
+                  href="/dashboard/stock/recepcion-mercaderia"
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/10 bg-card p-4 touch-target haptic-tap"
+                >
+                  <Truck className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xs font-medium text-foreground">Recepción</span>
+                </Link>
+                <Link
+                  href="/dashboard/caja"
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/10 bg-card p-4 touch-target haptic-tap"
+                >
+                  <Wallet className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xs font-medium text-foreground">Caja</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop/tablet overview - KPIs, graficos, historial */}
+          <div className="hidden lg:block space-y-4 lg:space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             <KPICardV2
               title="Total Facturado"
@@ -284,6 +361,7 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+          </div>
           </div>
 
           {/* Recent Activity */}

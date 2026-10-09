@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AtlasLogo } from "@/components/atlas-logo"
-import { Eye, EyeOff, Mail, Lock, User, Building2, ArrowRight, Check } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Building2, Phone, ArrowRight, Check } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function RegisterPage() {
@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("")
   const [businessName, setBusinessName] = useState("")
   const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
@@ -34,6 +35,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    const phoneDigits = phone.replace(/\D/g, "")
+    if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+      setError("Ingresá un teléfono válido (8 a 15 dígitos)")
+      return
+    }
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden")
@@ -58,6 +65,7 @@ export default function RegisterPage() {
           data: {
             full_name: fullName,
             business_name: businessName || "Mi Negocio",
+            phone: phoneDigits,
           },
         },
       })
@@ -161,6 +169,25 @@ export default function RegisterPage() {
                         placeholder="Mi Kiosco"
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
+                        className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white placeholder:text-gray-500 focus:border-cyan-500 focus:ring-cyan-500/20 h-11 sm:h-12"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-gray-300 text-sm">
+                      Teléfono
+                    </Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="11 2345 6789"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
                         className="pl-10 bg-[#0d1424] border-cyan-500/20 text-white placeholder:text-gray-500 focus:border-cyan-500 focus:ring-cyan-500/20 h-11 sm:h-12"
                       />
                     </div>

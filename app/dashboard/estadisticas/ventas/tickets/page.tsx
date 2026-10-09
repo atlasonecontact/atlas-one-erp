@@ -118,7 +118,7 @@ export default function TicketsTablePage() {
         />
       </div>
 
-      <Card className="bg-card border-cyan-500/20 p-6 mb-6">
+      <Card className="bg-card border-cyan-500/10 p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -175,7 +175,7 @@ export default function TicketsTablePage() {
         </div>
       )}
 
-      <Card className="bg-card border-cyan-500/20 overflow-hidden">
+      <Card className="bg-card border-cyan-500/10 overflow-hidden">
         {/* Mobile: cards */}
         <div className="divide-y divide-border md:hidden">
           {loading ? (

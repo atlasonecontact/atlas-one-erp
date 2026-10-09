@@ -4,7 +4,7 @@ import type React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ShoppingCart, Package, Wallet, Menu, Scan } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, Wallet, Menu, Scan } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/theme-context"
 
@@ -17,7 +17,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
-  { href: "/dashboard/productos", label: "Productos", icon: Package },
   { href: "/dashboard/caja", label: "Caja", icon: Wallet },
 ]
 
@@ -74,13 +73,14 @@ export function BottomNavigation({ onMenuClick, onScanClick }: BottomNavigationP
         {/* Central Scan FAB */}
         <button
           onClick={onScanClick}
-          className="relative -mt-8 flex items-center justify-center w-16 h-16 rounded-full fab haptic-tap"
+          className="relative -mt-5 flex items-center justify-center w-12 h-12 rounded-full fab haptic-tap ring-4 ring-background"
           style={{
             background: `linear-gradient(135deg, ${config.primary}, ${config.accent})`,
           }}
+          aria-label="Escanear"
         >
-          <Scan className="w-7 h-7 text-black" />
-          <span className="absolute -bottom-5 text-[10px] font-semibold" style={{ color: config.primary }}>
+          <Scan className="w-5 h-5 text-black" />
+          <span className="absolute -bottom-4 text-[10px] font-semibold whitespace-nowrap" style={{ color: config.primary }}>
             Escanear
           </span>
         </button>

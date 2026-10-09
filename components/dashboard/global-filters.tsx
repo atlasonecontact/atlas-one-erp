@@ -34,7 +34,7 @@ interface GlobalFiltersProps {
 
 // Todos los controles ocupan su celda completa y recortan el texto largo: nada se superpone.
 const triggerClass =
-  "w-full min-w-0 justify-start bg-gray-800/50 border-gray-700 text-gray-100 hover:bg-gray-800 hover:border-cyan-500/50 [&>span]:truncate"
+  "w-full min-w-0 justify-start bg-muted border-border text-foreground hover:bg-accent hover:border-cyan-500/50 [&>span]:truncate"
 const iconClass = "mr-2 h-4 w-4 shrink-0 text-cyan-400"
 
 export function GlobalFiltersComponent({
@@ -81,10 +81,10 @@ export function GlobalFiltersComponent({
   const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00`
 
   return (
-    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 shadow-2xl sm:p-6">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-2xl sm:p-6">
       <div className="mb-4 flex items-center gap-2">
         <div className="h-8 w-1 rounded-full bg-gradient-to-b from-cyan-400 to-cyan-600" />
-        <h2 className="text-lg font-bold text-white">Filtros Globales</h2>
+        <h2 className="text-lg font-bold text-foreground">Filtros Globales</h2>
       </div>
 
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
@@ -96,13 +96,13 @@ export function GlobalFiltersComponent({
               <span>{dateLabel}</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto border-gray-700 bg-gray-900 p-0" align="start">
-            <div className="flex gap-2 border-b border-gray-700 p-3">
+          <PopoverContent className="w-auto border-border bg-popover p-0" align="start">
+            <div className="flex gap-2 border-b border-border p-3">
               <Button
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "flex-1 border-gray-700 bg-transparent",
+                  "flex-1 border-border bg-transparent",
                   singleDay && isSameDay(from, today) && "border-cyan-500/60 text-cyan-300",
                 )}
                 onClick={() => pickDay(new Date())}
@@ -113,7 +113,7 @@ export function GlobalFiltersComponent({
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "flex-1 border-gray-700 bg-transparent",
+                  "flex-1 border-border bg-transparent",
                   singleDay && isSameDay(from, subDays(today, 1)) && "border-cyan-500/60 text-cyan-300",
                 )}
                 onClick={() => pickDay(subDays(new Date(), 1))}
@@ -122,17 +122,17 @@ export function GlobalFiltersComponent({
               </Button>
             </div>
             {allowRange && (
-              <div className="flex flex-wrap gap-2 border-b border-gray-700 p-3">
-                <Button variant="outline" size="sm" className="flex-1 border-gray-700 bg-transparent" onClick={() => pickRange(subDays(new Date(), 6), new Date())}>
+              <div className="flex flex-wrap gap-2 border-b border-border p-3">
+                <Button variant="outline" size="sm" className="flex-1 border-border bg-transparent" onClick={() => pickRange(subDays(new Date(), 6), new Date())}>
                   7 días
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1 border-gray-700 bg-transparent" onClick={() => pickRange(subDays(new Date(), 29), new Date())}>
+                <Button variant="outline" size="sm" className="flex-1 border-border bg-transparent" onClick={() => pickRange(subDays(new Date(), 29), new Date())}>
                   30 días
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 border-gray-700 bg-transparent"
+                  className="flex-1 border-border bg-transparent"
                   onClick={() => pickRange(new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date())}
                 >
                   Este mes
@@ -149,7 +149,7 @@ export function GlobalFiltersComponent({
                 if (day) pickDay(day)
               }}
               initialFocus
-              className="bg-gray-900"
+              className="bg-popover"
             />
           </PopoverContent>
         </Popover>
@@ -162,7 +162,7 @@ export function GlobalFiltersComponent({
             <Building2 className={iconClass} />
             <SelectValue placeholder="Todas las sucursales" />
           </SelectTrigger>
-          <SelectContent className="border-gray-700 bg-gray-900">
+          <SelectContent className="border-border bg-popover">
             <SelectItem value="all">Todas las sucursales</SelectItem>
             {branches.map((branch) => (
               <SelectItem key={branch.id} value={branch.id}>
@@ -180,7 +180,7 @@ export function GlobalFiltersComponent({
             <Clock className={iconClass} />
             <SelectValue placeholder="Todos los turnos" />
           </SelectTrigger>
-          <SelectContent className="border-gray-700 bg-gray-900">
+          <SelectContent className="border-border bg-popover">
             <SelectItem value="all">Todos los turnos</SelectItem>
             <SelectItem value="morning">Mañana (6-14h)</SelectItem>
             <SelectItem value="afternoon">Tarde (14-22h)</SelectItem>
@@ -196,7 +196,7 @@ export function GlobalFiltersComponent({
             <User className={iconClass} />
             <SelectValue placeholder="Todos los vendedores" />
           </SelectTrigger>
-          <SelectContent className="border-gray-700 bg-gray-900">
+          <SelectContent className="border-border bg-popover">
             <SelectItem value="all">Todos los vendedores</SelectItem>
             {sellers.map((seller) => (
               <SelectItem key={seller.id} value={seller.id}>
@@ -214,7 +214,7 @@ export function GlobalFiltersComponent({
             <CreditCard className={iconClass} />
             <SelectValue placeholder="Todos los métodos" />
           </SelectTrigger>
-          <SelectContent className="border-gray-700 bg-gray-900">
+          <SelectContent className="border-border bg-popover">
             <SelectItem value="all">Todos los métodos</SelectItem>
             <SelectItem value="cash">Efectivo</SelectItem>
             <SelectItem value="card">Tarjeta</SelectItem>
@@ -231,7 +231,7 @@ export function GlobalFiltersComponent({
             <Package className={iconClass} />
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
-          <SelectContent className="border-gray-700 bg-gray-900">
+          <SelectContent className="border-border bg-popover">
             <SelectItem value="all">Todas las categorías</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
@@ -243,15 +243,15 @@ export function GlobalFiltersComponent({
       </div>
 
       {showHourFilter && (
-        <div className="mt-4 border-t border-gray-700/60 pt-4">
-          <div className="mb-3 flex items-center gap-2 text-sm text-gray-300">
+        <div className="mt-4 border-t border-border/60 pt-4">
+          <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4 shrink-0 text-cyan-400" />
             Franja horaria
             {filters.hourRange && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto h-7 px-2 text-gray-400 hover:text-white"
+                className="ml-auto h-7 px-2 text-muted-foreground hover:text-foreground"
                 onClick={() => onChange({ ...filters, hourRange: undefined })}
               >
                 Todo el día
@@ -263,7 +263,7 @@ export function GlobalFiltersComponent({
               <SelectTrigger className={triggerClass}>
                 <SelectValue placeholder="Desde" />
               </SelectTrigger>
-              <SelectContent className="max-h-64 border-gray-700 bg-gray-900">
+              <SelectContent className="max-h-64 border-border bg-popover">
                 <SelectItem value="all">Desde 00:00</SelectItem>
                 {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
                   <SelectItem key={h} value={String(h)}>
@@ -279,7 +279,7 @@ export function GlobalFiltersComponent({
               <SelectTrigger className={triggerClass}>
                 <SelectValue placeholder="Hasta" />
               </SelectTrigger>
-              <SelectContent className="max-h-64 border-gray-700 bg-gray-900">
+              <SelectContent className="max-h-64 border-border bg-popover">
                 <SelectItem value="all">Hasta 24:00</SelectItem>
                 {Array.from({ length: 23 }, (_, i) => i + 1).map((h) => (
                   <SelectItem key={h} value={String(h)}>

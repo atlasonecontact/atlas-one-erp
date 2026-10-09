@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 interface DashboardStats {
   todaySales: number
   todaySalesChange: number
+  todaySalesCount: number
   monthSales: number
   monthSalesChange: number
   avgTicket: number
@@ -24,6 +25,7 @@ interface DashboardStats {
 const defaultStats: DashboardStats = {
   todaySales: 0,
   todaySalesChange: 0,
+  todaySalesCount: 0,
   monthSales: 0,
   monthSalesChange: 0,
   avgTicket: 0,
@@ -268,6 +270,7 @@ export function useDashboardData(period: string) {
       setData({
         todaySales,
         todaySalesChange: Math.round(todaySalesChange),
+        todaySalesCount: todaySalesData?.length || 0,
         monthSales,
         monthSalesChange: Math.round(monthSalesChange),
         avgTicket: Math.round(avgTicket),
