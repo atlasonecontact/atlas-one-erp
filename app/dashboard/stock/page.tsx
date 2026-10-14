@@ -231,7 +231,7 @@ export default function StockPage() {
         sistema, podés ajustarlo a mano desde cada producto.
       </ModuleIntro>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Control de Stock</h1>
           <div className="flex items-center gap-4 mt-1">
@@ -240,14 +240,14 @@ export default function StockPage() {
             <button className="text-sm text-muted-foreground hover:text-foreground pb-1">Alertas</button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Date Range */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Date Range - solo escritorio, en mobile ocupa demasiado lugar */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-foreground">Últimos 30 días</span>
           </div>
 
-          <Button variant="outline" size="sm" className="border-cyan-500/20 text-muted-foreground bg-card">
+          <Button variant="outline" size="sm" className="hidden lg:flex border-cyan-500/20 text-muted-foreground bg-card">
             <Filter className="w-4 h-4 mr-2" />
             Filtrar
           </Button>
@@ -262,7 +262,7 @@ export default function StockPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
+          <Button variant="outline" className="hidden lg:flex border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
           </Button>

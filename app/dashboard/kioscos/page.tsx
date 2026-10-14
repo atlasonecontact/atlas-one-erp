@@ -160,8 +160,8 @@ export default function KioscosPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 lg:p-8 space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Mis Kioscos</h1>
           <p className="text-muted-foreground mt-1">Gestiona todos tus puntos de venta</p>

@@ -132,14 +132,14 @@ export default function StockPorSucursalPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Stock por Sucursal</h1>
           <p className="text-sm text-muted-foreground mt-1">Inventario distribuido en sucursales</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={selectedKiosko} onValueChange={setSelectedKiosko}>
-            <SelectTrigger className="w-[250px] bg-card border-cyan-500/20">
+            <SelectTrigger className="w-full lg:w-[250px] bg-card border-cyan-500/20">
               <SelectValue placeholder="Seleccionar sucursal" />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +164,7 @@ export default function StockPorSucursalPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
+          <Button variant="outline" className="hidden lg:flex border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
           </Button>

@@ -176,7 +176,7 @@ export default function PedidosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Pedidos Delivery</h1>
           <p className="text-muted-foreground text-sm">Pedidos de Pedidos Ya, Rappi y otras apps</p>

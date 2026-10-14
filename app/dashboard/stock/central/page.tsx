@@ -110,13 +110,13 @@ export default function StockCentralPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Stock Central</h1>
           <p className="text-sm text-muted-foreground mt-1">Inventario del depósito central</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-cyan-500/20">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-foreground">Tiempo real</span>
           </div>
@@ -131,7 +131,7 @@ export default function StockCentralPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button variant="outline" className="border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
+          <Button variant="outline" className="hidden lg:flex border-cyan-500/20 text-muted-foreground hover:text-foreground bg-transparent gap-2">
             <Download className="w-4 h-4" />
             Exportar
           </Button>
