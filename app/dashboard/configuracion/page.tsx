@@ -56,8 +56,8 @@ export default function ConfiguracionPage() {
 
   const [notifications, setNotifications] = useState({
     lowStock: true,
-    dailySummary: true,
-    newSales: false,
+    dailySummary: false,
+    newSales: true,
   })
 
   const [whatsappConfig, setWhatsappConfig] = useState({
@@ -92,7 +92,32 @@ export default function ConfiguracionPage() {
   useEffect(() => {
     loadKioscos()
     loadUserProfile()
+    loadNotificationPreferences()
   }, [])
+
+  // Las preferencias (que SI frenan o dejan pasar el aviso de venta/stock bajo)
+  // son globales por usuario, no por kiosko: se guardan con kiosko_id null.
+  const loadNotificationPreferences = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+    if (!authUser) return
+
+    const { data: prefs } = await supabase
+      .from("notification_preferences")
+      .select("notify_sales, notify_low_stock, notify_daily_summary")
+      .eq("profile_id", authUser.id)
+      .is("kiosko_id", null)
+      .maybeSingle()
+
+    if (prefs) {
+      setNotifications({
+        lowStock: prefs.notify_low_stock ?? true,
+        dailySummary: prefs.notify_daily_summary ?? false,
+        newSales: prefs.notify_sales ?? true,
+      })
+    }
+  }
 
   useEffect(() => {
     if (selectedKiosko) {
@@ -258,6 +283,22 @@ export default function ConfiguracionPage() {
           .eq("id", user.id)
       }
 
+      // 4. Guardar las preferencias (estas SI frenan o dejan pasar el aviso real
+      // de venta/stock bajo en /api/notifications/sale — antes los switches de
+      // "Notificaciones" no se guardaban en ningun lado).
+      if (user) {
+        await supabase.from("notification_preferences").upsert(
+          {
+            profile_id: user.id,
+            kiosko_id: null,
+            notify_sales: notifications.newSales,
+            notify_low_stock: notifications.lowStock,
+            notify_daily_summary: notifications.dailySummary,
+          },
+          { onConflict: "profile_id,kiosko_id" },
+        )
+      }
+
       await loadKioskoConfig()
       await loadKioskoData()
 
@@ -374,8 +415,10 @@ export default function ConfiguracionPage() {
     }
   }
 
-  // Función para verificar el estado del webhook de Telegram
-  const checkTelegramStatus = async () => {
+  // Función para verificar el estado del webhook de Telegram.
+  // silent=true se usa en la carga automática al abrir la sección, para no
+  // spamear toasts cada vez que alguien activa el switch.
+  const checkTelegramStatus = async (silent = false) => {
     setIsCheckingTelegram(true)
     try {
       const response = await fetch("/api/telegram/setup")
@@ -384,6 +427,8 @@ export default function ConfiguracionPage() {
       }
       const data = await response.json()
       setTelegramStatus(data)
+
+      if (silent) return
 
       if (!data.configured) {
         toast.warning("Telegram no configurado", data.error || "Falta el token del bot o la URL del webhook.")
@@ -394,11 +439,20 @@ export default function ConfiguracionPage() {
       }
     } catch (error: any) {
       console.error("Error checking Telegram status:", error)
-      toast.error("Error", `No se pudo verificar el estado de Telegram: ${error.message}`)
+      if (!silent) toast.error("Error", `No se pudo verificar el estado de Telegram: ${error.message}`)
     } finally {
       setIsCheckingTelegram(false)
     }
   }
+
+  // Trae el @username real del bot apenas se activa la seccion, asi el paso a
+  // paso no muestra un nombre de bot viejo/equivocado hasta que alguien
+  // toque "Verificar" a mano.
+  useEffect(() => {
+    if (telegramConfig.enabled && !telegramStatus) {
+      checkTelegramStatus(true)
+    }
+  }, [telegramConfig.enabled])
 
   // Función para configurar el webhook de Telegram
   const setupTelegramWebhook = async () => {
@@ -512,9 +566,6 @@ export default function ConfiguracionPage() {
           <TabsTrigger value="kiosko" className="data-[state=active]:bg-cyan-500/20">
             Mi Kiosco
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="data-[state=active]:bg-cyan-500/20">
-            Integraciones
-          </TabsTrigger>
           <TabsTrigger value="general" className="data-[state=active]:bg-cyan-500/20">
             General
           </TabsTrigger>
@@ -600,222 +651,6 @@ export default function ConfiguracionPage() {
                 actualizados ayuda a identificar tu negocio.
               </p>
             </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6 mt-6">
-          {/* WhatsApp Section - Marked as "Coming Soon" */}
-          <div className="rounded-xl border border-cyan-500/10 bg-card p-6 relative overflow-hidden">
-            {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-card/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
-              <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-3 rounded-full border border-green-500/30 mb-3">
-                <span className="text-green-400 font-semibold text-lg">Proximamente</span>
-              </div>
-              <p className="text-muted-foreground text-sm text-center max-w-xs">
-                La integracion con WhatsApp Business estara disponible pronto
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between mb-6 opacity-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">WhatsApp Business</h3>
-                  <p className="text-sm text-muted-foreground">Recibe notificaciones y consulta estadisticas por WhatsApp</p>
-                </div>
-              </div>
-              <Switch checked={false} disabled className="data-[state=checked]:bg-green-500 opacity-50" />
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-cyan-500/10 opacity-50">
-              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm font-medium text-green-400 mb-3">Funcionalidades planeadas:</p>
-                <ul className="text-sm text-green-200/90 space-y-2 list-disc list-inside">
-                  <li>Notificaciones de ventas en tiempo real</li>
-                  <li>Consultar ventas del dia con un mensaje</li>
-                  <li>Alertas de stock bajo automaticas</li>
-                  <li>Resumen diario/semanal/mensual</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Telegram Section */}
-          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <Send className="w-5 h-5 text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  Telegram Bot
-                  {telegramConfig.verified && (
-                    <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                      <CheckCircle className="w-3 h-3" />
-                      Verificado
-                    </span>
-                  )}
-                </h3>
-                <p className="text-sm text-muted-foreground">Consulta estadísticas y recibe alertas desde Telegram</p>
-              </div>
-              <Switch
-                checked={telegramConfig.enabled}
-                onCheckedChange={(checked) => setTelegramConfig({ ...telegramConfig, enabled: checked })}
-                className="data-[state=checked]:bg-blue-500"
-              />
-            </div>
-
-            {telegramConfig.enabled && (
-              <div className="space-y-4 pt-4 border-t border-cyan-500/10">
-                {/* Admin: Telegram webhook status */}
-                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-purple-400 flex items-center gap-2">
-                      <Settings className="w-4 h-4" />
-                      Estado del Bot (Admin)
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={checkTelegramStatus}
-                        disabled={isCheckingTelegram}
-                        className="border-purple-500/30 text-purple-300 text-xs bg-transparent"
-                      >
-                        {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verificar"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={setupTelegramWebhook}
-                        disabled={isCheckingTelegram}
-                        className="bg-purple-500 hover:bg-purple-400 text-foreground text-xs"
-                      >
-                        Activar Webhook
-                      </Button>
-                    </div>
-                  </div>
-                  {telegramStatus && (
-                    <div className="text-xs space-y-1 text-purple-200/80">
-                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : "No configurado"}</p>
-                      <p>Webhook: {telegramStatus.webhook?.url || "No configurado"}</p>
-                      {telegramStatus.webhook?.lastErrorMessage && (
-                        <p className="text-red-400">Error: {telegramStatus.webhook.lastErrorMessage}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Step by step guide */}
-                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-sm font-medium text-blue-400 mb-3">
-                    📱 Cómo configurar Telegram (3 pasos simples):
-                  </p>
-                  <ol className="text-sm text-blue-200/90 space-y-3 list-decimal list-inside">
-                    <li>
-                      <span className="font-medium">Abrí Telegram</span> y buscá nuestro bot:{" "}
-                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">@AtlasOneBot</span>
-                    </li>
-                    <li>
-                      <span className="font-medium">Mandá el mensaje</span>{" "}
-                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">/start</span> al bot
-                    </li>
-                    <li>
-                      <span className="font-medium">El bot te va a responder con tu Chat ID</span> - Copialo y pegalo
-                      abajo
-                    </li>
-                  </ol>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">Tu Chat ID de Telegram</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ej: 123456789"
-                      value={telegramConfig.chatId}
-                      onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
-                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-foreground text-lg font-mono"
-                    />
-                    <Button
-                      onClick={handleTestTelegram}
-                      disabled={isTestingTelegram || !telegramConfig.chatId}
-                      className="bg-blue-500 hover:bg-blue-400 text-foreground font-semibold px-6"
-                    >
-                      {isTestingTelegram ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : telegramConfig.verified ? (
-                        "✓ Probar de nuevo"
-                      ) : (
-                        "🧪 Probar"
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que todo funcione.
-                  </p>
-                </div>
-
-                {telegramConfig.verified ? (
-                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 flex gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-green-200">
-                      <p className="font-semibold mb-1">✅ Telegram configurado correctamente</p>
-                      <p className="text-green-300/80">
-                        Vas a recibir notificaciones de ventas automáticamente en este chat.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-200">
-                      <p className="font-semibold mb-1">⚠️ Verificación pendiente</p>
-                      <p className="text-amber-300/80">
-                        Ingresá tu Chat ID y tocá "Probar" para verificar que todo funcione.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-4 rounded-lg bg-accent">
-                  <div>
-                    <p className="text-foreground font-medium">🔔 Notificar cada venta</p>
-                    <p className="text-sm text-muted-foreground">Recibís un mensaje cada vez que se hace una venta</p>
-                  </div>
-                  <Switch
-                    checked={telegramConfig.notifyOnSale}
-                    onCheckedChange={(checked) => setTelegramConfig({ ...telegramConfig, notifyOnSale: checked })}
-                    className="data-[state=checked]:bg-cyan-500"
-                  />
-                </div>
-
-                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <p className="text-sm font-medium text-cyan-400 mb-3">🤖 ¿Qué podés hacer desde Telegram?</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="p-2 rounded bg-cyan-500/10">
-                      <span className="font-mono text-cyan-300">/ventas</span>
-                      <p className="text-muted-foreground text-xs mt-1">Ver ventas de hoy</p>
-                    </div>
-                    <div className="p-2 rounded bg-cyan-500/10">
-                      <span className="font-mono text-cyan-300">/mes</span>
-                      <p className="text-muted-foreground text-xs mt-1">Resumen del mes</p>
-                    </div>
-                    <div className="p-2 rounded bg-cyan-500/10">
-                      <span className="font-mono text-cyan-300">/stock</span>
-                      <p className="text-muted-foreground text-xs mt-1">Productos con poco stock</p>
-                    </div>
-                    <div className="p-2 rounded bg-cyan-500/10">
-                      <span className="font-mono text-cyan-300">/ayuda</span>
-                      <p className="text-muted-foreground text-xs mt-1">Ver todos los comandos</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
@@ -914,6 +749,213 @@ export default function ConfiguracionPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6 mt-6">
+          {/* Telegram Section */}
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Send className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  Telegram Bot
+                  {telegramConfig.verified && (
+                    <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                      <CheckCircle className="w-3 h-3" />
+                      Verificado
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Recibí un aviso por cada venta, directo a tu Telegram. Solo vos (el dueño/gerente) lo ves — tus
+                  vendedores no reciben estos mensajes.
+                </p>
+              </div>
+              <Switch
+                checked={telegramConfig.enabled}
+                onCheckedChange={(checked) => setTelegramConfig({ ...telegramConfig, enabled: checked })}
+                className="data-[state=checked]:bg-blue-500"
+              />
+            </div>
+
+            {telegramConfig.enabled && (
+              <div className="space-y-4 pt-4 border-t border-cyan-500/10">
+                {/* Estado del bot/webhook */}
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-purple-400 flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      Estado del Bot
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => checkTelegramStatus()}
+                        disabled={isCheckingTelegram}
+                        className="border-purple-500/30 text-purple-300 text-xs bg-transparent"
+                      >
+                        {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verificar"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={setupTelegramWebhook}
+                        disabled={isCheckingTelegram}
+                        className="bg-purple-500 hover:bg-purple-400 text-foreground text-xs"
+                      >
+                        Activar Webhook
+                      </Button>
+                    </div>
+                  </div>
+                  {telegramStatus && (
+                    <div className="text-xs space-y-1 text-purple-200/80">
+                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : "No configurado"}</p>
+                      <p>Webhook: {telegramStatus.webhook?.url || "No configurado"}</p>
+                      {telegramStatus.webhook?.lastErrorMessage && (
+                        <p className="text-red-400">Error: {telegramStatus.webhook.lastErrorMessage}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Step by step guide */}
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-sm font-medium text-blue-400 mb-3">
+                    📱 Cómo configurar Telegram (3 pasos simples):
+                  </p>
+                  <ol className="text-sm text-blue-200/90 space-y-3 list-decimal list-inside">
+                    <li>
+                      <span className="font-medium">Abrí Telegram</span> y buscá nuestro bot:{" "}
+                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">
+                        {telegramStatus?.bot?.username ? `@${telegramStatus.bot.username}` : "el bot de Atlas One"}
+                      </span>
+                    </li>
+                    <li>
+                      <span className="font-medium">Mandá el mensaje</span>{" "}
+                      <span className="font-mono bg-blue-500/20 px-2 py-0.5 rounded">/start</span> al bot
+                    </li>
+                    <li>
+                      <span className="font-medium">El bot te va a responder con tu Chat ID</span> - Copialo y pegalo
+                      abajo
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Tu Chat ID de Telegram</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ej: 123456789"
+                      value={telegramConfig.chatId}
+                      onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
+                      className="flex-1 bg-[#0d1424] border-cyan-500/20 text-foreground text-lg font-mono"
+                    />
+                    <Button
+                      onClick={handleTestTelegram}
+                      disabled={isTestingTelegram || !telegramConfig.chatId}
+                      className="bg-blue-500 hover:bg-blue-400 text-foreground font-semibold px-6"
+                    >
+                      {isTestingTelegram ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : telegramConfig.verified ? (
+                        "✓ Probar de nuevo"
+                      ) : (
+                        "🧪 Probar"
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pegá el Chat ID que te dio el bot y tocá "Probar" para verificar que todo funcione.
+                  </p>
+                </div>
+
+                {telegramConfig.verified ? (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 flex gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-green-200">
+                      <p className="font-semibold mb-1">✅ Telegram configurado correctamente</p>
+                      <p className="text-green-300/80">
+                        Vas a recibir notificaciones de ventas automáticamente en este chat.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-200">
+                      <p className="font-semibold mb-1">⚠️ Verificación pendiente</p>
+                      <p className="text-amber-300/80">
+                        Ingresá tu Chat ID y tocá "Probar" para verificar que todo funcione.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <p className="text-sm font-medium text-cyan-400 mb-3">🤖 ¿Qué podés hacer desde Telegram?</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/ventas</span>
+                      <p className="text-muted-foreground text-xs mt-1">Ver ventas de hoy</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/mes</span>
+                      <p className="text-muted-foreground text-xs mt-1">Resumen del mes</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/stock</span>
+                      <p className="text-muted-foreground text-xs mt-1">Productos con poco stock</p>
+                    </div>
+                    <div className="p-2 rounded bg-cyan-500/10">
+                      <span className="font-mono text-cyan-300">/ayuda</span>
+                      <p className="text-muted-foreground text-xs mt-1">Ver todos los comandos</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* WhatsApp Section - Marked as "Coming Soon" */}
+          <div className="rounded-xl border border-cyan-500/10 bg-card p-6 relative overflow-hidden">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-card/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+              <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-3 rounded-full border border-green-500/30 mb-3">
+                <span className="text-green-400 font-semibold text-lg">Proximamente</span>
+              </div>
+              <p className="text-muted-foreground text-sm text-center max-w-xs">
+                La integracion con WhatsApp Business estara disponible pronto
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between mb-6 opacity-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">WhatsApp Business</h3>
+                  <p className="text-sm text-muted-foreground">Recibe notificaciones y consulta estadisticas por WhatsApp</p>
+                </div>
+              </div>
+              <Switch checked={false} disabled className="data-[state=checked]:bg-green-500 opacity-50" />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-cyan-500/10 opacity-50">
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm font-medium text-green-400 mb-3">Funcionalidades planeadas:</p>
+                <ul className="text-sm text-green-200/90 space-y-2 list-disc list-inside">
+                  <li>Notificaciones de ventas en tiempo real</li>
+                  <li>Consultar ventas del dia con un mensaje</li>
+                  <li>Alertas de stock bajo automaticas</li>
+                  <li>Resumen diario/semanal/mensual</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Notifications */}
           <div className="rounded-xl border border-cyan-500/10 bg-card p-6">
             <div className="flex items-center gap-3 mb-6">
