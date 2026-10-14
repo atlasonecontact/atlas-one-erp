@@ -37,6 +37,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Product {
   id: string
@@ -672,6 +673,11 @@ export default function ProductosPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="productos">
+        Acá administrás tu catálogo: cargá productos nuevos (a mano, por CSV o escaneando el código de barras),
+        editá precios y organizalos por categoría. Lo que cargues acá es lo que aparece para vender en el
+        punto de venta.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>

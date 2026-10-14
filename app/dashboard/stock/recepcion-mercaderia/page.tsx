@@ -29,6 +29,7 @@ import { compressImage } from "@/lib/utils/compress-image"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { useToast } from "@/components/ui/toast-provider"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Product {
   id: string
@@ -606,6 +607,11 @@ export default function RecepcionMercaderiaPage() {
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        <ModuleIntro id="recepcion-mercaderia">
+          Acá registrás la mercadería que te llega de tus proveedores: escaneá o buscá cada producto, cargá
+          cantidad, lote y vencimiento si corresponde, y confirmá — el stock se actualiza solo. Abajo queda el
+          historial de recepciones ya confirmadas.
+        </ModuleIntro>
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

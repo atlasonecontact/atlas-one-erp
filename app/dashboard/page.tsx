@@ -15,6 +15,7 @@ import Link from "next/link"
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data"
 import { useTheme } from "@/lib/theme-context"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -84,6 +85,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      <ModuleIntro id="dashboard">
+        Tu pantalla de inicio: un resumen de cómo viene el negocio (ventas de hoy, ticket promedio) y accesos
+        rápidos a Nueva venta, Caja y Escanear. Las pestañas de arriba te llevan a Notificaciones e Historial.
+      </ModuleIntro>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-foreground">Dashboard</h1>

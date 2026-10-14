@@ -8,6 +8,7 @@ import { Search, Plus, Edit2, UserCog, Circle, Copy, Check, KeyRound, Clock, Pho
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import type { EmployeePermissions } from "@/lib/hooks/use-employee-permissions"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 type Shift = {
   day_of_week: number
@@ -196,6 +197,10 @@ export default function EmpleadosPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="empleados">
+        Acá das de alta a tu equipo: le asignás un kiosco, un PIN para fichar y controlás qué puede hacer cada
+        uno (vender, ver caja, administrar stock, etc.). Los permisos se editan tocando el lápiz de cada empleado.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

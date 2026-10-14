@@ -23,6 +23,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useToast } from "@/components/ui/toast-provider"
 import { formatCurrency } from "@/lib/utils/currency"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Purchase {
   id: string
@@ -371,6 +372,10 @@ export default function PagoProveedoresPage() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        <ModuleIntro id="pago-proveedores">
+          Acá ves cuánto le debés a cada proveedor según tus compras, registrás los pagos que vas haciendo (completos
+          o parciales) y consultás el historial de pagos ya realizados en la pestaña de arriba.
+        </ModuleIntro>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Pago a Proveedores</h1>

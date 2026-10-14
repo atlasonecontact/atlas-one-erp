@@ -28,6 +28,7 @@ import {
   Check,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Product {
   id: string
@@ -224,6 +225,11 @@ export default function StockPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="stock">
+        Acá ves el stock de todos tus productos: cuánto tenés de cada uno, cuáles están por agotarse (en
+        amarillo/rojo) y en qué sucursal está cada cosa. Si el conteo real no coincide con lo que dice el
+        sistema, podés ajustarlo a mano desde cada producto.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

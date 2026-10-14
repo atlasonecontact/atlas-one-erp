@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/toast-provider"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface KioskoData {
   id: string
@@ -541,6 +542,11 @@ export default function ConfiguracionPage() {
         <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
         <p className="text-muted-foreground text-sm">Administra la configuración de tu negocio</p>
       </div>
+
+      <ModuleIntro id="configuracion">
+        Acá configurás los datos de tu kiosco, qué métodos de pago aceptás, y cómo querés recibir avisos (por
+        ejemplo cada venta por Telegram). Si tenés más de un kiosco, elegí cuál estás editando arriba.
+      </ModuleIntro>
 
       {kioscos.length > 1 && (
         <div className="space-y-2">

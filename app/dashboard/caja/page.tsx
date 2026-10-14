@@ -25,6 +25,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { useToast } from "@/components/ui/toast-provider"
 import { formatCurrency } from "@/lib/utils/currency"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface CashRegister {
   id: string
@@ -461,6 +462,11 @@ export default function CajaPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="caja">
+        Acá controlás el efectivo del turno: abrí la caja al empezar con el monto inicial, registrá ingresos o
+        egresos durante el día (Movimiento) y cerrala al final contando la plata real contra lo que el sistema
+        espera (Arqueo). La "Caja fuerte" es la plata que ya sacaste de circulación.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
