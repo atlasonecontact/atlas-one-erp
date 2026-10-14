@@ -23,80 +23,11 @@ import { useTheme } from "@/lib/theme-context"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
 
-// Function to send Telegram notification after sale
-async function sendSaleNotification(
-  kioskoId: string, 
-  saleNumber: string, 
-  total: number, 
-  paymentMethod: string,
-  items: { name: string; quantity: number; price: number }[]
-) {
-  try {
-    const supabase = createClient()
-    
-    // Get notification config for this kiosko
-    const { data: config } = await supabase
-      .from("notification_configs")
-      .select("telegram_chat_id, telegram_enabled")
-      .eq("kiosko_id", kioskoId)
-      .maybeSingle()
-    
-    if (!config?.telegram_enabled || !config?.telegram_chat_id) {
-      return // Notifications not enabled or no chat ID
-    }
-    
-    // Get kiosko name
-    const { data: kiosko } = await supabase
-      .from("kioscos")
-      .select("name")
-      .eq("id", kioskoId)
-      .single()
-    
-    // Format items list
-    const itemsList = items.slice(0, 5).map(item => 
-      `  • ${item.name} x${item.quantity} = $${(item.price * item.quantity).toLocaleString('es-AR')}`
-    ).join('\n')
-    const moreItems = items.length > 5 ? `\n  ... y ${items.length - 5} más` : ''
-    
-    // Format payment method
-    const paymentLabels: Record<string, string> = {
-      efectivo: '💵 Efectivo',
-      cash: '💵 Efectivo',
-      tarjeta: '💳 Tarjeta',
-      card: '💳 Tarjeta',
-      qr: '📱 QR',
-      transfer: '🏦 Transferencia'
-    }
-    const paymentLabel = paymentLabels[paymentMethod.toLowerCase()] || paymentMethod
-    
-    // Build message
-    const message = `🛒 <b>Nueva Venta!</b>
-
-🏪 ${kiosko?.name || 'Mi Kiosco'}
-🧾 #${saleNumber.split('-').slice(-1)[0]}
-
-<b>Productos:</b>
-${itemsList}${moreItems}
-
-💰 <b>Total: $${total.toLocaleString('es-AR')}</b>
-${paymentLabel}
-
-📅 ${new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}`
-
-    // Send notification
-    await fetch("/api/notifications/telegram", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId: config.telegram_chat_id,
-        message
-      }),
-    })
-  } catch (error) {
-    console.error("[Telegram] Error sending sale notification:", error)
-    // Don't throw - notifications should not break the sale flow
-  }
-}
+// La notificacion de venta (Telegram/WhatsApp) la manda PaymentModal via
+// /api/notifications/sale despues de llamar a onPayment (este handlePayment).
+// Antes tambien se mandaba un segundo mensaje desde aca -> llegaban dos avisos
+// por cada venta, uno corto y uno larguisimo con el detalle producto por
+// producto. Se saco ese segundo camino, no hace falta nada aca.
 
 export interface CartItem {
   id: string
@@ -1010,15 +941,6 @@ export default function VentasPage() {
 
       if (saleError) throw saleError
       const saleData = { id: rpcData?.sale_id as string }
-
-      // Send Telegram notification (async, don't wait)
-      sendSaleNotification(
-        kioskoId,
-        saleNumber,
-        total,
-        method,
-        cart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }))
-      )
 
       setLastSale({ items: cart, total, method, saleId: saleData.id, saleNumber })
       setShowPayment(false)

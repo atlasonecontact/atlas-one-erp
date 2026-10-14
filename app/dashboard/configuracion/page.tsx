@@ -20,7 +20,6 @@ import {
   Phone,
   Store,
   Loader2,
-  Settings,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -779,43 +778,25 @@ export default function ConfiguracionPage() {
 
             {telegramConfig.enabled && (
               <div className="space-y-4 pt-4 border-t border-cyan-500/10">
-                {/* Estado del bot/webhook */}
-                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-purple-400 flex items-center gap-2">
-                      <Settings className="w-4 h-4" />
-                      Estado del Bot
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => checkTelegramStatus()}
-                        disabled={isCheckingTelegram}
-                        className="border-purple-500/30 text-purple-300 text-xs bg-transparent"
-                      >
-                        {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verificar"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={setupTelegramWebhook}
-                        disabled={isCheckingTelegram}
-                        className="bg-purple-500 hover:bg-purple-400 text-foreground text-xs"
-                      >
-                        Activar Webhook
-                      </Button>
-                    </div>
+                {/* Estado del bot: solo un indicador simple + accion para arreglarlo si hace falta. */}
+                {telegramStatus && !telegramStatus.configured && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3">
+                    <p className="text-xs text-amber-300">El bot todavía no está activado del todo.</p>
+                    <Button
+                      size="sm"
+                      onClick={setupTelegramWebhook}
+                      disabled={isCheckingTelegram}
+                      className="bg-amber-500 hover:bg-amber-400 text-black text-xs shrink-0"
+                    >
+                      {isCheckingTelegram ? <Loader2 className="w-3 h-3 animate-spin" /> : "Activar"}
+                    </Button>
                   </div>
-                  {telegramStatus && (
-                    <div className="text-xs space-y-1 text-purple-200/80">
-                      <p>Bot: {telegramStatus.bot?.username ? `@${telegramStatus.bot.username}` : "No configurado"}</p>
-                      <p>Webhook: {telegramStatus.webhook?.url || "No configurado"}</p>
-                      {telegramStatus.webhook?.lastErrorMessage && (
-                        <p className="text-red-400">Error: {telegramStatus.webhook.lastErrorMessage}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                )}
+                {telegramStatus?.webhook?.lastErrorMessage && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-xs text-red-300">Hubo un problema con el bot: {telegramStatus.webhook.lastErrorMessage}</p>
+                  </div>
+                )}
 
                 {/* Step by step guide */}
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">

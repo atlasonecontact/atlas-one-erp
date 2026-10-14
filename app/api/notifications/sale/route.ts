@@ -64,17 +64,10 @@ export async function POST(request: NextRequest) {
       timeZone: "America/Argentina/Buenos_Aires",
     }).format(new Date())
 
-    const message = `
-🛒 <b>Nueva Venta - ${kiosko.name}</b>
-
-💰 Total: <b>$${total.toLocaleString()}</b>
-📦 Items: ${items} (${itemsSummary})
-💳 Método: ${paymentMethod}
-${employeeName ? `👤 Vendedor: ${employeeName}` : ""}
-🕐 ${formattedTimestamp}
-
-#${saleId}
-    `.trim()
+    // Corto y facil de leer de un vistazo: total primero, el resto en una sola
+    // linea chica. Antes tenia 6 lineas + hashtag y quedaba "grande" en el celu.
+    const message = `🛒 <b>Venta registrada por $${total.toLocaleString("es-AR")}</b>
+${itemsSummary} · ${paymentMethod}${employeeName ? ` · ${employeeName}` : ""} · ${formattedTimestamp}`
 
     const notifications = []
 
