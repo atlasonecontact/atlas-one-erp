@@ -708,8 +708,8 @@ export default function ConfiguracionPage() {
               ].map((method) => (
                 <div key={method.key} className="flex items-center justify-between p-4 rounded-lg bg-accent">
                   <div>
-                    <p className="text-foreground font-medium">{method.label}</p>
-                    <p className="text-sm text-muted-foreground">{method.desc}</p>
+                    <p className="text-slate-900 font-medium">{method.label}</p>
+                    <p className="text-sm text-slate-700">{method.desc}</p>
                   </div>
                   <Switch
                     checked={paymentMethods[method.key as keyof typeof paymentMethods]}
@@ -957,8 +957,8 @@ export default function ConfiguracionPage() {
               ].map((notif) => (
                 <div key={notif.key} className="flex items-center justify-between p-4 rounded-lg bg-accent">
                   <div>
-                    <p className="text-foreground font-medium">{notif.label}</p>
-                    <p className="text-sm text-muted-foreground">{notif.desc}</p>
+                    <p className="text-slate-900 font-medium">{notif.label}</p>
+                    <p className="text-sm text-slate-700">{notif.desc}</p>
                   </div>
                   <Switch
                     checked={notifications[notif.key as keyof typeof notifications]}
