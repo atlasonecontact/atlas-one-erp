@@ -183,7 +183,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden",
+          "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity lg:hidden",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
@@ -192,7 +192,7 @@ export function MobileMenuDrawer({ isOpen, onClose, user, onLogout, employeePerm
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden",
+          "fixed inset-y-0 right-0 z-[60] w-[85%] max-w-sm bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
       >

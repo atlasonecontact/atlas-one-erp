@@ -1221,7 +1221,7 @@ export default function VentasPage() {
       )}
 
       {showMobileCart && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowMobileCart(false)} />
 
@@ -1326,7 +1326,7 @@ export default function VentasPage() {
 
       {/* Sin caja abierta no se cobra */}
       {showOpenCash && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-card border border-cyan-500/20 rounded-2xl w-full max-w-md p-6 space-y-4">
             <h2 className="text-xl font-bold text-foreground">Abrí la caja para empezar a vender</h2>
             <p className="text-sm text-muted-foreground">
