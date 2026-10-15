@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { extractInvoiceFromImage } from "@/lib/invoices/extract-invoice"
 
 // Telegram Bot Webhook Handler - Following official Telegram Bot API best practices
 // https://core.telegram.org/bots/tutorial
@@ -92,6 +93,13 @@ export async function POST(request: NextRequest) {
           ownerKioscos = allKioscos || []
         }
       }
+    }
+
+    // Foto de factura/remito: se lee con IA y se crea un borrador de recepción.
+    // Solo en chat privado (igual que el resto de lo que no es comando).
+    if (message.chat.type === "private" && Array.isArray(message.photo) && message.photo.length > 0) {
+      await handleInvoicePhoto(botToken, chatId, message.photo, ownerId, ownerKioscos, supabase)
+      return NextResponse.json({ ok: true })
     }
 
     // Extract command and arguments
@@ -588,6 +596,109 @@ async function handleCallbackQuery(botToken: string, query: any) {
         }
       }
       break
+  }
+}
+
+async function handleInvoicePhoto(
+  botToken: string,
+  chatId: number,
+  photos: { file_id: string; width: number; height: number }[],
+  ownerId: string | null,
+  ownerKioscos: { id: string; name: string }[],
+  supabase: any,
+) {
+  if (ownerKioscos.length === 0) {
+    await sendNotLinkedMessage(botToken, chatId)
+    return
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    await sendMessage(
+      botToken,
+      chatId,
+      `📷 Recibí la foto, pero la lectura automática de facturas todavía no está activada.`,
+    )
+    return
+  }
+
+  const targetKiosko = ownerKioscos[0]
+  const multiKioscoNote = ownerKioscos.length > 1 ? ` (se cargó en <b>${targetKiosko.name}</b>)` : ""
+
+  try {
+    // Telegram manda la misma foto en varias resoluciones; la última es la más grande.
+    const bestPhoto = photos[photos.length - 1]
+
+    const fileInfoRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${bestPhoto.file_id}`)
+    const fileInfo = await fileInfoRes.json()
+    const filePath = fileInfo?.result?.file_path
+    if (!filePath) throw new Error("No se pudo obtener el archivo de Telegram")
+
+    const imageRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${filePath}`)
+    const imageBuffer = await imageRes.arrayBuffer()
+    const imageBase64 = Buffer.from(imageBuffer).toString("base64")
+
+    const extracted = await extractInvoiceFromImage({ imageBase64, mediaType: "image/jpeg" })
+
+    if (extracted.items.length === 0) {
+      await sendMessage(
+        botToken,
+        chatId,
+        `📷 No pude identificar productos en esa foto. Probá con más luz y que se vea bien el listado.`,
+      )
+      return
+    }
+
+    const fileName = `telegram-${targetKiosko.id}-${Date.now()}.jpg`
+    const { data: uploadData } = await supabase.storage.from("receipts").upload(fileName, imageBuffer, {
+      contentType: "image/jpeg",
+    })
+    const photoUrl = uploadData
+      ? supabase.storage.from("receipts").getPublicUrl(fileName).data.publicUrl
+      : null
+
+    const { data: receipt, error: receiptError } = await supabase
+      .from("merchandise_receipts")
+      .insert({
+        kiosko_id: targetKiosko.id,
+        receipt_number: extracted.receipt_number || `TG-${Date.now()}`,
+        receipt_date: new Date().toISOString().split("T")[0],
+        supplier_name: extracted.supplier_name || "Proveedor sin identificar",
+        receipt_photo_url: photoUrl,
+        received_by_name: "Telegram",
+        total_amount: extracted.items.reduce((sum, it) => sum + it.quantity * (it.unit_cost || 0), 0),
+        notes: "Cargado automáticamente desde una foto enviada por Telegram.",
+        status: "draft",
+        source: "telegram",
+      })
+      .select("id")
+      .single()
+
+    if (receiptError || !receipt) throw receiptError || new Error("No se pudo crear el borrador")
+
+    await supabase.from("merchandise_receipt_items").insert(
+      extracted.items.map((it) => ({
+        receipt_id: receipt.id,
+        product_id: null,
+        product_name: it.name,
+        quantity: it.quantity,
+        unit_cost: it.unit_cost || 0,
+        subtotal: it.quantity * (it.unit_cost || 0),
+      })),
+    )
+
+    const itemsList = extracted.items.map((it) => `• ${it.name} x${it.quantity}`).join("\n")
+    await sendMessage(
+      botToken,
+      chatId,
+      `📷 <b>Factura cargada${multiKioscoNote}</b>\n\n${extracted.supplier_name ? `Proveedor: ${extracted.supplier_name}\n` : ""}Detecté ${extracted.items.length} producto${extracted.items.length === 1 ? "" : "s"}:\n\n${itemsList}\n\nEntrá a Recepción de Mercadería y escaneá cada producto para asociarlo y confirmar.`,
+    )
+  } catch (error) {
+    console.error("Error procesando foto de factura:", error)
+    await sendMessage(
+      botToken,
+      chatId,
+      `📷 No pude procesar esa factura. Probá sacar la foto de nuevo con buena luz, o cargala a mano desde Recepción de Mercadería.`,
+    )
   }
 }
 

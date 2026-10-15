@@ -28,6 +28,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { compressImage } from "@/lib/utils/compress-image"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { findUnmatchedDraftLineIndex } from "@/lib/receipts/match-draft-item"
 import { useToast } from "@/components/ui/toast-provider"
 import { ModuleIntro } from "@/components/ui/module-intro"
 
@@ -42,7 +43,7 @@ interface Product {
 }
 
 interface ReceiptItem {
-  product_id: string
+  product_id: string | null
   product_name: string
   quantity: number
   unit_cost: number
@@ -62,6 +63,7 @@ interface MerchandiseReceipt {
   receipt_photo_url: string | null
   cancel_reason?: string | null
   created_at: string
+  source?: string
 }
 
 export default function RecepcionMercaderiaPage() {
@@ -288,6 +290,23 @@ export default function RecepcionMercaderiaPage() {
       return
     }
 
+    // Si esta recepción vino de una foto de factura por Telegram, puede tener líneas
+    // sin product_id (solo el nombre que decía la factura). Si el código escaneado
+    // corresponde a una de esas líneas, la completamos en vez de crear una nueva —
+    // así se conserva la cantidad/costo que leyó la IA de la factura real.
+    const unmatchedIndex = findUnmatchedDraftLineIndex(items, product.name)
+    if (unmatchedIndex >= 0) {
+      const updatedItems = [...items]
+      updatedItems[unmatchedIndex] = {
+        ...updatedItems[unmatchedIndex],
+        product_id: product.id,
+        product_name: product.name,
+      }
+      setItems(updatedItems)
+      toast.success("Producto asociado", `${product.name} quedó vinculado a la línea de la factura`)
+      return
+    }
+
     // Search if the product is already in the list
     const existingIndex = items.findIndex((item) => item.product_id === product.id)
 
@@ -475,6 +494,13 @@ export default function RecepcionMercaderiaPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!kioskoId || !user || items.length === 0) return
+    if (unmatchedItems.length > 0) {
+      toast.warning(
+        "Faltan productos por escanear",
+        `Escaneá con la pistolita: ${unmatchedItems.map((i) => i.product_name).join(", ")}`,
+      )
+      return
+    }
     idempotencyKeyRef.current = crypto.randomUUID()
     setShowConfirm(true)
   }
@@ -571,20 +597,23 @@ export default function RecepcionMercaderiaPage() {
   // Impacto exacto en stock por producto (una fila por producto aunque este
   // repetido en varias lineas): stock actual + recibido = stock nuevo.
   const stockImpact = Object.values(
-    items.reduce(
-      (acc, item) => {
-        const current = products.find((p) => p.id === item.product_id)?.stock_quantity ?? 0
-        acc[item.product_id] = {
-          name: item.product_name,
-          add: (acc[item.product_id]?.add ?? 0) + item.quantity,
-          current,
-        }
-        return acc
-      },
-      {} as Record<string, { name: string; add: number; current: number }>,
-    ),
+    items
+      .filter((item) => item.product_id !== null)
+      .reduce(
+        (acc, item) => {
+          const current = products.find((p) => p.id === item.product_id)?.stock_quantity ?? 0
+          acc[item.product_id as string] = {
+            name: item.product_name,
+            add: (acc[item.product_id as string]?.add ?? 0) + item.quantity,
+            current,
+          }
+          return acc
+        },
+        {} as Record<string, { name: string; add: number; current: number }>,
+      ),
   )
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0)
+  const unmatchedItems = items.filter((item) => item.product_id === null)
   const filteredReceipts = receipts.filter(
     (r) =>
       r.receipt_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -910,6 +939,15 @@ export default function RecepcionMercaderiaPage() {
               {/* Items List */}
               {items.length > 0 && (
                 <div className="mt-6 space-y-2">
+                  {unmatchedItems.length > 0 && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                      <ScanLine className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>
+                        Quedan <b>{unmatchedItems.length}</b> producto{unmatchedItems.length === 1 ? "" : "s"} de la
+                        factura sin escanear: {unmatchedItems.map((i) => i.product_name).join(", ")}
+                      </span>
+                    </div>
+                  )}
                   {/* Desktop: tabla completa */}
                   <div className="hidden md:block space-y-2">
                     <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground px-4 py-2">
@@ -924,7 +962,14 @@ export default function RecepcionMercaderiaPage() {
                         key={index}
                         className="grid grid-cols-12 gap-4 items-center bg-card rounded-lg px-4 py-3 border border-border"
                       >
-                        <div className="col-span-5 text-foreground font-medium">{item.product_name}</div>
+                        <div className="col-span-5 text-foreground font-medium flex items-center gap-2">
+                          {item.product_name}
+                          {item.product_id === null && (
+                            <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300 shrink-0">
+                              Sin escanear
+                            </span>
+                          )}
+                        </div>
                         <div className="col-span-2 text-right text-foreground">{item.quantity} un.</div>
                         <div className="col-span-2 text-right text-foreground">${item.unit_cost.toFixed(2)}</div>
                         <div className="col-span-2 text-right text-cyan-400 font-semibold">
@@ -953,7 +998,14 @@ export default function RecepcionMercaderiaPage() {
                         className="bg-card rounded-lg px-4 py-3 border border-border"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-foreground font-medium">{item.product_name}</span>
+                          <span className="text-foreground font-medium flex items-center gap-2 flex-wrap">
+                            {item.product_name}
+                            {item.product_id === null && (
+                              <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300">
+                                Sin escanear
+                              </span>
+                            )}
+                          </span>
                           <Button
                             type="button"
                             size="icon"
@@ -1118,6 +1170,11 @@ export default function RecepcionMercaderiaPage() {
                             ? "Anulada"
                             : "Confirmada"}
                       </span>
+                      {receipt.source === "telegram" && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-300">
+                          📷 Por Telegram
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {receipt.supplier_name} • {new Date(receipt.receipt_date).toLocaleDateString()}
