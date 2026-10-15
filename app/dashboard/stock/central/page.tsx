@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client"
 import { StockMovementModal } from "@/components/stock/stock-movement-modal"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Product {
   id: string
@@ -109,6 +110,10 @@ export default function StockCentralPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="stock-central">
+        Acá ves el inventario del depósito central (separado del stock de cada sucursal): de ahí es de donde
+        salen los pedidos internos hacia los locales.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

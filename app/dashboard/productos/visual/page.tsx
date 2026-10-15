@@ -20,6 +20,7 @@ import { AccessDenied } from "@/components/ui/access-denied"
 import { formatCurrency } from "@/lib/utils/currency"
 import { cn } from "@/lib/utils"
 import { lookupOpenFoodFactsImage, lookupUpcItemDbImage, decideConfidence } from "@/lib/catalog/image-providers"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface VisualProduct {
   id: string
@@ -320,6 +321,10 @@ export default function CatalogoVisualPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="productos-visual">
+        Acá ves todos tus productos con foto, para encontrarlos más rápido visualmente. Si a un producto le falta
+        imagen, el sistema puede buscarle una automáticamente por su código de barras.
+      </ModuleIntro>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Catálogo Visual</h1>
         <p className="text-muted-foreground text-sm">Explorá tus productos de forma visual</p>

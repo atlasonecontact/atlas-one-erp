@@ -20,6 +20,7 @@ import {
 } from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, moneyTick, pct } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -86,6 +87,10 @@ export default function ProductividadLocalPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="productividad-local">
+        Acá comparás cómo le va a cada sucursal: ventas, cantidad de tickets y ticket promedio de cada local, para
+        ver cuál rinde mejor.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Productividad por Local</h1>

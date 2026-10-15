@@ -18,6 +18,7 @@ import {
   pct,
   type Ticket,
 } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 import {
   AreaChart,
   Area,
@@ -161,6 +162,10 @@ export default function ComportamientoCompraPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <ModuleIntro id="comportamiento-compra">
+        Acá ves cómo compran tus clientes: qué combinan en el mismo ticket, cuánto gastan en promedio y
+        oportunidades de venta cruzada (upsell) basadas en tus ventas reales.
+      </ModuleIntro>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Comportamiento de Compra</h1>
         <p className="text-muted-foreground">Análisis de patrones de compra y oportunidades de upsell, con tus ventas reales</p>

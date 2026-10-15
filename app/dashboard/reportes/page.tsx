@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface SalesMetrics {
   totalSales: number
@@ -321,6 +322,10 @@ export default function ReportesPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="reportes">
+        Acá tenés un reporte completo de rendimiento comercial: ventas, facturación, empleados y más, todo en una
+        sola pantalla para exportar o revisar de un vistazo.
+      </ModuleIntro>
       {/* Header with filters */}
       <div className="flex items-start justify-between gap-4">
         <div>

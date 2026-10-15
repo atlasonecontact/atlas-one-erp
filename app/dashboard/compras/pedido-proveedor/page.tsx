@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Plus, Eye, DollarSign, Package, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { PurchaseModalNew } from "@/components/purchases/purchase-modal-new"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface PurchaseWithItems {
   id: string
@@ -159,6 +160,10 @@ export default function PedidoProveedorPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="compras-pedido-proveedor">
+        Acá ves tus órdenes de compra con foco en el pago: cuánto le debés a cada proveedor, qué ya pagaste y qué
+        falta, para no perder el control de las cuentas pendientes.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

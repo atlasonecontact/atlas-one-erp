@@ -20,6 +20,7 @@ import {
 } from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, moneyTick, pct } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -88,6 +89,10 @@ export default function IngresosTarjetasPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="ingresos-tarjetas">
+        Acá ves cuánto cobraste con tarjeta de crédito o débito, separado de los demás medios de pago, con
+        gráficos por período.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Ingresos por Tarjetas</h1>

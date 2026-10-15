@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
 import { formatCurrency } from "@/lib/utils/currency"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface MonthRow {
   month: string
@@ -107,6 +108,10 @@ export default function CajaFuertePage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="caja-plata">
+        Acá ves cuánto ganaste hoy, en el mes y el histórico mes por mes, además de lo que tenés guardado en la caja
+        fuerte. Es solo para el dueño — a los empleados no les aparece.
+      </ModuleIntro>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Caja fuerte</h1>
         <Link href="/dashboard/caja" className="text-sm text-cyan-400 hover:text-cyan-300">

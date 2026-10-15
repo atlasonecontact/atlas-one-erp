@@ -7,6 +7,7 @@ import { DollarSign, Users, Package, ShoppingCart, Download, Filter, ArrowUp, Ar
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data"
 import { useTheme } from "@/lib/theme-context"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface StatsData {
   totalRevenue: number
@@ -256,6 +257,10 @@ export default function EstadisticasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="estadisticas">
+        Acá tenés un análisis más profundo de tu negocio: ventas, productos, inventario y más, todo con gráficos
+        y filtrado por período.
+      </ModuleIntro>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Estadísticas Detalladas</h1>

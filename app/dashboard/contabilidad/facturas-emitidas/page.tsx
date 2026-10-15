@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Filter, Download, Eye, FileText, Calendar, DollarSign, AlertTriangle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 type InvoiceRow = {
   id: string
@@ -146,6 +147,10 @@ export default function FacturasEmitidasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="contabilidad-facturas-emitidas">
+        Acá está el historial de todas las facturas que emitiste: podés buscarlas, filtrarlas y ver el detalle de
+        cada una (CAE, importe, cliente).
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

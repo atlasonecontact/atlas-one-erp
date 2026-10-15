@@ -18,6 +18,7 @@ import {
   ArrowDown
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 import { useTheme } from "@/lib/theme-context"
 
 interface SaleStats {
@@ -186,6 +187,10 @@ export default function VentasEstadisticasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="estadisticas-ventas">
+        Acá tenés el análisis detallado de tus ventas: por hora, por medio de pago, comparado con el período
+        anterior y más.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

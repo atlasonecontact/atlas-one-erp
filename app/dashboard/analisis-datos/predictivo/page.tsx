@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Brain, TrendingUp, AlertTriangle, Lightbulb, Target } from "lucide-react"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -44,6 +45,10 @@ export default function PredictivoPage() {
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+      <ModuleIntro id="analisis-predictivo">
+        Acá vas a ver predicciones de ventas futuras generadas con IA: cuánto vas a vender el próximo mes, alertas
+        sobre categorías que suben o bajan, y recomendaciones de stock y precios basadas en esas tendencias.
+      </ModuleIntro>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Análisis Predictivo</h2>

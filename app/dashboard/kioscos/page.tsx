@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 import { KioskoModal } from "@/components/kioscos/kiosko-modal"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/components/ui/toast-provider"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 type Kiosko = {
   id: string
@@ -161,6 +162,10 @@ export default function KioscosPage() {
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
+      <ModuleIntro id="kioscos">
+        Acá administrás todas tus sucursales: podés crear un kiosco nuevo, cambiarle el nombre, la ubicación o el
+        color, y ver qué plan tiene cada uno.
+      </ModuleIntro>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Mis Kioscos</h1>

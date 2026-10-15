@@ -17,6 +17,7 @@ import {
 } from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, moneyTick, pct } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -85,6 +86,10 @@ export default function IngresosWalletsPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="ingresos-wallets">
+        Acá ves cuánto cobraste por QR o transferencia (Mercado Pago, MODO, Ualá y similares), separado de
+        efectivo y tarjeta, con gráficos por período.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Ingresos por Wallets</h1>

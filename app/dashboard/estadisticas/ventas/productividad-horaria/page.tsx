@@ -25,6 +25,7 @@ import {
 } from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, WEEKDAYS_SHORT, WEEKDAYS_LONG, WEEK_ORDER, moneyTick } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -100,6 +101,10 @@ export default function ProductividadHorariaPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="productividad-horaria">
+        Acá ves en qué horarios y días vendés más o menos, para organizar mejor los turnos y el stock según la
+        demanda real de cada franja.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Productividad Horaria</h1>

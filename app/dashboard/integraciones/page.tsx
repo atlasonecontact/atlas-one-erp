@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createClient } from "@/lib/supabase/client"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/toast-provider"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface IntegrationConfig {
   id: string
@@ -194,6 +195,10 @@ export default function IntegracionesPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <ModuleIntro id="integraciones">
+        Acá conectás Atlas One con servicios externos: facturación electrónica (ARCA), apps de delivery y medios
+        de pago. El aviso de ventas por Telegram se configura en Configuración → Notificaciones, no acá.
+      </ModuleIntro>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Integraciones</h1>

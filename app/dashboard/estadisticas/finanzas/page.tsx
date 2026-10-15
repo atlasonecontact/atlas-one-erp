@@ -17,6 +17,7 @@ import {
   Calculator
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 import { useTheme } from "@/lib/theme-context"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { chartDefs, ChartTooltip, PALETTE, ANIMATION, areaFill, axisProps, cursorLine, gridProps } from "@/components/charts/chart-theme"
@@ -231,6 +232,10 @@ export default function FinanzasEstadisticasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="estadisticas-finanzas">
+        Acá ves cómo le va a tu negocio en plata: ingresos, costos y qué tan rentable estás siendo, con gráficos
+        por período (7, 30 o 90 días).
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

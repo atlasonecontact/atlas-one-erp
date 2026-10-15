@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Receipt, CreditCard, MinusCircle, PlusCircle, ArrowRight, Building2 } from "lucide-react"
 import { AlertTriangle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 const invoiceTypes = [
   {
@@ -146,6 +147,10 @@ export default function EmitirFacturaPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="contabilidad-emitir-factura">
+        Acá generás la factura según el tipo de cliente (A, B o C). Elegís el comprobante, completás los datos y
+        se emite — queda guardada en Facturas Emitidas para que la puedas ver o reimprimir después.
+      </ModuleIntro>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Emitir Factura</h1>

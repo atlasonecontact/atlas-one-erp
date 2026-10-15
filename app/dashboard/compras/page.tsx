@@ -7,6 +7,7 @@ import { PurchaseModalNew } from "@/components/purchases/purchase-modal-new"
 import { Search, Plus, Eye, Check, Clock, Truck, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Purchase {
   id: string
@@ -166,6 +167,10 @@ export default function ComprasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="compras">
+        Acá creás y seguís las órdenes de compra a tus proveedores: qué pediste, cuánto cuesta y en qué estado está
+        (pendiente, en camino, recibida). Cuando llega la mercadería, se recibe desde Stock → Recepción.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

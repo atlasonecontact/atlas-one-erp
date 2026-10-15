@@ -22,6 +22,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import { formatCurrency } from "@/lib/utils/currency"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Sale {
   id: string
@@ -347,6 +348,10 @@ export default function HistorialVentasPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="ventas-historial">
+        Acá podés buscar una venta puntual para corregirla o anularla si hubo un error de cobro. Si lo que
+        buscás es un análisis general de ventas (gráficos, exportar todo), eso está en Estadísticas → Ventas.
+      </ModuleIntro>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/ventas">

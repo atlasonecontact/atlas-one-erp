@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils/currency"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 const TZ = "America/Argentina/Buenos_Aires"
 const PAGE = 1000
@@ -297,6 +298,11 @@ export default function HistorialVentasDatasetPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="estadisticas-ventas-historial">
+        Acá está el detalle de cada producto vendido en formato tabla (fecha, hora, método de pago, etc.), para
+        analizar o exportar a CSV. Si buscás anular o rehacer una venta puntual, usá el Historial que está dentro
+        de Punto de Venta.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Historial de Ventas</h1>

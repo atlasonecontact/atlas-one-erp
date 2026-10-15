@@ -17,6 +17,7 @@ import {
   User,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface ExternalOrder {
   id: string
@@ -175,6 +176,10 @@ export default function PedidosPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="pedidos">
+        Acá ves los pedidos que llegan de apps de delivery (PedidosYa, Rappi y otras): podés cambiarles el
+        estado (preparando, listo, entregado) a medida que avanzan.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

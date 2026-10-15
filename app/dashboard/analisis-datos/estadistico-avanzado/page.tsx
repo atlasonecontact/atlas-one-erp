@@ -3,12 +3,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calculator, TrendingUp, BarChart3, Activity } from "lucide-react"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
 export default function EstadisticoAvanzadoPage() {
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+      <ModuleIntro id="analisis-estadistico-avanzado">
+        Acá vas a poder correr herramientas estadísticas más avanzadas sobre tus datos de ventas (correlaciones,
+        regresiones, ANOVA). Todavía está en desarrollo, así que por ahora es solo una vista previa de lo que viene.
+      </ModuleIntro>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Análisis Estadístico Avanzado</h2>

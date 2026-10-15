@@ -7,6 +7,7 @@ import { GlobalFiltersComponent, type GlobalFilters } from "@/components/dashboa
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
+import { ModuleIntro } from "@/components/ui/module-intro"
 import { formatCurrency } from "@/lib/utils/currency"
 import { shiftFromLabel, shiftOf, OWNER_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
 import { format, isSameDay } from "date-fns"
@@ -394,6 +395,10 @@ export default function ExecutiveOverviewPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <ModuleIntro id="estadisticas-executive-overview">
+        Acá tenés el panorama general del negocio en una sola vista: cómo vienen las ventas, la eficiencia y los
+        indicadores clave, pensado para revisar de un vistazo sin entrar a cada módulo por separado.
+      </ModuleIntro>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Resumen Ejecutivo</h1>
         <p className="text-muted-foreground">Vista ejecutiva de rendimiento y eficiencia del negocio, con tus ventas reales</p>

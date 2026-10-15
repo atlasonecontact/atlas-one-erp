@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface Product {
   id: string
@@ -131,6 +132,10 @@ export default function StockPorSucursalPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="stock-por-sucursal">
+        Acá ves el inventario repartido entre tus sucursales: cuánto tiene cada local de cada producto, para
+        comparar y detectar faltantes puntuales por punto de venta.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

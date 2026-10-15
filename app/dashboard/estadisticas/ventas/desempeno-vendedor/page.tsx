@@ -25,6 +25,7 @@ import {
 } from "@/components/charts/chart-theme"
 import { formatCurrency } from "@/lib/utils/currency"
 import { useTickets, ymdToday, shiftYmd, moneyTick, SHIFT_LABEL, type ShiftKey } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -128,6 +129,10 @@ export default function DesempenoVendedorPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="desempeno-vendedor">
+        Acá ves cuánto vendió cada empleado, turno por turno: te sirve para comparar desempeño y detectar quién
+        necesita más apoyo o entrenamiento.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Desempeño por Vendedor</h1>

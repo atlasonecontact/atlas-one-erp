@@ -23,6 +23,7 @@ import { AprobarPedidoInternoModal } from "@/components/compras/aprobar-pedido-i
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { useToast } from "@/components/ui/toast-provider"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface PedidoInterno {
   id: string
@@ -308,6 +309,10 @@ export default function PedidosInternosPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="compras-pedidos-internos">
+        Acá pedís mercadería de una sucursal a otra o al stock central (no a un proveedor externo): creás el
+        pedido, lo aprueban, y cuando llega se suma al stock de quien lo pidió.
+      </ModuleIntro>
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

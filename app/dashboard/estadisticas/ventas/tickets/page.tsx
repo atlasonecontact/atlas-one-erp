@@ -21,6 +21,7 @@ import {
   SHIFT_LABEL,
   TZ,
 } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -101,6 +102,10 @@ export default function TicketsTablePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <ModuleIntro id="tickets">
+        Acá está cada ticket de venta (transacción completa) con su detalle: fecha, productos, medio de pago y
+        vendedor. Tocá un ticket para ver todo lo que incluyó.
+      </ModuleIntro>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Tickets de Venta</h1>
         <p className="text-muted-foreground">Tabla detallada de todas las transacciones reales</p>

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import { useEmployeePermissions } from "@/lib/hooks/use-employee-permissions"
 import { AccessDenied } from "@/components/ui/access-denied"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 interface ProductOption {
   id: string
@@ -207,6 +208,10 @@ export default function PromocionesPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleIntro id="productos-promociones">
+        Acá armás combos de productos con un precio propio (ej. "2 alfajores + 1 gaseosa a $1500"): se venden
+        como un solo ítem desde Punto de Venta y descuentan el stock real de cada producto que incluyen.
+      </ModuleIntro>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Promociones</h1>

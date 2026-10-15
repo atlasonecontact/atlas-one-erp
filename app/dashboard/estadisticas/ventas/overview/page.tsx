@@ -33,6 +33,7 @@ import {
   moneyTick,
   pct,
 } from "@/lib/analytics/tickets"
+import { ModuleIntro } from "@/components/ui/module-intro"
 
 export const dynamic = "force-dynamic"
 
@@ -132,6 +133,10 @@ export default function VentasOverviewPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-8">
+      <ModuleIntro id="estadisticas-ventas-overview">
+        Acá tenés la vista ejecutiva de tus ventas: evolución, comparación con el período anterior y los
+        productos/categorías que más venden.
+      </ModuleIntro>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Análisis de Ventas</h1>
