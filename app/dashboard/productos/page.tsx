@@ -391,13 +391,30 @@ export default function ProductosPage() {
     }
 
     if (editingProduct) {
+      // stock_quantity no va en este update: si cambió, lo aplica adjust_stock() más abajo,
+      // que además de actualizarlo deja el movimiento en stock_movements (sin esto, editar
+      // un producto movía stock sin dejar ningún rastro para auditar después).
+      const { stock_quantity: _stockIgnored, ...payloadWithoutStock } = payload
       const { error } = await supabase
         .from("products")
-        .update({ ...payload, updated_at: new Date().toISOString() })
+        .update({ ...payloadWithoutStock, updated_at: new Date().toISOString() })
         .eq("id", editingProduct.id)
 
       if (!error) {
         await saveLots(editingProduct.id, lots)
+        const stockDelta = finalStock - editingProduct.stock
+        if (stockDelta !== 0) {
+          const { error: stockError } = await supabase.rpc("adjust_stock", {
+            p_kiosko: kioskoId,
+            p_product: editingProduct.id,
+            p_delta: stockDelta,
+            p_movement_type: "adjustment",
+            p_reason: "Edición manual de producto",
+          })
+          if (stockError) {
+            toast.error("No se pudo actualizar el stock", stockError.message)
+          }
+        }
         setProducts((prev) =>
           prev.map((p) =>
             p.id === editingProduct.id ? ({ ...product, id: editingProduct.id, stock: finalStock } as Product) : p,

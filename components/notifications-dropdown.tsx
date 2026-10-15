@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { useTheme } from "@/lib/theme-context"
+import { filterLowStock } from "@/lib/stock/low-stock"
 
 interface Notification {
   id: string
@@ -178,19 +179,17 @@ export function NotificationsDropdown() {
         .order("stock_quantity", { ascending: true })
         .limit(50)
 
-      lowStockProducts?.forEach(product => {
-        if (product.stock_quantity <= (product.min_stock_level || 10)) {
-          newNotifications.push({
-            id: `stock-${product.id}`,
-            type: "stock",
-            title: "Stock bajo",
-            message: `${product.name}: ${product.stock_quantity} unidades`,
-            time: new Date(product.updated_at),
-            read: false,
-            kioskoName: kioskoMap.get(product.kiosko_id),
-            href: "/dashboard/productos",
-          })
-        }
+      filterLowStock(lowStockProducts || [], 50).forEach(product => {
+        newNotifications.push({
+          id: `stock-${product.id}`,
+          type: "stock",
+          title: "Stock bajo",
+          message: `${product.name}: ${product.stock_quantity} unidades`,
+          time: new Date(product.updated_at),
+          read: false,
+          kioskoName: kioskoMap.get(product.kiosko_id),
+          href: "/dashboard/productos",
+        })
       })
 
       // Sort by time (las urgentes de aprobación van siempre primero)

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { filterLowStock } from "@/lib/stock/low-stock"
 
 interface DashboardStats {
   todaySales: number
@@ -201,9 +202,7 @@ export function useDashboardData(period: string) {
         .order("stock_quantity", { ascending: true })
         .limit(50)
 
-      const lowStock = (lowStockRaw || [])
-        .filter((p) => p.stock_quantity <= (p.min_stock_level || 10))
-        .slice(0, 5)
+      const lowStock = filterLowStock(lowStockRaw || [], 5)
 
       const mappedLowStock =
         lowStock?.map((p) => ({
