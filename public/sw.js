@@ -1,11 +1,19 @@
 // Service Worker para ATLAS ONE ERP
 // Proporciona funcionalidad offline básica
 
-const CACHE_NAME = "atlas-one-v2"
+const CACHE_NAME = "atlas-one-v3"
 const OFFLINE_URL = "/offline.html"
 
 // Recursos esenciales para cachear
-const ESSENTIAL_RESOURCES = ["/", "/dashboard", "/dashboard/ventas", "/offline.html", "/manifest.json"]
+const ESSENTIAL_RESOURCES = [
+  "/",
+  "/dashboard",
+  "/dashboard/ventas",
+  "/dashboard/stock",
+  "/dashboard/compras",
+  "/offline.html",
+  "/manifest.json",
+]
 
 // Install event - cachea recursos esenciales
 self.addEventListener("install", (event) => {
@@ -47,17 +55,43 @@ self.addEventListener("fetch", (event) => {
   }
 
   const isNavigation = request.mode === "navigate"
-  // Nunca cachear el documento HTML, los chunks de Next.js ni las respuestas RSC:
-  // deben venir siempre de red mientras haya conexión, para no servir una build vieja.
-  const isNextInternal = url.pathname.startsWith("/_next/")
-  const skipCache = isNavigation || isNextInternal
+  const isStaticAsset = url.pathname.startsWith("/_next/static/")
+  // El resto de /_next/ (payloads RSC, datos internos) no tiene hash en el
+  // nombre y puede variar por request: siempre de red, nunca se guarda.
+  const isNextInternal = url.pathname.startsWith("/_next/") && !isStaticAsset
 
-  // Estrategia: Network First, fallback to Cache
+  // Los archivos de /_next/static/ tienen el hash de su contenido en el
+  // nombre: si ya está en cache es válido para siempre, así que se sirve
+  // directo sin tocar la red. Esto es lo que permite que la app pueda
+  // arrancar (HTML + JS) estando sin conexión.
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((response) => {
+          if (response && response.status === 200 && response.type === "basic") {
+            const responseToCache = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache))
+          }
+          return response
+        })
+      }),
+    )
+    return
+  }
+
+  if (isNextInternal) {
+    event.respondWith(fetch(request, { cache: "no-store" }))
+    return
+  }
+
+  // Documentos de navegación y el resto de recursos propios: Network First,
+  // guardando siempre la última respuesta válida (así una recarga sin
+  // conexión muestra la página real que ya se visitó, no un cartel vacío).
   event.respondWith(
-    fetch(request, { cache: skipCache ? "no-store" : "default" })
+    fetch(request, { cache: isNavigation ? "no-store" : "default" })
       .then((response) => {
-        // Si la respuesta es válida, clona y guarda en cache (solo recursos estáticos)
-        if (!skipCache && response && response.status === 200 && response.type === "basic") {
+        if (response && response.status === 200 && response.type === "basic") {
           const responseToCache = response.clone()
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseToCache)
@@ -72,7 +106,8 @@ self.addEventListener("fetch", (event) => {
             return cachedResponse
           }
 
-          // Si es navegación y no hay cache, muestra página offline
+          // Si es navegación y no hay nada guardado de esa página todavía
+          // (primera vez que se abre, sin conexión), muestra la página offline.
           if (isNavigation) {
             return caches.match(OFFLINE_URL)
           }
