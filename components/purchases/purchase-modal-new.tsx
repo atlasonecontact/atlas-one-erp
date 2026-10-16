@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Trash2, Package, ShoppingBag } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
+import { enqueuePurchase } from "@/lib/offline/purchases-queue"
 
 interface Product {
   id: string
@@ -80,15 +81,41 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
   const loadProducts = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, name, category, cost, stock_quantity")
-      .eq("kiosko_id", kioskoId)
-      .eq("is_active", true)
-      .order("name")
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, category, cost, stock_quantity")
+        .eq("kiosko_id", kioskoId)
+        .eq("is_active", true)
+        .order("name")
 
-    if (!error && data) {
-      setProducts(data)
+      if (error) throw error
+      if (data) setProducts(data)
+    } catch {
+      // Sin conexión: leemos (sin pisarla) la caché de productos del POS. No
+      // tiene costo cargado, así que el costo unitario queda en 0 y lo
+      // completa quien registra la compra.
+      if (typeof window !== "undefined") {
+        const cached = window.localStorage.getItem(`atlas.cache.products.${kioskoId}.v1`)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (Array.isArray(parsed)) {
+              const mapped: Product[] = parsed.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                category: p.category || "Sin categoría",
+                cost: 0,
+                stock_quantity: p.stock ?? p.stock_quantity ?? 0,
+              }))
+              setProducts(mapped)
+              toast.warning("Modo offline", "Mostrando productos guardados")
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
     }
     setLoading(false)
   }
@@ -138,10 +165,45 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
     if (items.length === 0 || !supplier) return
 
     setSaving(true)
-    try {
-      const supplierName = supplier === "Otro proveedor" ? customSupplier : supplier
-      const purchaseNumber = `C-${Date.now()}`
+    const supplierName = supplier === "Otro proveedor" ? customSupplier : supplier
+    const purchaseNumber = `C-${Date.now()}`
 
+    const resetForm = () => {
+      setItems([])
+      setSupplier("")
+      setCustomSupplier("")
+      setNotes("")
+      setSearchQuery("")
+    }
+
+    const queueOffline = () => {
+      enqueuePurchase({
+        id: `offline-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        createdAt: Date.now(),
+        kioskoId,
+        supplierName,
+        purchaseNumber,
+        totalAmount: total,
+        notes: notes || null,
+        items: items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitCost: item.unitCost,
+        })),
+      })
+      toast.warning("Compra guardada offline", "Se sincronizará al reconectar")
+      resetForm()
+      onSuccess()
+      onClose()
+    }
+
+    if (typeof window !== "undefined" && !window.navigator.onLine) {
+      queueOffline()
+      setSaving(false)
+      return
+    }
+
+    try {
       // Compra + items + stock + costo, todo en una sola transacción del lado
       // de la base (register_purchase): si se corta la conexión a mitad, no
       // queda nada a medio grabar.
@@ -162,18 +224,22 @@ export function PurchaseModalNew({ open, onClose, kioskoId, onSuccess }: Purchas
 
       if (error) throw error
 
-      // Reset form
-      setItems([])
-      setSupplier("")
-      setCustomSupplier("")
-      setNotes("")
-      setSearchQuery("")
-      
+      resetForm()
       onSuccess()
       onClose()
     } catch (error: any) {
-      console.error("Error saving purchase:", error)
-      toast.error("Error al guardar la compra", error.message)
+      const message = String(error?.message ?? "").toLowerCase()
+      const looksOffline =
+        (typeof window !== "undefined" && !window.navigator.onLine) ||
+        message.includes("failed to fetch") ||
+        message.includes("network")
+
+      if (looksOffline) {
+        queueOffline()
+      } else {
+        console.error("Error saving purchase:", error)
+        toast.error("Error al guardar la compra", error.message)
+      }
     } finally {
       setSaving(false)
     }

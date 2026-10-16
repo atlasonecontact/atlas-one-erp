@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ModuleIntro } from "@/components/ui/module-intro"
+import { flushQueuedStockMovements } from "@/lib/offline/stock-queue"
 
 interface Product {
   id: string
@@ -70,6 +71,23 @@ export default function StockPage() {
   useEffect(() => {
     loadUserAndData()
   }, [])
+
+  // Sincroniza movimientos de stock cargados offline (ver StockMovementModal)
+  // cuando se entra a la pantalla y cuando vuelve la conexión.
+  useEffect(() => {
+    if (!kioskoId) return
+
+    const trySync = async () => {
+      const result = await flushQueuedStockMovements(supabase)
+      if (result && result.flushed > 0) {
+        await Promise.all([loadProducts(kioskoId), loadMovements(kioskoId)])
+      }
+    }
+
+    trySync()
+    window.addEventListener("online", trySync)
+    return () => window.removeEventListener("online", trySync)
+  }, [kioskoId])
 
   const loadUserAndData = async () => {
     setLoading(true)

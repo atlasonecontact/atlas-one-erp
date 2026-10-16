@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Package, Plus, Minus, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
+import { enqueueStockMovement } from "@/lib/offline/stock-queue"
 
 interface Product {
   id: string
@@ -60,16 +61,44 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
 
   const loadProducts = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("products")
-      .select("id, name, category, stock_quantity")
-      .eq("kiosko_id", kioskoId)
-      .eq("is_active", true)
-      .order("name")
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, category, stock_quantity")
+        .eq("kiosko_id", kioskoId)
+        .eq("is_active", true)
+        .order("name")
 
-    if (!error && data) {
-      setProducts(data)
-      setFilteredProducts(data.slice(0, 10))
+      if (error) throw error
+      if (data) {
+        setProducts(data)
+        setFilteredProducts(data.slice(0, 10))
+      }
+    } catch {
+      // Sin conexión: leemos (sin pisarla) la caché de productos que ya guarda
+      // el POS — nunca se escribe desde aquí para no dejarla con menos campos
+      // (barcode, price) de los que Ventas necesita para escanear offline.
+      if (typeof window !== "undefined") {
+        const cached = window.localStorage.getItem(`atlas.cache.products.${kioskoId}.v1`)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (Array.isArray(parsed)) {
+              const mapped: Product[] = parsed.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                category: p.category || "Sin categoría",
+                stock_quantity: p.stock ?? p.stock_quantity ?? 0,
+              }))
+              setProducts(mapped)
+              setFilteredProducts(mapped.slice(0, 10))
+              toast.warning("Modo offline", "Mostrando productos guardados")
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
     }
     setLoading(false)
   }
@@ -79,6 +108,34 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
     if (!selectedProduct || quantity <= 0) return
 
     setSaving(true)
+    const delta = movementType === "in" ? quantity : -quantity
+    const finalReason = reason || (movementType === "in" ? "Ingreso manual" : "Salida manual")
+
+    const queueOffline = () => {
+      enqueueStockMovement({
+        id: `offline-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        createdAt: Date.now(),
+        kioskoId,
+        productId: selectedProduct.id,
+        delta,
+        movementType,
+        reason: finalReason,
+      })
+      toast.warning("Movimiento guardado offline", "Se sincronizará al reconectar")
+      setSelectedProduct(null)
+      setQuantity(1)
+      setReason("")
+      setSearchQuery("")
+      onSuccess()
+      onClose()
+    }
+
+    if (typeof window !== "undefined" && !window.navigator.onLine) {
+      queueOffline()
+      setSaving(false)
+      return
+    }
+
     try {
       // Delta atómico en la base (sin leer-calcular-escribir): adjust_stock
       // aplica el +/- directo sobre la fila y deja el movimiento con la
@@ -86,9 +143,9 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
       const { error } = await supabase.rpc("adjust_stock", {
         p_kiosko: kioskoId,
         p_product: selectedProduct.id,
-        p_delta: movementType === "in" ? quantity : -quantity,
+        p_delta: delta,
         p_movement_type: movementType,
-        p_reason: reason || (movementType === "in" ? "Ingreso manual" : "Salida manual"),
+        p_reason: finalReason,
       })
 
       if (error) throw error
@@ -98,12 +155,22 @@ export function StockMovementModal({ open, onClose, kioskoId, onSuccess }: Stock
       setQuantity(1)
       setReason("")
       setSearchQuery("")
-      
+
       onSuccess()
       onClose()
     } catch (error: any) {
-      console.error("Error saving movement:", error)
-      toast.error("Error al guardar el movimiento", error.message)
+      const message = String(error?.message ?? "").toLowerCase()
+      const looksOffline =
+        (typeof window !== "undefined" && !window.navigator.onLine) ||
+        message.includes("failed to fetch") ||
+        message.includes("network")
+
+      if (looksOffline) {
+        queueOffline()
+      } else {
+        console.error("Error saving movement:", error)
+        toast.error("Error al guardar el movimiento", error.message)
+      }
     } finally {
       setSaving(false)
     }

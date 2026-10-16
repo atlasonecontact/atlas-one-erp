@@ -8,6 +8,7 @@ import { Search, Plus, Eye, Check, Clock, Truck, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import { ModuleIntro } from "@/components/ui/module-intro"
+import { flushQueuedPurchases } from "@/lib/offline/purchases-queue"
 
 interface Purchase {
   id: string
@@ -32,6 +33,23 @@ export default function ComprasPage() {
   useEffect(() => {
     loadUserAndPurchases()
   }, [])
+
+  // Sincroniza compras cargadas offline (ver PurchaseModalNew) cuando se
+  // entra a la pantalla y cuando vuelve la conexión.
+  useEffect(() => {
+    if (!kioskoId) return
+
+    const trySync = async () => {
+      const result = await flushQueuedPurchases(supabase)
+      if (result && result.flushed > 0) {
+        await loadPurchases(kioskoId)
+      }
+    }
+
+    trySync()
+    window.addEventListener("online", trySync)
+    return () => window.removeEventListener("online", trySync)
+  }, [kioskoId])
 
   const loadUserAndPurchases = async () => {
     setLoading(true)
