@@ -39,21 +39,38 @@ describe("decideConfidence", () => {
     expect(result.confidence).toBeGreaterThanOrEqual(90)
   })
 
-  it("Open Food Facts + nombre distinto: no aprueba, va a revisión", () => {
+  it("Open Food Facts + nombre totalmente distinto: se descarta, ni va a revisión", () => {
     const result = decideConfidence(offCandidate, "Alfajor Jorgito Triple")
     expect(result.autoApprove).toBe(false)
+    expect(result.discard).toBe(true)
     expect(result.confidence).toBeLessThan(90)
   })
 
-  it("UPCItemDB + nombre similar: aprueba, pero con menos confianza que Open Food Facts", () => {
+  it("Open Food Facts + nombre parecido pero no suficiente: va a revisión, no se descarta", () => {
+    const result = decideConfidence(offCandidate, "Coca-Cola Light")
+    expect(result.autoApprove).toBe(false)
+    expect(result.discard).toBe(false)
+  })
+
+  it("UPCItemDB: nunca aprueba automático aunque el nombre coincida bien (fuente menos confiable)", () => {
     const upcCandidate: ImageCandidate = {
       imageUrl: "https://example.com/pepsi.jpg",
       source: "upcitemdb",
       offName: "Pepsi Black 354ml",
     }
     const result = decideConfidence(upcCandidate, "Pepsi Black 354 ml")
-    expect(result.autoApprove).toBe(true)
-    expect(result.confidence).toBeLessThan(90)
+    expect(result.autoApprove).toBe(false)
+    expect(result.discard).toBe(false)
+  })
+
+  it("UPCItemDB + nombre totalmente distinto: se descarta", () => {
+    const upcCandidate: ImageCandidate = {
+      imageUrl: "https://example.com/x.jpg",
+      source: "upcitemdb",
+      offName: "Pepsi Black 354ml",
+    }
+    const result = decideConfidence(upcCandidate, "Alfajor Jorgito Triple")
+    expect(result.discard).toBe(true)
   })
 
   it("sin nombre de la fuente (offName ausente): nunca aprueba automático", () => {

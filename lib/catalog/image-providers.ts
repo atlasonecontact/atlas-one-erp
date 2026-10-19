@@ -16,7 +16,11 @@ export async function lookupOpenFoodFactsImage(barcode: string): Promise<ImageCa
   if (data.status !== 1 || !data.product) return null
 
   const p = data.product
-  const imageUrl = p.image_front_url || p.image_url
+  // Sólo image_front_url: es la foto que Open Food Facts marcó como "frente
+  // del producto". Sin eso, image_url puede ser cualquier otra foto que haya
+  // cargado un usuario (ingredientes, tabla nutricional, código de barras) —
+  // mejor no traer imagen que traer una que no es del producto.
+  const imageUrl = p.image_front_url
   if (!imageUrl) return null
 
   const baseName = p.product_name_es || p.product_name || ""
@@ -72,25 +76,62 @@ export interface ConfidenceResult {
   confidence: number
   autoApprove: boolean
   matchMethod: string
+  // true = ni siquiera vale la pena mandarlo a revisión manual (el nombre no
+  // tiene nada que ver, es casi seguro un producto distinto).
+  discard: boolean
 }
 
 // Regla central de "no asignar automáticamente matches dudosos": sólo se
 // aprueba solo si, además de matchear por código de barras, el nombre que
-// trajo la fuente se parece de verdad al que ya tenemos cargado. Si no, va a
-// la cola de revisión — nunca se descarta directo, para que un humano decida.
+// trajo la fuente se parece de verdad al que ya tenemos cargado. Si el
+// parecido es mínimo, se descarta directo (no vale la pena revisar algo que
+// casi seguro es otro producto); si es intermedio, va a la cola de revisión.
+//
+// UPCItemDB nunca aprueba solo: sus fotos son de catálogos de venta
+// genéricos (a veces de otra variante, tamaño o directamente otro producto),
+// mucho menos confiables que las fotos curadas de Open Food Facts — siempre
+// pasan por un humano antes de mostrarse en el catálogo real.
 export function decideConfidence(candidate: ImageCandidate, atlasName: string): ConfidenceResult {
   const sim = candidate.offName ? nameSimilarity(candidate.offName, atlasName) : 0
 
   if (candidate.source === "openfoodfacts") {
-    if (sim >= 0.4) {
-      return { confidence: Math.round(90 + sim * 10), autoApprove: true, matchMethod: "barcode+nombre (Open Food Facts)" }
+    if (sim >= 0.5) {
+      return {
+        confidence: Math.round(85 + sim * 15),
+        autoApprove: true,
+        matchMethod: "barcode+nombre (Open Food Facts)",
+        discard: false,
+      }
     }
-    return { confidence: 70, autoApprove: false, matchMethod: "barcode (Open Food Facts), nombre no coincide" }
+    if (sim >= 0.2) {
+      return {
+        confidence: 60,
+        autoApprove: false,
+        matchMethod: "barcode (Open Food Facts), nombre coincide parcial",
+        discard: false,
+      }
+    }
+    return {
+      confidence: 40,
+      autoApprove: false,
+      matchMethod: "barcode (Open Food Facts), nombre no coincide",
+      discard: true,
+    }
   }
 
   // upcitemdb
-  if (sim >= 0.4) {
-    return { confidence: 80, autoApprove: true, matchMethod: "barcode+nombre (UPCItemDB)" }
+  if (sim >= 0.35) {
+    return {
+      confidence: 55,
+      autoApprove: false,
+      matchMethod: "barcode+nombre (UPCItemDB), a revisar",
+      discard: false,
+    }
   }
-  return { confidence: 55, autoApprove: false, matchMethod: "barcode (UPCItemDB), nombre no coincide" }
+  return {
+    confidence: 30,
+    autoApprove: false,
+    matchMethod: "barcode (UPCItemDB), nombre no coincide",
+    discard: true,
+  }
 }

@@ -212,25 +212,31 @@ export default function CatalogoVisualPage() {
           if (!candidate) {
             progress.noMatch++
           } else {
-            const { confidence, autoApprove, matchMethod } = decideConfidence(candidate, product.name)
-            const { error } = await supabase.rpc("set_product_image_candidate", {
-              p_kiosko: kioskoId,
-              p_product: product.id,
-              p_barcode: product.barcode,
-              p_image_url: candidate.imageUrl,
-              p_source: candidate.source,
-              p_source_url: candidate.sourceUrl ?? null,
-              p_confidence: confidence,
-              p_match_method: matchMethod,
-              p_auto_approve: autoApprove,
-            })
-            if (error) {
-              firstErrorMessage ??= error.message
+            const { confidence, autoApprove, matchMethod, discard } = decideConfidence(candidate, product.name)
+            if (discard) {
+              // El nombre no tiene nada que ver: casi seguro otro producto,
+              // no vale la pena ni mandarlo a revisión manual.
               progress.noMatch++
-            } else if (autoApprove) {
-              progress.approved++
             } else {
-              progress.pending++
+              const { error } = await supabase.rpc("set_product_image_candidate", {
+                p_kiosko: kioskoId,
+                p_product: product.id,
+                p_barcode: product.barcode,
+                p_image_url: candidate.imageUrl,
+                p_source: candidate.source,
+                p_source_url: candidate.sourceUrl ?? null,
+                p_confidence: confidence,
+                p_match_method: matchMethod,
+                p_auto_approve: autoApprove,
+              })
+              if (error) {
+                firstErrorMessage ??= error.message
+                progress.noMatch++
+              } else if (autoApprove) {
+                progress.approved++
+              } else {
+                progress.pending++
+              }
             }
           }
         }
