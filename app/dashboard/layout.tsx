@@ -62,7 +62,6 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { MobileHeader } from "@/components/mobile/mobile-header"
 import { BottomNavigation } from "@/components/mobile/bottom-navigation"
 import { ThemeModeToggle } from "@/components/theme-mode-toggle"
-import { SubscriptionDueBanner } from "@/components/dashboard/subscription-due-banner"
 
 function DashboardSidebar({
   mobileOpen,
@@ -810,22 +809,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <TermsGate />
-      <div className="flex h-screen flex-col overflow-hidden">
-        <SubscriptionDueBanner />
-        <div className="flex flex-1 overflow-hidden">
-          <DashboardSidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
-            <DashboardHeader />
-            <MobileHeader onMenuClick={() => setMobileNavOpen(true)} />
-            <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8 bg-background">
-              {children}
-            </main>
-            <BottomNavigation
-              onMenuClick={() => setMobileNavOpen(true)}
-              onScanClick={() => router.push("/dashboard/ventas?scanner=1")}
-            />
-          </div>
+      <div className="flex h-screen overflow-hidden">
+        <DashboardSidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <DashboardHeader />
+          <MobileHeader onMenuClick={() => setMobileNavOpen(true)} />
+          <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8 bg-background">
+            {children}
+          </main>
+          <BottomNavigation
+            onMenuClick={() => setMobileNavOpen(true)}
+            onScanClick={() => router.push("/dashboard/ventas?scanner=1")}
+          />
         </div>
       </div>
     </ThemeProvider>
