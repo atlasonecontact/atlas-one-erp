@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ShieldAlert, Ban, RotateCcw } from "lucide-react"
+import { ShieldAlert, Ban, RotateCcw, CircleDollarSign } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/toast-provider"
 import { cn } from "@/lib/utils"
@@ -21,7 +21,19 @@ interface Account {
   owner_name: string | null
   business_name: string | null
   access_status: string
+  next_payment_due_at: string | null
+  last_payment_at: string | null
   created_at: string
+}
+
+function isOverdue(dueDate: string | null) {
+  if (!dueDate) return false
+  return new Date(dueDate + "T00:00:00") < new Date(new Date().toDateString())
+}
+
+function formatDate(d: string | null) {
+  if (!d) return "Sin fecha"
+  return new Date(d + "T00:00:00").toLocaleDateString("es-AR")
 }
 
 export default function AdminCuentasPage() {
@@ -78,6 +90,29 @@ export default function AdminCuentasPage() {
     setUpdatingId(null)
   }
 
+  const markPaid = async (account: Account) => {
+    if (!account.owner_id) return
+    setUpdatingId(account.owner_id)
+    const { data, error } = await supabase.rpc("admin_mark_payment_received", {
+      p_profile_id: account.owner_id,
+      p_months: 1,
+    })
+    if (error) {
+      toast.error("No se pudo registrar el pago", error.message)
+    } else {
+      const nextDue = (data as { next_payment_due_at: string })?.next_payment_due_at
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.owner_id === account.owner_id
+            ? { ...a, next_payment_due_at: nextDue, last_payment_at: new Date().toISOString() }
+            : a,
+        ),
+      )
+      toast.success("Pago registrado", `${account.kiosko_name} — próximo vencimiento ${formatDate(nextDue)}`)
+    }
+    setUpdatingId(null)
+  }
+
   if (checking) return null
 
   return (
@@ -119,20 +154,35 @@ export default function AdminCuentasPage() {
                   <p className="truncate">{a.owner_name || "—"}</p>
                   <p className="truncate text-muted-foreground">{a.owner_email || "—"}</p>
                 </div>
-                <button
-                  type="button"
-                  disabled={updatingId === a.owner_id || !a.owner_id}
-                  onClick={() => setStatus(a, suspended ? "approved" : "suspended")}
-                  className={cn(
-                    "touch-target inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors disabled:opacity-50",
-                    suspended
-                      ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
-                      : "bg-red-500/15 text-red-400 hover:bg-red-500/25",
-                  )}
-                >
-                  {suspended ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                  {suspended ? "Reactivar" : "Suspender"}
-                </button>
+                <p className={cn("text-xs font-medium", isOverdue(a.next_payment_due_at) ? "text-red-400" : "text-muted-foreground")}>
+                  Vence: {formatDate(a.next_payment_due_at)}
+                  {isOverdue(a.next_payment_due_at) && " (vencida)"}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={updatingId === a.owner_id || !a.owner_id}
+                    onClick={() => markPaid(a)}
+                    className="touch-target inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-cyan-500/15 px-3 text-sm font-semibold text-cyan-400 transition-colors hover:bg-cyan-500/25 disabled:opacity-50"
+                  >
+                    <CircleDollarSign className="h-4 w-4" />
+                    Marcar pago
+                  </button>
+                  <button
+                    type="button"
+                    disabled={updatingId === a.owner_id || !a.owner_id}
+                    onClick={() => setStatus(a, suspended ? "approved" : "suspended")}
+                    className={cn(
+                      "touch-target inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors disabled:opacity-50",
+                      suspended
+                        ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                        : "bg-red-500/15 text-red-400 hover:bg-red-500/25",
+                    )}
+                  >
+                    {suspended ? <RotateCcw className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                    {suspended ? "Reactivar" : "Suspender"}
+                  </button>
+                </div>
               </div>
             )
           })
@@ -147,19 +197,20 @@ export default function AdminCuentasPage() {
               <th className="px-4 py-3">Kiosko / Negocio</th>
               <th className="hidden px-4 py-3 sm:table-cell">Dueño</th>
               <th className="w-[120px] px-4 py-3 text-center">Estado</th>
-              <th className="w-[140px] px-4 py-3 text-right">Acción</th>
+              <th className="w-[130px] px-4 py-3 text-center">Vence</th>
+              <th className="w-[220px] px-4 py-3 text-right">Acción</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Cargando...
                 </td>
               </tr>
             ) : accounts.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No hay cuentas todavía.
                 </td>
               </tr>
@@ -186,21 +237,37 @@ export default function AdminCuentasPage() {
                         {suspended ? "Suspendida" : "Activa"}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={cn("text-xs font-medium", isOverdue(a.next_payment_due_at) ? "text-red-400" : "text-muted-foreground")}>
+                        {formatDate(a.next_payment_due_at)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        disabled={updatingId === a.owner_id || !a.owner_id}
-                        onClick={() => setStatus(a, suspended ? "approved" : "suspended")}
-                        className={cn(
-                          "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors disabled:opacity-50",
-                          suspended
-                            ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
-                            : "bg-red-500/15 text-red-400 hover:bg-red-500/25",
-                        )}
-                      >
-                        {suspended ? <RotateCcw className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
-                        {suspended ? "Reactivar" : "Suspender"}
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={updatingId === a.owner_id || !a.owner_id}
+                          onClick={() => markPaid(a)}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-cyan-500/15 px-3 text-xs font-semibold text-cyan-400 transition-colors hover:bg-cyan-500/25 disabled:opacity-50"
+                        >
+                          <CircleDollarSign className="h-3.5 w-3.5" />
+                          Marcar pago
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === a.owner_id || !a.owner_id}
+                          onClick={() => setStatus(a, suspended ? "approved" : "suspended")}
+                          className={cn(
+                            "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors disabled:opacity-50",
+                            suspended
+                              ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                              : "bg-red-500/15 text-red-400 hover:bg-red-500/25",
+                          )}
+                        >
+                          {suspended ? <RotateCcw className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+                          {suspended ? "Reactivar" : "Suspender"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
